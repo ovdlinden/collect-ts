@@ -108,7 +108,7 @@ let wrapProxy: <U>(lc: LazyCollection<U>) => ProxiedLazyCollection<U> = null!;
 export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * The source of items - either an array or a generator function.
-	 * Like Laravel's $source property.
+	 * Like Laravel's source property.
 	 */
 	public source: LazySource<T>;
 

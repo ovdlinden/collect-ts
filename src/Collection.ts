@@ -486,7 +486,7 @@ export function operatorForWhere<T>(
 type HigherOrderHandler<T> = (collection: Collection<T, CollectionKind>, callback: (item: T) => unknown) => unknown;
 
 /**
- * Methods that support higher-order messaging (Laravel's $proxies list)
+ * Methods that support higher-order messaging (Laravel's proxies list)
  */
 type ProxyableMethod =
 	| 'average'
@@ -684,7 +684,7 @@ class HigherOrderCollectionProxy {
 
 				// For primitive results (number, boolean, string, null, undefined),
 				// return the value directly - no proxy needed
-				// This matches Laravel's behavior where $collection->sum->age returns a number
+				// This matches Laravel's behavior where collection.sum.age returns a number
 				if (
 					propertyResult === null ||
 					propertyResult === undefined ||
