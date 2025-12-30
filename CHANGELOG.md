@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [Unreleased]
+
+### Documentation
+- Add CONTRIBUTING.md ([`12961d9`](https://github.com/ovdlinden/collect-ts/commit/12961d9cc5eeb9972e28a0cf3d853f6bdc5ef3e6))
+- Add initial CHANGELOG.md ([`09bdeb9`](https://github.com/ovdlinden/collect-ts/commit/09bdeb9f05dd4b5d17777b7d4d1ea13c63c7be2d))
+- Add issue and PR templates ([`d1fedd2`](https://github.com/ovdlinden/collect-ts/commit/d1fedd2f931e2de985f866e4e609288a4e704b36))
+
+
+### Miscellaneous
+- Bump version to 0.2.0 ([`55c006e`](https://github.com/ovdlinden/collect-ts/commit/55c006e03360437a3d52177d9cface69e3c866fc))
+
 ## [0.1.0] - 2025-12-30
 
 ### Bug Fixes
