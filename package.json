@@ -1,5 +1,5 @@
 {
-	"name": "laravel-collection-ts",
+	"name": "collect-ts",
 	"version": "1.0.0",
 	"laravelCollectionVersion": "12.43",
 	"description": "TypeScript port of Laravel Collection (Laravel 12.x compatible) - fully typed",
@@ -41,11 +41,15 @@
 		"utilities",
 		"enumerable"
 	],
-	"author": "",
+	"author": "Omid van der Linden",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/your-org/laravel-collection-ts"
+		"url": "https://github.com/ovdlinden/collect-ts"
+	},
+	"homepage": "https://github.com/ovdlinden/collect-ts#readme",
+	"bugs": {
+		"url": "https://github.com/ovdlinden/collect-ts/issues"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
