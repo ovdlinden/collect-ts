@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Bug Fixes
+- Remove duplicate pnpm version specification ([`c03af73`](https://github.com/ovdlinden/collect-ts/commit/c03af736a862d138fe2a385bae62efc1a81c8bbf))
+
+
+### Miscellaneous
+- Update CHANGELOG ([`54b032a`](https://github.com/ovdlinden/collect-ts/commit/54b032a0f0efb77692c9ef0076d65a106b52be45))
+
+## [0.2.0] - 2025-12-30
+
+### Bug Fixes
 - Add explicit return types to trait mixins for JSR compatibility ([`b9f2250`](https://github.com/ovdlinden/collect-ts/commit/b9f2250dfc29e2345d523cc6d6c709d4d1fc104b))
 
 
