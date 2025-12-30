@@ -1,13 +1,24 @@
-# Laravel Collection for TypeScript
+# collect-ts
 
-A fully-typed TypeScript port of [Laravel's Collection](https://laravel.com/docs/collections) class, designed to stay in sync with the official Laravel framework.
+**Laravel Collection for TypeScript — always in sync, TypeScript-first, modern.**
+
+[![Laravel 12.x](https://img.shields.io/badge/Laravel-12.x-FF2D20)](https://laravel.com/docs/12.x/collections)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org/)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Why collect-ts?
+
+**A living synchronization with Laravel Collections.**
+
+- 🔄 **Always in Sync** — Tracks Laravel 12.x. When Laravel updates, we update.
+- 🎯 **TypeScript-First** — Advanced generics, conditional types, full inference.
+- ⚡ **LazyCollection** — Generator-based lazy evaluation for large datasets.
+- 🛠️ **Modern Stack** — ESM-only, Node 18+, zero dependencies.
 
 ## Installation
 
 ```bash
-# JSR (Deno, Bun, Node 18+)
-npx jsr add @ovdlinden/collect-ts
-
 # npm
 npm install collect-ts
 
@@ -16,18 +27,17 @@ pnpm add collect-ts
 
 # yarn
 yarn add collect-ts
+
+# JSR (Deno, Bun, Node 18+)
+npx jsr add @ovdlinden/collect-ts
 ```
 
-## Usage
+## Quick Start
 
 ```typescript
 import { collect } from 'collect-ts';
 
-// Create a collection
-const collection = collect([1, 2, 3, 4, 5]);
-
-// Chain methods fluently
-const result = collection
+const result = collect([1, 2, 3, 4, 5])
   .filter(n => n > 2)
   .map(n => n * 2)
   .sum();
@@ -36,205 +46,83 @@ const result = collection
 
 ## Features
 
-- **Full Laravel Parity**: 130+ methods matching Laravel's Collection API
-- **Fully Typed**: Complete TypeScript generics for type safety
-- **Zero Dependencies**: Lightweight and self-contained
-- **Laravel 12.x Compatible**: Synced with Laravel 12.x Collection API
+### Always in Sync with Laravel
+
+We track the exact Laravel Collection version in `package.json`:
+
+```json
+{
+  "laravelCollectionVersion": "12.43"
+}
+```
+
+Sync scripts pull updates from Laravel's repository. Tests are ported from Laravel's test suite.
+
+### TypeScript-First
+
+Not JavaScript with types added later. Built from the ground up with:
+
+- **Advanced generics** for full type inference
+- **Conditional types** like `Collapse<T>` and `FlattenDepth<T, D>`
+- **Higher-order messaging** with proper typing
+
+```typescript
+// Types flow through the chain
+const names = collect(users).pluck('name') // Collection<string>
+
+// Higher-order messaging
+const emails = collect(users).map.email // Collection<string>
+
+// Conditional types infer correctly
+const flat = collect([[1, 2], [3, 4]]).collapse() // Collection<number>
+```
+
+### LazyCollection
+
+Generator-based lazy evaluation for memory-efficient processing:
+
+```typescript
+import { lazy } from 'collect-ts';
+
+// Process millions without loading into memory
+const result = lazy(hugeDataset)
+  .filter(item => item.active)
+  .map(item => item.id)
+  .take(100)
+  .all();
+```
+
+### 130+ Methods
+
+Full Laravel Collection API including:
+
+```typescript
+// Transformation
+collect(items).map().filter().flatten().collapse().pluck()
+
+// Aggregation
+collect(items).sum().avg().min().max().median().mode()
+
+// Filtering
+collect(items).where('active', true).whereIn('role', ['admin']).whereBetween('age', [18, 65])
+
+// Grouping
+collect(items).groupBy('category').keyBy('id').partition(fn)
+
+// And 100+ more...
+```
+
+### Modern Stack
+
+- **ESM-only** — No CommonJS baggage
+- **Node 18+** — Modern JavaScript features
+- **Zero dependencies** — Nothing to audit
+- **TypeScript 5** — Latest type system features
 
 ## API Reference
 
-### Creating Collections
-
-```typescript
-import { collect, Collection } from 'collect-ts';
-
-// From array
-collect([1, 2, 3])
-
-// From object
-collect({ a: 1, b: 2, c: 3 })
-
-// Empty collection
-collect()
-
-// Using constructor
-new Collection([1, 2, 3])
-```
-
-### Transformation Methods
-
-```typescript
-// Map values
-collect([1, 2, 3]).map(n => n * 2)  // [2, 4, 6]
-
-// Filter values
-collect([1, 2, 3, 4]).filter(n => n > 2)  // [3, 4]
-
-// Pluck values from objects
-collect([{ name: 'John' }, { name: 'Jane' }]).pluck('name')  // ['John', 'Jane']
-
-// Flatten nested arrays
-collect([[1, 2], [3, 4]]).flatten()  // [1, 2, 3, 4]
-
-// Collapse arrays
-collect([[1, 2], [3, 4]]).collapse()  // [1, 2, 3, 4]
-
-// Map with new keys
-collect([{ id: 1, name: 'John' }])
-  .mapWithKeys(item => [item.id, item.name])  // { 1: 'John' }
-```
-
-### Aggregation Methods
-
-```typescript
-// Sum
-collect([1, 2, 3]).sum()  // 6
-collect([{ price: 10 }, { price: 20 }]).sum('price')  // 30
-
-// Average
-collect([1, 2, 3]).avg()  // 2
-
-// Min/Max
-collect([1, 2, 3]).min()  // 1
-collect([1, 2, 3]).max()  // 3
-
-// Count
-collect([1, 2, 3]).count()  // 3
-
-// Median
-collect([1, 2, 3]).median()  // 2
-
-// Mode
-collect([1, 1, 2, 2, 2]).mode()  // [2]
-```
-
-### Filtering Methods
-
-```typescript
-// Where clauses
-collect(users).where('active', true)
-collect(users).where('age', '>', 18)
-collect(users).whereIn('role', ['admin', 'editor'])
-collect(users).whereBetween('age', [18, 65])
-collect(users).whereNull('deletedAt')
-collect(users).whereNotNull('email')
-
-// First/Last
-collect([1, 2, 3]).first()  // 1
-collect([1, 2, 3]).first(n => n > 1)  // 2
-collect([1, 2, 3]).last()  // 3
-
-// Contains
-collect([1, 2, 3]).contains(2)  // true
-collect(users).contains('name', 'John')  // true
-
-// Unique
-collect([1, 1, 2, 2, 3]).unique()  // [1, 2, 3]
-```
-
-### Sorting Methods
-
-```typescript
-// Sort
-collect([3, 1, 2]).sort()  // [1, 2, 3]
-collect([1, 2, 3]).sortDesc()  // [3, 2, 1]
-
-// Sort by key
-collect(users).sortBy('name')
-collect(users).sortByDesc('age')
-
-// Reverse
-collect([1, 2, 3]).reverse()  // [3, 2, 1]
-
-// Shuffle
-collect([1, 2, 3]).shuffle()  // random order
-```
-
-### Grouping Methods
-
-```typescript
-// Group by key
-collect(users).groupBy('department')
-
-// Key by
-collect(users).keyBy('id')
-
-// Partition
-const [active, inactive] = collect(users).partition(u => u.active)
-
-// Chunk
-collect([1, 2, 3, 4, 5]).chunk(2)  // [[1, 2], [3, 4], [5]]
-```
-
-### Reduction Methods
-
-```typescript
-// Reduce
-collect([1, 2, 3]).reduce((sum, n) => sum + n, 0)  // 6
-
-// Each (iteration)
-collect([1, 2, 3]).each(n => console.log(n))
-
-// Pipe
-collect([1, 2, 3]).pipe(c => c.sum())  // 6
-
-// Tap
-collect([1, 2, 3]).tap(c => console.log(c.count()))
-```
-
-### Set Operations
-
-```typescript
-// Diff
-collect([1, 2, 3]).diff([2, 3, 4])  // [1]
-
-// Intersect
-collect([1, 2, 3]).intersect([2, 3, 4])  // [2, 3]
-
-// Union
-collect({ a: 1 }).union({ b: 2 })  // { a: 1, b: 2 }
-
-// Merge
-collect([1, 2]).merge([3, 4])  // [1, 2, 3, 4]
-
-// Combine
-collect(['a', 'b']).combine([1, 2])  // { a: 1, b: 2 }
-
-// Cross join
-collect([1, 2]).crossJoin(['a', 'b'])  // [[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]
-
-// Zip
-collect([1, 2]).zip(['a', 'b'])  // [[1, 'a'], [2, 'b']]
-```
-
-### Conditional Methods
-
-```typescript
-// When
-collect([1, 2, 3]).when(true, c => c.push(4))  // [1, 2, 3, 4]
-
-// Unless
-collect([1, 2, 3]).unless(false, c => c.push(4))  // [1, 2, 3, 4]
-
-// WhenEmpty/WhenNotEmpty
-collect([]).whenEmpty(c => c.push(1))  // [1]
-collect([1]).whenNotEmpty(c => c.push(2))  // [1, 2]
-```
-
-### Exception Methods
-
-```typescript
-// Sole - throws if not exactly one item
-collect([42]).sole()  // 42
-collect([]).sole()  // throws ItemNotFoundException
-collect([1, 2]).sole()  // throws MultipleItemsFoundException
-
-// FirstOrFail - throws if empty
-collect([1, 2]).firstOrFail()  // 1
-collect([]).firstOrFail()  // throws ItemNotFoundException
-```
-
-## All Available Methods
+<details>
+<summary>View all 130+ methods</summary>
 
 | Method | Description |
 |--------|-------------|
@@ -291,6 +179,7 @@ collect([]).firstOrFail()  // throws ItemNotFoundException
 | `keyBy()` | Key by callback |
 | `keys()` | Get all keys |
 | `last()` | Get last item |
+| `lazy()` | Convert to LazyCollection |
 | `map()` | Transform items |
 | `mapInto()` | Map into class instances |
 | `mapSpread()` | Map spreading arrays |
@@ -380,6 +269,8 @@ collect([]).firstOrFail()  // throws ItemNotFoundException
 | `whereStrict()` | Filter strict |
 | `zip()` | Zip with arrays |
 
+</details>
+
 ## Versioning
 
 This package uses semantic versioning independently from Laravel, with Laravel compatibility tracked via metadata.
@@ -396,5 +287,5 @@ MIT
 
 ## Credits
 
-- [Laravel](https://laravel.com) - Original Collection implementation
-- [Taylor Otwell](https://github.com/taylorotwell) - Creator of Laravel
+- [Laravel](https://laravel.com) — Original Collection implementation
+- [Taylor Otwell](https://github.com/taylorotwell) — Creator of Laravel

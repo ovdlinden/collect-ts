@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Laravel Collection
   text: for TypeScript
-  tagline: A fully-typed TypeScript port of Laravel's Collection class with 130+ methods
+  tagline: Always in sync with Laravel. TypeScript-first. Modern.
   actions:
     - theme: brand
       text: Get Started
@@ -14,21 +14,31 @@ hero:
       link: https://github.com/ovdlinden/collect-ts
 
 features:
+  - icon: 🔄
+    title: Always in Sync
+    details: Synchronized with Laravel 12.x. When Laravel adds methods or fixes bugs, we update. Not a one-time port.
   - icon: 🎯
-    title: Full Laravel Parity
-    details: 130+ Collection methods ported from Laravel 12.x with identical behavior and API
-  - icon: 📘
-    title: Fully Typed
-    details: Complete TypeScript type definitions with generics, inference, and IDE autocomplete
+    title: TypeScript-First
+    details: Built from the ground up in TypeScript with advanced generics, conditional types, and full type inference.
   - icon: ⚡
-    title: Zero Dependencies
-    details: Lightweight and fast with no external dependencies
-  - icon: 🔗
-    title: Fluent Chaining
-    details: Chain methods together for expressive, readable data transformations
+    title: LazyCollection
+    details: Generator-based lazy evaluation for memory-efficient processing of large datasets.
+  - icon: 🛠️
+    title: Modern Stack
+    details: ESM-only, Node 18+, zero dependencies. Built for 2025, not legacy compatibility.
 ---
 
-## Installation {#installation}
+## Why collect-ts?
+
+**A living synchronization with Laravel Collections.**
+
+- 🔄 **Version tracked** — `laravelCollectionVersion: 12.43` in package.json
+- 🔧 **Sync infrastructure** — Scripts to pull updates from Laravel's repository
+- ✅ **Test parity** — Tests ported from Laravel's own test suite
+
+When Laravel adds new methods, we add them. When bugs are fixed upstream, we fix them.
+
+## Installation
 
 ::: code-group
 
@@ -44,6 +54,10 @@ pnpm add collect-ts
 yarn add collect-ts
 ```
 
+```bash [jsr]
+npx jsr add @ovdlinden/collect-ts
+```
+
 :::
 
 ## Quick Start
@@ -51,29 +65,45 @@ yarn add collect-ts
 ```typescript
 import { collect } from 'collect-ts'
 
-// Create a collection
-const collection = collect([1, 2, 3, 4, 5])
-
-// Chain methods fluently
-const result = collection
+const result = collect([1, 2, 3, 4, 5])
+  .filter(n => n > 2)
   .map(n => n * 2)
-  .filter(n => n > 4)
   .sum()
-
 // => 24
 ```
 
-## Why Laravel Collection for TypeScript?
+## LazyCollection for Large Datasets
 
-If you've used Laravel's Collection class in PHP, you know how powerful and expressive it makes working with arrays. This library brings that same experience to TypeScript with:
+Process millions of items without loading everything into memory:
 
-- **Familiar API** - Same method names and behavior as Laravel
-- **Type Safety** - Full TypeScript support with generics
-- **IDE Support** - Autocomplete and inline documentation
-- **Higher-Order Messaging** - Use `collection.map.name` instead of `collection.map(item => item.name)`
+```typescript
+import { lazy } from 'collect-ts'
+
+const result = lazy(hugeDataset)
+  .filter(item => item.active)
+  .map(item => item.id)
+  .take(100)
+  .all()
+// Only processes what's needed
+```
+
+## TypeScript-First
+
+Not JavaScript with types bolted on. Real TypeScript with advanced patterns:
+
+```typescript
+// Type-safe property extraction
+const names = collect(users).pluck('name') // Collection<string>
+
+// Higher-order messaging with full typing
+const emails = collect(users).map.email // Collection<string>
+
+// Conditional types that infer correctly
+const flat = collect([[1, 2], [3, 4]]).collapse() // Collection<number>
+```
 
 ## Documentation
 
-This documentation is synced from [Laravel's official Collection documentation](https://laravel.com/docs/collections) and adapted for TypeScript. All PHP examples have been converted to idiomatic TypeScript.
+Full documentation synced from [Laravel's official docs](https://laravel.com/docs/collections), converted to TypeScript.
 
-[Read the full documentation →](/collections)
+[Read the documentation →](/collections)
