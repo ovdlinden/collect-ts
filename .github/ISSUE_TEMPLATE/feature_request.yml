@@ -1,0 +1,49 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature!
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What feature would you like to see?
+      placeholder: Describe the feature and its use case
+    validations:
+      required: true
+
+  - type: textarea
+    id: laravel-reference
+    attributes:
+      label: Laravel Reference
+      description: If this exists in Laravel Collection, link to the docs
+      placeholder: |
+        https://laravel.com/docs/collections#method-...
+
+        ```php
+        // Laravel implementation
+        $collection->someMethod();
+        ```
+
+  - type: textarea
+    id: proposed-api
+    attributes:
+      label: Proposed API
+      description: How would you like to use this feature?
+      placeholder: |
+        ```typescript
+        import { collect } from 'collect-ts';
+
+        collect([1, 2, 3]).newMethod();
+        ```
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to help implement this feature
