@@ -24,7 +24,7 @@ The initial alpha release with core functionality:
 
 Focus: Development infrastructure
 
-- [ ] GitHub Actions CI (lint, test, build on PRs)
+- [x] GitHub Actions CI (lint, test, build on PRs)
 - [ ] Automated npm publishing on release tags
 - [ ] CHANGELOG.md
 - [ ] CONTRIBUTING.md
