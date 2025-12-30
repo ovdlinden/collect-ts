@@ -9,19 +9,19 @@ A fully-typed TypeScript port of [Laravel's Collection](https://laravel.com/docs
 npx jsr add @ovdlinden/collect-ts
 
 # npm
-npm install laravel-collection-ts
+npm install collect-ts
 
 # pnpm
-pnpm add laravel-collection-ts
+pnpm add collect-ts
 
 # yarn
-yarn add laravel-collection-ts
+yarn add collect-ts
 ```
 
 ## Usage
 
 ```typescript
-import { collect } from 'laravel-collection-ts';
+import { collect } from 'collect-ts';
 
 // Create a collection
 const collection = collect([1, 2, 3, 4, 5]);
@@ -46,7 +46,7 @@ const result = collection
 ### Creating Collections
 
 ```typescript
-import { collect, Collection } from 'laravel-collection-ts';
+import { collect, Collection } from 'collect-ts';
 
 // From array
 collect([1, 2, 3])
