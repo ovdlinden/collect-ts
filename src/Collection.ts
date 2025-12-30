@@ -37,7 +37,12 @@
  * ```
  */
 
-import { ItemNotFoundException, MultipleItemsFoundException } from './exceptions';
+import {
+	InvalidArgumentException,
+	ItemNotFoundException,
+	MultipleItemsFoundException,
+	UnexpectedValueException,
+} from './exceptions';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -1995,7 +2000,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 */
 	shift(count = 1): T | Collection<T> | null {
 		if (count < 0) {
-			throw new Error('Number of shifted items may not be less than zero.');
+			throw new InvalidArgumentException('Number of shifted items may not be less than zero.');
 		}
 
 		const keys = Object.keys(this.items);
@@ -2647,7 +2652,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	random(number?: number | ((collection: Collection<T>) => number), preserveKeys = false): T | Collection<T> {
 		const values = Object.values(this.items);
 		if (values.length === 0) {
-			throw new Error('Cannot get random item from empty collection.');
+			throw new InvalidArgumentException('Cannot get random item from empty collection.');
 		}
 
 		if (number === undefined) {
@@ -2657,7 +2662,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		const count = typeof number === 'function' ? number(this as unknown as Collection<T>) : number;
 
 		if (count > values.length) {
-			throw new Error(`You requested ${count} items, but there are only ${values.length} items available.`);
+			throw new InvalidArgumentException(
+				`You requested ${count} items, but there are only ${values.length} items available.`,
+			);
 		}
 
 		// Fisher-Yates shuffle helper
@@ -2683,10 +2690,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 */
 	sliding(size = 2, step = 1): Collection<Collection<T>> {
 		if (size < 1) {
-			throw new Error('Size value must be at least 1.');
+			throw new InvalidArgumentException('Size value must be at least 1.');
 		}
 		if (step < 1) {
-			throw new Error('Step value must be at least 1.');
+			throw new InvalidArgumentException('Step value must be at least 1.');
 		}
 
 		const entries = Object.entries(this.items);
@@ -3193,7 +3200,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				}
 			}
 
-			throw new Error(
+			throw new UnexpectedValueException(
 				`Collection should only include [${allowedTypes.map((t) => (typeof t === 'string' ? t : t.name)).join(', ')}] items, but '${itemType}' found at key '${key}'.`,
 			);
 		});

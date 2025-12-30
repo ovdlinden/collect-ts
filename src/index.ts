@@ -36,7 +36,12 @@ export type {
 } from './Collection.js';
 
 // Exceptions
-export { ItemNotFoundException, MultipleItemsFoundException } from './exceptions/index.js';
+export {
+	InvalidArgumentException,
+	ItemNotFoundException,
+	MultipleItemsFoundException,
+	UnexpectedValueException,
+} from './exceptions/index.js';
 
 // Traits (for extension)
 export { Conditionable, Pipeable, Tappable } from './traits/index.js';
