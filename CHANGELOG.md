@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
+### Bug Fixes
+- Add explicit return types to trait mixins for JSR compatibility ([`b9f2250`](https://github.com/ovdlinden/collect-ts/commit/b9f2250dfc29e2345d523cc6d6c709d4d1fc104b))
+
+
 ### Documentation
 - Add CONTRIBUTING.md ([`12961d9`](https://github.com/ovdlinden/collect-ts/commit/12961d9cc5eeb9972e28a0cf3d853f6bdc5ef3e6))
 - Add initial CHANGELOG.md ([`09bdeb9`](https://github.com/ovdlinden/collect-ts/commit/09bdeb9f05dd4b5d17777b7d4d1ea13c63c7be2d))
@@ -11,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous
 - Bump version to 0.2.0 ([`55c006e`](https://github.com/ovdlinden/collect-ts/commit/55c006e03360437a3d52177d9cface69e3c866fc))
+- Update CHANGELOG ([`d7df243`](https://github.com/ovdlinden/collect-ts/commit/d7df2432bc8bd1112953bac90c01e66344db434c))
 
 ## [0.1.0] - 2025-12-30
 
