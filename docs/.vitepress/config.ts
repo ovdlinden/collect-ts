@@ -15,7 +15,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Collections', link: '/collections' },
-      { text: 'GitHub', link: 'https://github.com/your-org/laravel-collection-ts' },
+      { text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
     ],
 
     sidebar: [
@@ -35,7 +35,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/your-org/laravel-collection-ts' },
+      { icon: 'github', link: 'https://github.com/ovdlinden/collect-ts' },
     ],
 
     footer: {

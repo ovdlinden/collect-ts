@@ -11,7 +11,7 @@ hero:
       link: /collections
     - theme: alt
       text: View on GitHub
-      link: https://github.com/your-org/laravel-collection-ts
+      link: https://github.com/ovdlinden/collect-ts
 
 features:
   - icon: 🎯
@@ -33,15 +33,15 @@ features:
 ::: code-group
 
 ```bash [npm]
-npm install laravel-collection-ts
+npm install collect-ts
 ```
 
 ```bash [pnpm]
-pnpm add laravel-collection-ts
+pnpm add collect-ts
 ```
 
 ```bash [yarn]
-yarn add laravel-collection-ts
+yarn add collect-ts
 ```
 
 :::
@@ -49,7 +49,7 @@ yarn add laravel-collection-ts
 ## Quick Start
 
 ```typescript
-import { collect } from 'laravel-collection-ts'
+import { collect } from 'collect-ts'
 
 // Create a collection
 const collection = collect([1, 2, 3, 4, 5])

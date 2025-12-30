@@ -24,7 +24,7 @@ This documentation is automatically synced from [Laravel's official documentatio
 <a name="introduction"></a>
 ## Introduction
 
-The `Illuminate\Support\Collection` class provides a fluent, convenient wrapper for working with arrays of data. For example, check out the following code. We'll use the `collect` helper to create a new collection instance from the array, run the `strtoupper` function on each element, and then remove all empty elements:
+The `Collection` class provides a fluent, convenient wrapper for working with arrays of data. For example, check out the following code. We'll use the `collect` helper to create a new collection instance from the array, convert each element to uppercase, and then remove all empty elements:
 
 ```typescript
 const collection = collect(['Taylor', 'Abigail', null])
@@ -37,16 +37,13 @@ As you can see, the `Collection` class allows you to chain its methods to perfor
 <a name="creating-collections"></a>
 ### Creating Collections
 
-As mentioned above, the `collect` helper returns a new `Illuminate\Support\Collection` instance for the given array. So, creating a collection is as simple as:
+As mentioned above, the `collect` helper returns a new `Collection` instance for the given array. So, creating a collection is as simple as:
 
 ```typescript
 const collection = collect([1, 2, 3]);
 ```
 
 You may also create a collection using the [make](#make) and [fromJson](#fromjson) methods.
-
-> [!NOTE]
-> The results of [Eloquent](https://laravel.com/docs/12.x/$2) queries are always returned as `Collection` instances.
 
 <a name="extending-collections"></a>
 ### Extending Collections
@@ -138,7 +135,7 @@ For the majority of the remaining collection documentation, we'll discuss each m
 [containsOneItem](#containsoneitem)
 [containsStrict](#containsstrict)
 [count](#count)
-[countBy](#countBy)
+[countBy](#method-countby)
 [crossJoin](#crossjoin)
 [dd](#dd)
 [diff](#diff)
@@ -348,9 +345,15 @@ Alias for the [avg](#avg) method.
 The `avg` method returns the [average value](https://en.wikipedia.org/wiki/Average) of a given key:
 
 ```typescript
-const average = collect([{ foo: 10 }, { foo: 10 }, { foo: 20 }, { foo: 40 }]).avg('foo');
+const average = collect([
+    { foo: 10 },
+    { foo: 10 },
+    { foo: 20 },
+    { foo: 40 }
+]).avg('foo');
 
 // 20
+
 const average = collect([1, 1, 2, 4]).avg();
 
 // 2
@@ -395,22 +398,31 @@ chunks.all();
 // [[1, 2, 3, 4], [5, 6, 7]]
 ```
 
-This method is especially useful in [views](https://laravel.com/docs/12.x/$2) when working with a grid system such as [Bootstrap](https://getbootstrap.com/docs/5.3/layout/grid/). For example, imagine you have a collection of [Eloquent](https://laravel.com/docs/12.x/$2) models you want to display in a grid:
+This method is especially useful when working with a grid system such as [Bootstrap](https://getbootstrap.com/docs/5.3/layout/grid/). For example, imagine you have a collection of objects you want to display in a grid:
 
-```blade
-@foreach ($products->chunk(3) as $chunk)
-    <div class="row">
-        @foreach ($chunk as $product)
-            <div class="col-xs-4">{{ $product->name }}</div>
-        @endforeach
+```vue
+<template>
+  <div v-for="(chunk, index) in products.chunk(3).all()" :key="index" class="row">
+    <div v-for="product in chunk.all()" :key="product.name" class="col-xs-4">
+      {{ product.name }}
     </div>
-@endforeach
+  </div>
+</template>
+
+<script setup lang="ts">
+import { collect } from 'collect-ts';
+
+const products = collect([
+  { name: 'Widget' }, { name: 'Gadget' }, { name: 'Gizmo' },
+  { name: 'Tool' }, { name: 'Device' }
+]);
+</script>
 ```
 
 <a name="method-chunkwhile"></a>
 #### `chunkWhile()`
 
-The `chunkWhile` method breaks the collection into multiple, smaller collections based on the evaluation of the given callback. The `$chunk` variable passed to the closure may be used to inspect the previous element:
+The `chunkWhile` method breaks the collection into multiple, smaller collections based on the evaluation of the given callback. The `chunk` parameter passed to the callback may be used to inspect the previous element:
 
 ```typescript
 const collection = collect('AABBCCCD'.split(''));
@@ -591,9 +603,6 @@ collect([1, 2, 3]).containsOneItem(item => item === 2);
 
 This method has the same signature as the [contains](#contains) method; however, all values are compared using "strict" comparisons.
 
-> [!NOTE]
-> This method's behavior is modified when using [Eloquent Collections](https://laravel.com/docs/12.x/$2).
-
 <a name="method-count"></a>
 #### `count()`
 
@@ -623,7 +632,6 @@ counted.all();
 
 You may pass a closure to the `countBy` method to count all items by a custom value:
 
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
 ```typescript
 const collection = collect(['alice@gmail.com', 'bob@yahoo.com', 'carlos@gmail.com']);
 const counted = collection.countBy(email => email.split('@')[1]);
@@ -652,6 +660,7 @@ matrix.all();
         [2, 'b'],
     ]
 */
+
 const collection = collect([1, 2]);
 const matrix = collection.crossJoin(['a', 'b'], ['I', 'II']);
 
@@ -676,7 +685,6 @@ matrix.all();
 
 The `dd` method dumps the collection's items and ends execution of the script:
 
-<!-- REVIEW: Contains dd() - needs manual replacement -->
 ```typescript
 const collection = collect(['John Doe', 'Jane Doe']);
 
@@ -695,7 +703,7 @@ If you do not want to stop executing the script, use the [dump](#dump) method in
 <a name="method-diff"></a>
 #### `diff()`
 
-The `diff` method compares the collection against another collection or a plain PHP `array` based on its values. This method will return the values in the original collection that are not present in the given collection:
+The `diff` method compares the collection against another collection or a plain JavaScript array based on its values. This method will return the values in the original collection that are not present in the given collection:
 
 ```typescript
 const collection = collect([1, 2, 3, 4, 5]);
@@ -706,17 +714,24 @@ diff.all();
 // [1, 3, 5]
 ```
 
-> [!NOTE]
-> This method's behavior is modified when using [Eloquent Collections](https://laravel.com/docs/12.x/$2).
-
 <a name="method-diffassoc"></a>
 #### `diffAssoc()`
 
-The `diffAssoc` method compares the collection against another collection or a plain PHP `array` based on its keys and values. This method will return the key / value pairs in the original collection that are not present in the given collection:
+The `diffAssoc` method compares the collection against another collection or a plain JavaScript object based on its keys and values. This method will return the key / value pairs in the original collection that are not present in the given collection:
 
 ```typescript
-const collection = collect({ color: 'orange', type: 'fruit', remain: 6 });
-const diff = collection.diffAssoc({ color: 'yellow', type: 'fruit', remain: 3, price: 6 });
+const collection = collect({
+    color: 'orange',
+    type: 'fruit',
+    remain: 6
+});
+
+const diff = collection.diffAssoc({
+    color: 'yellow',
+    type: 'fruit',
+    remain: 3,
+    price: 6
+});
 
 diff.all();
 
@@ -729,24 +744,44 @@ diff.all();
 Unlike `diffAssoc`, `diffAssocUsing` accepts a user supplied callback function for the indices comparison:
 
 ```typescript
-const collection = collect({ color: 'orange', type: 'fruit', remain: 6 });
-const diff = collection.diffAssocUsing({ Color: 'yellow', type: 'fruit', remain: 3 }, (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+const collection = collect({
+    color: 'orange',
+    type: 'fruit',
+    remain: 6
+});
+
+const diff = collection.diffAssocUsing(
+    { Color: 'yellow', type: 'fruit', remain: 3 },
+    (a, b) => a.toLowerCase().localeCompare(b.toLowerCase())
+);
 
 diff.all();
 
 // { color: 'orange', remain: 6 }
 ```
 
-The callback must be a comparison function that returns an integer less than, equal to, or greater than zero. For more information, refer to the PHP documentation on [array_diff_uassoc](https://www.php.net/array_diff_uassoc#refsect1-function.array-diff-uassoc-parameters), which is the PHP function that the `diffAssocUsing` method utilizes internally.
+The callback must be a comparison function that returns an integer less than, equal to, or greater than zero.
 
 <a name="method-diffkeys"></a>
 #### `diffKeys()`
 
-The `diffKeys` method compares the collection against another collection or a plain PHP `array` based on its keys. This method will return the key / value pairs in the original collection that are not present in the given collection:
+The `diffKeys` method compares the collection against another collection or a plain JavaScript object based on its keys. This method will return the key / value pairs in the original collection that are not present in the given collection:
 
 ```typescript
-const collection = collect({ one: 10, two: 20, three: 30, four: 40, five: 50 });
-const diff = collection.diffKeys({ two: 2, four: 4, six: 6, eight: 8 });
+const collection = collect({
+    one: 10,
+    two: 20,
+    three: 30,
+    four: 40,
+    five: 50
+});
+
+const diff = collection.diffKeys({
+    two: 2,
+    four: 4,
+    six: 6,
+    eight: 8
+});
 
 diff.all();
 
@@ -846,7 +881,6 @@ collection.duplicates();
 
 If the collection contains arrays or objects, you can pass the key of the attributes that you wish to check for duplicate values:
 
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
 ```typescript
 const employees = collect([{ email: 'abigail@example.com', position: 'Developer' }, { email: 'james@example.com', position: 'Designer' }, { email: 'victoria@example.com', position: 'Developer' }]);
 
@@ -959,9 +993,6 @@ filtered.all();
 
 For the inverse of `except`, see the [only](#only) method.
 
-> [!NOTE]
-> This method's behavior is modified when using [Eloquent Collections](https://laravel.com/docs/12.x/$2).
-
 <a name="method-filter"></a>
 #### `filter()`
 
@@ -1010,7 +1041,7 @@ collect([1, 2, 3, 4]).first();
 <a name="method-first-or-fail"></a>
 #### `firstOrFail()`
 
-The `firstOrFail` method is identical to the `first` method; however, if no result is found, an `Illuminate\Support\ItemNotFoundException` exception will be thrown:
+The `firstOrFail` method is identical to the `first` method; however, if no result is found, an `ItemNotFoundException` exception will be thrown:
 
 ```typescript
 collect([1, 2, 3, 4]).firstOrFail((value, key) => value > 5);
@@ -1018,7 +1049,7 @@ collect([1, 2, 3, 4]).firstOrFail((value, key) => value > 5);
 // Throws ItemNotFoundException...
 ```
 
-You may also call the `firstOrFail` method with no arguments to get the first element in the collection. If the collection is empty, an `Illuminate\Support\ItemNotFoundException` exception will be thrown:
+You may also call the `firstOrFail` method with no arguments to get the first element in the collection. If the collection is empty, an `ItemNotFoundException` exception will be thrown:
 
 ```typescript
 collect([]).firstOrFail();
@@ -1061,8 +1092,16 @@ collection.firstWhere('age');
 The `flatMap` method iterates through the collection and passes each value to the given closure. The closure is free to modify the item and return it, thus forming a new collection of modified items. Then, the array is flattened by one level:
 
 ```typescript
-const collection = collect([{ name: 'Sally' }, { school: 'Arkansas' }, { age: 28 }]);
-const flattened = collection.flatMap(values => Object.fromEntries(Object.entries(values).map(([k, v]) => [k, String(v).toUpperCase()])));
+const collection = collect([
+    { name: 'Sally' },
+    { school: 'Arkansas' },
+    { age: 28 }
+]);
+
+const flattened = collection.flatMap(values => {
+    const entries = Object.entries(values);
+    return Object.fromEntries(entries.map(([k, v]) => [k, String(v).toUpperCase()]));
+});
 
 flattened.all();
 
@@ -1156,7 +1195,7 @@ chunk.all();
 <a name="method-fromjson"></a>
 #### `fromJson()`
 
-The static `fromJson` method creates a new collection instance by decoding a given JSON string using the `json_decode` PHP function:
+The static `fromJson` method creates a new collection instance by decoding a given JSON string using `JSON.parse`:
 
 ```typescript
 const json = JSON.stringify({ name: 'Taylor Otwell', role: 'Developer', status: 'Active' });
@@ -1186,7 +1225,6 @@ const value = collection.get('age', 34);
 
 You may even pass a callback as the method's default value. The result of the callback will be returned if the specified key does not exist:
 
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
 ```typescript
 collection.get('email', () => 'taylor@example.com');
 
@@ -1239,7 +1277,6 @@ grouped.all();
 
 Multiple grouping criteria may be passed as an array. Each array element will be applied to the corresponding level within a multi-dimensional array:
 
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
 ```typescript
 const data = new Collection({
     10: { user: 1, skill: 1, roles: ['Role_1', 'Role_3'] },
@@ -1357,9 +1394,6 @@ intersect.all();
 // { 0: 'Desk', 2: 'Chair' }
 ```
 
-> [!NOTE]
-> This method's behavior is modified when using [Eloquent Collections](https://laravel.com/docs/12.x/$2).
-
 <a name="method-intersectusing"></a>
 #### `intersectUsing()`
 
@@ -1445,9 +1479,13 @@ The `join` method joins the collection's values with a string. Using this method
 
 ```typescript
 collect(['a', 'b', 'c']).join(', '); // 'a, b, c'
-collect(['a', 'b', 'c']).join(', ', ', '); // 'a, b, and c'
+
+collect(['a', 'b', 'c']).join(', ', ', and '); // 'a, b, and c'
+
 collect(['a', 'b']).join(', ', ' and '); // 'a and b'
+
 collect(['a']).join(', ', ' and '); // 'a'
+
 collect([]).join(', ', ' and '); // ''
 ```
 
@@ -1583,7 +1621,6 @@ multiplied.all();
 
 The `mapInto()` method iterates over the collection, creating a new instance of the given class by passing the value into the constructor:
 
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
 ```typescript
 class Currency {
     constructor(public code: string) {}
@@ -1679,9 +1716,13 @@ keyed.all();
 The `max` method returns the maximum value of a given key:
 
 ```typescript
-const max = collect([{ foo: 10 }, { foo: 20 }]).max('foo');
+const max = collect([
+    { foo: 10 },
+    { foo: 20 }
+]).max('foo');
 
 // 20
+
 const max = collect([1, 2, 3, 4, 5]).max();
 
 // 5
@@ -1693,9 +1734,15 @@ const max = collect([1, 2, 3, 4, 5]).max();
 The `median` method returns the [median value](https://en.wikipedia.org/wiki/Median) of a given key:
 
 ```typescript
-const median = collect([{ foo: 10 }, { foo: 10 }, { foo: 20 }, { foo: 40 }]).median('foo');
+const median = collect([
+    { foo: 10 },
+    { foo: 10 },
+    { foo: 20 },
+    { foo: 40 }
+]).median('foo');
 
 // 15
+
 const median = collect([1, 1, 2, 4]).median();
 
 // 1.5
@@ -1746,9 +1793,13 @@ merged.all();
 The `min` method returns the minimum value of a given key:
 
 ```typescript
-const min = collect([{ foo: 10 }, { foo: 20 }]).min('foo');
+const min = collect([
+    { foo: 10 },
+    { foo: 20 }
+]).min('foo');
 
 // 10
+
 const min = collect([1, 2, 3, 4, 5]).min();
 
 // 1
@@ -1760,12 +1811,19 @@ const min = collect([1, 2, 3, 4, 5]).min();
 The `mode` method returns the [mode value](https://en.wikipedia.org/wiki/Mode_(statistics)) of a given key:
 
 ```typescript
-const mode = collect([{ foo: 10 }, { foo: 10 }, { foo: 20 }, { foo: 40 }]).mode('foo');
+const mode = collect([
+    { foo: 10 },
+    { foo: 10 },
+    { foo: 20 },
+    { foo: 40 }
+]).mode('foo');
 
 // [10]
+
 const mode = collect([1, 1, 2, 4]).mode();
 
 // [1]
+
 const mode = collect([1, 1, 2, 2]).mode();
 
 // [1, 2]
@@ -1831,13 +1889,10 @@ filtered.all();
 
 For the inverse of `only`, see the [except](#except) method.
 
-> [!NOTE]
-> This method's behavior is modified when using [Eloquent Collections](https://laravel.com/docs/12.x/$2).
-
 <a name="method-pad"></a>
 #### `pad()`
 
-The `pad` method will fill the array with the given value until the array reaches the specified size. This method behaves like the [array_pad](https://secure.php.net/manual/en/function.array-pad.php) PHP function.
+The `pad` method will fill the array with the given value until the array reaches the specified size.
 
 To pad to the left, you should specify a negative size. No padding will take place if the absolute value of the given size is less than or equal to the length of the array:
 
@@ -1848,6 +1903,7 @@ const filtered = collection.pad(5, 0);
 filtered.all();
 
 // ['A', 'B', 'C', 0, 0]
+
 const filtered = collection.pad(-5, 0);
 
 filtered.all();
@@ -1858,7 +1914,7 @@ filtered.all();
 <a name="method-partition"></a>
 #### `partition()`
 
-The `partition` method may be combined with PHP array destructuring to separate elements that pass a given truth test from those that do not:
+The `partition` method may be combined with array destructuring to separate elements that pass a given truth test from those that do not:
 
 ```typescript
 const collection = collect([1, 2, 3, 4, 5, 6]);
@@ -1873,9 +1929,6 @@ equalOrAboveThree.all();
 
 // [3, 4, 5, 6]
 ```
-
-> [!NOTE]
-> This method's behavior is modified when interacting with [Eloquent collections](https://laravel.com/docs/12.x/$2).
 
 <a name="method-percentage"></a>
 #### `percentage()`
@@ -1914,7 +1967,6 @@ const piped = collection.pipe((collection) => collection.sum());
 
 The `pipeInto` method creates a new instance of the given class and passes the collection into the constructor:
 
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
 ```typescript
 class ResourceCollection {
     collection: Collection<number>;
@@ -2540,7 +2592,7 @@ collection.sole();
 // { product: 'Desk', price: 200 }
 ```
 
-If there are no elements in the collection that should be returned by the `sole` method, an `\Illuminate\Collections\ItemNotFoundException` exception will be thrown. If there is more than one element that should be returned, an `\Illuminate\Collections\MultipleItemsFoundException` will be thrown.
+If there are no elements in the collection that should be returned by the `sole` method, an `ItemNotFoundException` exception will be thrown. If there is more than one element that should be returned, a `MultipleItemsFoundException` will be thrown.
 
 <a name="method-some"></a>
 #### `some()`
@@ -2561,7 +2613,7 @@ sorted.values().all();
 // [1, 2, 3, 4, 5]
 ```
 
-If your sorting needs are more advanced, you may pass a callback to `sort` with your own algorithm. Refer to the PHP documentation on [uasort](https://secure.php.net/manual/en/function.uasort.php#refsect1-function.uasort-parameters), which is what the collection's `sort` method calls utilizes internally.
+If your sorting needs are more advanced, you may pass a callback to `sort` with your own algorithm. The callback should return a negative number if the first argument should come before the second, a positive number if the second should come before the first, or zero if they are equal.
 
 > [!NOTE]
 > If you need to sort a collection of nested arrays or objects, see the [sortBy](#sortby) and [sortByDesc](#sortbydesc) methods.
@@ -2590,28 +2642,7 @@ sorted.values().all();
 */
 ```
 
-The `sortBy` method accepts [sort flags](https://www.php.net/manual/en/function.sort.php) as its second argument:
-
-```typescript
-const collection = collect([
-    { title: 'Item 1' },
-    { title: 'Item 12' },
-    { title: 'Item 3' }
-]);
-const sorted = collection.sortBy('title', 'SORT_NATURAL');
-
-sorted.values().all();
-
-/*
-    [
-        { title: 'Item 1' },
-        { title: 'Item 3' },
-        { title: 'Item 12' }
-    ]
-*/
-```
-
-Alternatively, you may pass your own closure to determine how to sort the collection's values:
+You may also pass your own closure to determine how to sort the collection's values:
 
 ```typescript
 const collection = collect([
@@ -2742,7 +2773,7 @@ sorted.all();
 */
 ```
 
-The callback must be a comparison function that returns an integer less than, equal to, or greater than zero. For more information, refer to the PHP documentation on [uksort](https://www.php.net/manual/en/function.uksort.php#refsect1-function.uksort-parameters), which is the PHP function that `sortKeysUsing` method utilizes internally.
+The callback must be a comparison function that returns an integer less than, equal to, or greater than zero.
 
 <a name="method-splice"></a>
 #### `splice()`
@@ -2960,7 +2991,7 @@ collection.all();
 <a name="method-toarray"></a>
 #### `toArray()`
 
-The `toArray` method converts the collection into a plain PHP `array`. If the collection's values are [Eloquent](https://laravel.com/docs/12.x/$2) models, the models will also be converted to arrays:
+The `toArray` method converts the collection into a plain JavaScript array. If the collection's values are objects, they will remain as objects in the array:
 
 ```typescript
 const collection = collect({ name: 'Desk', price: 200 });
@@ -3120,9 +3151,6 @@ unique.values().all();
 
 The `unique` method uses "loose" comparisons when checking item values, meaning a string with an integer value will be considered equal to an integer of the same value. Use the [uniqueStrict](#uniquestrict) method to filter using "strict" comparisons.
 
-> [!NOTE]
-> This method's behavior is modified when using [Eloquent Collections](https://laravel.com/docs/12.x/$2).
-
 <a name="method-uniquestrict"></a>
 #### `uniqueStrict()`
 
@@ -3269,6 +3297,7 @@ collection.whenEmpty((collection) => collection.push('Adam'));
 collection.all();
 
 // ['Michael', 'Tom']
+
 const collection = collect();
 
 collection.whenEmpty((collection) => collection.push('Adam'));
@@ -3305,6 +3334,7 @@ collection.whenNotEmpty((collection) => collection.push('Adam'));
 collection.all();
 
 // ['Michael', 'Tom', 'Adam']
+
 const collection = collect();
 
 collection.whenNotEmpty((collection) => collection.push('Adam'));
@@ -3442,11 +3472,15 @@ This method has the same signature as the [whereIn](#wherein) method; however, a
 The `whereInstanceOf` method filters the collection by a given class type:
 
 ```typescript
+import { User } from './models/User';
+import { Post } from './models/Post';
+
 const collection = collect([
     new User(),
     new User(),
     new Post()
 ]);
+
 const filtered = collection.whereInstanceOf(User);
 
 filtered.all();
@@ -3568,11 +3602,13 @@ const collection = Collection.wrap('John Doe');
 collection.all();
 
 // ['John Doe']
+
 const collection = Collection.wrap(['John Doe']);
 
 collection.all();
 
 // ['John Doe']
+
 const collection = Collection.wrap(collect('John Doe'));
 
 collection.all();
@@ -3602,17 +3638,31 @@ Collections also provide support for "higher order messages", which are short-cu
 Each higher order message can be accessed as a dynamic property on a collection instance. For instance, let's use the `each` higher order message to call a method on each object within a collection:
 
 ```typescript
-const users = User.where('votes', '>', 500).get();
+class User {
+    name: string;
+    constructor(name: string) { this.name = name; }
+    notify() { console.log(`Notifying ${this.name}`); }
+}
 
-users.each.markAsVip();
+const users = collect([new User('Alice'), new User('Bob')]);
+
+users.each.notify();
+
+// Notifying Alice
+// Notifying Bob
 ```
 
 Likewise, we can use the `sum` higher order message to gather the total number of "votes" for a collection of users:
 
 ```typescript
-const users = User.where('group', 'Development').get();
+const users = collect([
+    { name: 'Alice', votes: 100 },
+    { name: 'Bob', votes: 200 }
+]);
 
-return users.sum.votes;
+users.sum.votes;
+
+// 300
 ```
 
 <a name="lazy-collections"></a>
@@ -3643,16 +3693,20 @@ LazyCollection.make(function* () {
 });
 ```
 
-Or, imagine you need to iterate through 10,000 Eloquent models. When using traditional Laravel collections, all 10,000 Eloquent models must be loaded into memory at the same time:
+Or, imagine you need to iterate through 10,000 records. When using traditional collections, all 10,000 items must be loaded into memory at the same time:
 
 ```typescript
-const users = User.all().filter((user) => user.id > 500);
+const users = collect(allUsersArray).filter((user) => user.id > 500);
 ```
 
-However, the query builder's `cursor` method returns a `LazyCollection` instance. This allows you to still only run a single query against the database but also only keep one Eloquent model loaded in memory at a time. In this example, the `filter` callback is not executed until we actually iterate over each user individually, allowing for a drastic reduction in memory usage:
+However, using a lazy collection allows you to process items one at a time. In this example, the `filter` callback is not executed until we actually iterate over each user individually, allowing for a drastic reduction in memory usage:
 
 ```typescript
-const users = User.cursor().filter((user) => user.id > 500);
+const users = lazy(function* () {
+    for (const user of generateUsersFromSource()) {
+        yield user;
+    }
+}).filter((user) => user.id > 500);
 
 for (const user of users) {
     console.log(user.id);
@@ -3738,7 +3792,7 @@ Almost all methods available on the `Collection` class are also available on the
 [contains](#contains)
 [containsStrict](#containsstrict)
 [count](#count)
-[countBy](#countBy)
+[countBy](#method-countby)
 [crossJoin](#crossjoin)
 [dd](#dd)
 [diff](#diff)
@@ -3871,13 +3925,19 @@ lazyCollection.each((number) => {
 // 59
 ```
 
-To illustrate the usage of this method, imagine an application that submits invoices from the database using a cursor. You could define a [scheduled task](https://laravel.com/docs/12.x/$2) that runs every 15 minutes and only processes invoices for a maximum of 14 minutes:
+To illustrate the usage of this method, imagine an application that submits invoices. You could set up a task that runs every 15 minutes and only processes invoices for a maximum of 14 minutes:
 
 ```typescript
-Invoice.pending().cursor()
-    .takeUntilTimeout(Carbon.createFromTimestamp(LARAVEL_START).add(14, 'minutes')
-    )
-    .each((invoice) => invoice.submit());
+const processStart = Date.now();
+const timeoutMs = 14 * 60 * 1000; // 14 minutes
+
+lazy(function* () {
+    for (const invoice of fetchPendingInvoices()) {
+        yield invoice;
+    }
+})
+    .takeUntilTimeout(new Date(processStart + timeoutMs))
+    .each((invoice) => submitInvoice(invoice));
 ```
 
 <a name="method-tapEach"></a>
