@@ -3348,7 +3348,7 @@ describe('Collection.with()', () => {
 describe('Collapse with Collection items', () => {
 	it('collapses nested collections', () => {
 		const c = collect([collect([1, 2]), collect([3, 4])]);
-		const result = c.collapse<number>();
+		const result = c.collapse();
 		expect(result.all()).toEqual([1, 2, 3, 4]);
 	});
 });
@@ -3434,7 +3434,7 @@ describe('Ensure with class instance', () => {
 describe('Flatten with Collection items', () => {
 	it('flattens nested collections', () => {
 		const c = collect([collect([1, 2]), collect([3, 4])]);
-		const result = c.flatten<number>(1);
+		const result = c.flatten(1);
 		expect(result.all()).toEqual([1, 2, 3, 4]);
 	});
 });
@@ -5106,7 +5106,7 @@ describe('Type Inference', () => {
 			expect(collapsed.first()).toBe(1);
 
 			// Type assertion - this line MUST compile without errors
-			const _typeCheck: number = collapsed.first()!;
+			collapsed.first()! satisfies number;
 		});
 
 		it('preserves T when not nested (type check)', () => {
@@ -5116,7 +5116,7 @@ describe('Type Inference', () => {
 			// Type should be Collection<number> (not Collection<never>)
 			// Runtime: collapse on non-nested items returns empty collection
 			// because 1, 2, 3 are not arrays/Collections to flatten
-			const _typeCheck: number | undefined = collapsed.first();
+			collapsed.first() satisfies number | undefined;
 			expect(collapsed.isEmpty()).toBe(true);
 		});
 
@@ -5125,7 +5125,7 @@ describe('Type Inference', () => {
 			const collapsed = nested.collapse();
 
 			// Type should be Collection<string>
-			const _typeCheck: string = collapsed.first()!;
+			collapsed.first()! satisfies string;
 			expect(collapsed.first()).toBe('a');
 		});
 	});
@@ -5139,7 +5139,7 @@ describe('Type Inference', () => {
 			const flat1 = deep.flatten(1);
 
 			// number[][][] flattened 1 level = number[][]
-			const _typeCheck: number[] = flat1.first()!;
+			flat1.first()! satisfies number[];
 			expect(flat1.first()).toEqual([1, 2]);
 		});
 
@@ -5151,7 +5151,7 @@ describe('Type Inference', () => {
 			const flat2 = deep.flatten(2);
 
 			// number[][][] flattened 2 levels = number
-			const _typeCheck: number = flat2.first()!;
+			flat2.first()! satisfies number;
 			expect(flat2.first()).toBe(1);
 		});
 
@@ -5160,7 +5160,7 @@ describe('Type Inference', () => {
 			const flatDeep = deep.flatten();
 
 			// Should be fully flattened to number
-			const _typeCheck: number = flatDeep.first()!;
+			flatDeep.first()! satisfies number;
 			expect(flatDeep.first()).toBe(1);
 		});
 
@@ -5169,7 +5169,7 @@ describe('Type Inference', () => {
 			const flat = collect([[[1]]]).flatten(depth);
 
 			// Should be Collection<unknown> - honest about limitation
-			const _typeCheck: unknown = flat.first();
+			flat.first() satisfies unknown;
 			expect(flat.first()).toBe(1);
 		});
 	});
@@ -5179,7 +5179,7 @@ describe('Type Inference', () => {
 			const users = collect([{ tags: ['a', 'b'] }, { tags: ['c'] }]);
 			const allTags = users.flatMap((u) => u.tags);
 
-			const _typeCheck: string = allTags.first()!;
+			allTags.first()! satisfies string;
 			expect(allTags.all()).toEqual(['a', 'b', 'c']);
 		});
 	});

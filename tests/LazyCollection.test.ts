@@ -12,7 +12,7 @@ import { Collection, LazyCollection, lazy, collect, type ProxiedCollection } fro
 declare module '../src' {
 	interface CollectionMacros<_T> {
 		toUpper: _T extends string ? () => ProxiedCollection<string> : never;
-		multiply: _T extends number ? (factor: number) => ProxiedCollection<number> : never;
+		multiplyBy: _T extends number ? (factor: number) => ProxiedCollection<number> : never;
 		double: _T extends number ? () => ProxiedCollection<number> : never;
 		total: _T extends number ? () => number : never;
 		customMethod: () => ProxiedCollection<_T>;
@@ -755,11 +755,11 @@ describe('Collection.macro()', () => {
 	});
 
 	it('passes arguments to macros', () => {
-		Collection.macro('multiply', function (this: Collection<number>, factor: number) {
+		Collection.macro('multiplyBy', function (this: Collection<number>, factor: number) {
 			return this.map((val) => val * factor);
 		});
 
-		const result = collect([1, 2, 3]).multiply(10).all();
+		const result = collect([1, 2, 3]).multiplyBy(10).all();
 		expect(result).toEqual([10, 20, 30]);
 
 		Collection.flushMacros();

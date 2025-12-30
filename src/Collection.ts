@@ -88,9 +88,11 @@ export type ValueRetriever<T, R> = string | ((value: T, key: string) => R);
 export type Collapse<T> =
 	T extends readonly (infer U)[]
 		? U
-		: T extends Collection<infer U, CollectionKind>
+		: T extends ProxiedCollection<infer U, CollectionKind>
 			? U
-			: T; // Return T unchanged, not `never`
+			: T extends Collection<infer U, CollectionKind>
+				? U
+				: T; // Return T unchanged, not `never`
 
 /**
  * Recursively unwraps nested arrays/Collections to specified depth.
@@ -119,12 +121,17 @@ export type FlattenDepth<T, D extends number> = {
 				U,
 				[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
 			>
-		: T extends Collection<infer U, CollectionKind>
+		: T extends ProxiedCollection<infer U, CollectionKind>
 			? FlattenDepth<
 					U,
 					[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
 				>
-			: T;
+			: T extends Collection<infer U, CollectionKind>
+				? FlattenDepth<
+						U,
+						[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
+					>
+				: T;
 }[D extends -1 ? 'done' : 'recur'];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2174,6 +2181,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
+	 * Get and remove the last item from the collection.
+	 * @returns The last item, or null if empty.
+	 */
+	pop(): T | null;
+	/**
+	 * Get and remove the last item from the collection.
+	 * @param count Must be 1 to return single item.
+	 * @returns The last item, or null if empty.
+	 */
+	pop(count: 1): T | null;
+	/**
+	 * Get and remove the last N items from the collection.
+	 * @param count Number of items to remove.
+	 * @returns Collection containing removed items.
+	 */
+	pop(count: number): Collection<T>;
+	/**
 	 * Get and remove the last N items from the collection.
 	 * Optimized: O(n) instead of O(n²) for multi-item pop.
 	 */
@@ -2207,6 +2231,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(results);
 	}
 
+	/**
+	 * Get and remove the first item from the collection.
+	 * @returns The first item, or null if empty.
+	 */
+	shift(): T | null;
+	/**
+	 * Get and remove the first item from the collection.
+	 * @param count Must be 1 to return single item.
+	 * @returns The first item, or null if empty.
+	 */
+	shift(count: 1): T | null;
+	/**
+	 * Get and remove the first N items from the collection.
+	 * @param count Number of items to remove.
+	 * @returns Collection containing removed items.
+	 */
+	shift(count: number): Collection<T>;
 	/**
 	 * Get and remove the first N items from the collection.
 	 * Optimized: O(n) instead of O(n²) for multi-item shift.
