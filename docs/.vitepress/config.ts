@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Laravel Collection for TypeScript',
   description: 'A TypeScript port of Laravel Collection with full type safety',
+  base: '/collect-ts/',
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
