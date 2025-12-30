@@ -58,8 +58,8 @@ export interface CollectionParam<T = unknown> {
 	toArray(): T[];
 }
 
-/** Operator types for where clauses */
-export type WhereOperator = '=' | '==' | '!=' | '<>' | '<' | '>' | '<=' | '>=' | '===' | '!==';
+/** Operator types for where clauses (Laravel uses loose comparison; use whereStrict() for strict) */
+export type WhereOperator = '=' | '==' | '!=' | '<>' | '<' | '>' | '<=' | '>=';
 
 /** Value retriever - can be a key string or callback function */
 export type ValueRetriever<T, R> = string | ((value: T, key: string) => R);
@@ -75,18 +75,16 @@ type NonNullableItem<T> = T extends null | undefined ? never : T;
 type PropertyKeys<T> = NonNullableItem<T> extends never
 	? never
 	: {
-			[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any
-				? never
-				: K;
+			// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
+			[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? never : K;
 		}[keyof NonNullableItem<T>];
 
 /** Extract function/method keys from T, handling nullable types */
 type MethodKeys<T> = NonNullableItem<T> extends never
 	? never
 	: {
-			[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any
-				? K
-				: never;
+			// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
+			[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? K : never;
 		}[keyof NonNullableItem<T>];
 
 /**
@@ -155,7 +153,7 @@ type CallableHigherOrderMap<T, CK extends CollectionKind> = (<U>(
 	call<U>(thisArg: unknown, callback: (value: T, key: string) => U): ProxiedCollection<U, CK>;
 	apply<U>(thisArg: unknown, args: [(value: T, key: string) => U]): ProxiedCollection<U, CK>;
 	bind(thisArg: unknown): <U>(callback: (value: T, key: string) => U) => ProxiedCollection<U, CK>;
-} & ([T] extends [never] ? {} : HigherOrderMapProxy<T, CK>);
+} & ([T] extends [never] ? object : HigherOrderMapProxy<T, CK>);
 
 /**
  * Callable higher-order filter type with explicit call/apply/bind.
@@ -168,20 +166,18 @@ type CallableHigherOrderFilter<T, CK extends CollectionKind> = ((
 	call(thisArg: unknown, callback?: ((value: T, key: string) => unknown) | keyof T): ProxiedCollection<T, CK>;
 	apply(thisArg: unknown, args: [((value: T, key: string) => unknown) | keyof T] | []): ProxiedCollection<T, CK>;
 	bind(thisArg: unknown): (callback?: ((value: T, key: string) => unknown) | keyof T) => ProxiedCollection<T, CK>;
-} & ([T] extends [never] ? {} : HigherOrderFilterProxy<T, CK>);
+} & ([T] extends [never] ? object : HigherOrderFilterProxy<T, CK>);
 
 /**
  * Callable higher-order aggregate type with explicit call/apply/bind.
  * Used for: sum, avg, min, max, contains, every, some, doesntContain
  * Returns the aggregate result type R (number, boolean, etc.)
  */
-type CallableHigherOrderAggregate<T, R> = ((
-	keyOrCallback?: ((value: T, key: string) => unknown) | keyof T,
-) => R) & {
+type CallableHigherOrderAggregate<T, R> = ((keyOrCallback?: ((value: T, key: string) => unknown) | keyof T) => R) & {
 	call(thisArg: unknown, keyOrCallback?: ((value: T, key: string) => unknown) | keyof T): R;
 	apply(thisArg: unknown, args: [((value: T, key: string) => unknown) | keyof T] | []): R;
 	bind(thisArg: unknown): (keyOrCallback?: ((value: T, key: string) => unknown) | keyof T) => R;
-} & ([T] extends [never] ? {} : HigherOrderAggregateProxy<T, R>);
+} & ([T] extends [never] ? object : HigherOrderAggregateProxy<T, R>);
 
 /**
  * Callable higher-order each type with explicit call/apply/bind.
@@ -189,12 +185,12 @@ type CallableHigherOrderAggregate<T, R> = ((
  * Returns ProxiedCollection<T> for chaining
  */
 type CallableHigherOrderEach<T, CK extends CollectionKind> = ((
-	callback: (value: T, key: string) => void | false,
+	callback: (value: T, key: string) => undefined | false,
 ) => ProxiedCollection<T, CK>) & {
-	call(thisArg: unknown, callback: (value: T, key: string) => void | false): ProxiedCollection<T, CK>;
-	apply(thisArg: unknown, args: [(value: T, key: string) => void | false]): ProxiedCollection<T, CK>;
-	bind(thisArg: unknown): (callback: (value: T, key: string) => void | false) => ProxiedCollection<T, CK>;
-} & ([T] extends [never] ? {} : HigherOrderEachProxy<T, CK>);
+	call(thisArg: unknown, callback: (value: T, key: string) => undefined | false): ProxiedCollection<T, CK>;
+	apply(thisArg: unknown, args: [(value: T, key: string) => undefined | false]): ProxiedCollection<T, CK>;
+	bind(thisArg: unknown): (callback: (value: T, key: string) => undefined | false) => ProxiedCollection<T, CK>;
+} & ([T] extends [never] ? object : HigherOrderEachProxy<T, CK>);
 
 /**
  * Higher-order proxy for first/last - returns T | undefined, not a collection.
@@ -215,8 +211,10 @@ type CallableHigherOrderFirst<T> = ((
 ) => T | undefined) & {
 	call(thisArg: unknown, callback?: ((value: T, key: string) => unknown) | keyof T, defaultValue?: T): T | undefined;
 	apply(thisArg: unknown, args: [((value: T, key: string) => unknown) | keyof T, T?] | []): T | undefined;
-	bind(thisArg: unknown): (callback?: ((value: T, key: string) => unknown) | keyof T, defaultValue?: T) => T | undefined;
-} & ([T] extends [never] ? {} : HigherOrderFirstProxy<T>);
+	bind(
+		thisArg: unknown,
+	): (callback?: ((value: T, key: string) => unknown) | keyof T, defaultValue?: T) => T | undefined;
+} & ([T] extends [never] ? object : HigherOrderFirstProxy<T>);
 
 /**
  * Higher-order partition proxy type.
@@ -249,7 +247,7 @@ type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
 	bind(
 		thisArg: unknown,
 	): (callback: ((value: T, key: string) => unknown) | keyof T) => [ProxiedCollection<T, CK>, ProxiedCollection<T, CK>];
-} & ([T] extends [never] ? {} : HigherOrderPartitionProxy<T, CK>);
+} & ([T] extends [never] ? object : HigherOrderPartitionProxy<T, CK>);
 
 /**
  * Collection type with higher-order messaging support.
@@ -264,60 +262,61 @@ type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
  * users.sum.age             // Higher-order aggregate
  * ```
  */
-export type ProxiedCollection<T, CK extends CollectionKind = 'array'> = Collection<T, CK> & CollectionParam<T> & {
-	/** Map with higher-order support: users.map(fn) OR users.map.name */
-	map: CallableHigherOrderMap<T, CK>;
-	/** Filter with higher-order support: users.filter(fn) OR users.filter.active */
-	filter: CallableHigherOrderFilter<T, CK>;
-	/** Reject with higher-order support: users.reject(fn) OR users.reject.deleted */
-	reject: CallableHigherOrderFilter<T, CK>;
-	/** Each with higher-order support: users.each(fn) OR users.each.save() */
-	each: CallableHigherOrderEach<T, CK>;
-	/** Sum with higher-order support: users.sum(fn) OR users.sum.age */
-	sum: CallableHigherOrderAggregate<T, number>;
-	/** Avg with higher-order support: users.avg(fn) OR users.avg.score */
-	avg: CallableHigherOrderAggregate<T, number | null>;
-	/** Min with higher-order support: users.min(fn) OR users.min.age */
-	min: CallableHigherOrderAggregate<T, T[keyof T] | undefined>;
-	/** Max with higher-order support: users.max(fn) OR users.max.age */
-	max: CallableHigherOrderAggregate<T, T[keyof T] | undefined>;
-	/** SortBy with higher-order support: users.sortBy(fn) OR users.sortBy.name */
-	sortBy: CallableHigherOrderFilter<T, CK>;
-	/** SortByDesc with higher-order support: users.sortByDesc(fn) OR users.sortByDesc.name */
-	sortByDesc: CallableHigherOrderFilter<T, CK>;
-	/** GroupBy with higher-order support: users.groupBy(fn) OR users.groupBy.status */
-	groupBy: CallableHigherOrderMap<T, CK>;
-	/** KeyBy with higher-order support: users.keyBy(fn) OR users.keyBy.id */
-	keyBy: CallableHigherOrderFilter<T, CK>;
-	/** Unique with higher-order support: users.unique(fn) OR users.unique.email */
-	unique: CallableHigherOrderFilter<T, CK>;
-	/** FlatMap with higher-order support: users.flatMap(fn) OR users.flatMap.tags */
-	flatMap: CallableHigherOrderMap<T, CK>;
-	/** Contains with higher-order support: users.contains(fn) OR users.contains.active */
-	contains: CallableHigherOrderAggregate<T, boolean>;
-	/** Every with higher-order support: users.every(fn) OR users.every.valid */
-	every: CallableHigherOrderAggregate<T, boolean>;
-	/** Some with higher-order support (alias for contains) */
-	some: CallableHigherOrderAggregate<T, boolean>;
-	/** DoesntContain with higher-order support */
-	doesntContain: CallableHigherOrderAggregate<T, boolean>;
-	/** Partition with higher-order support - returns [matching, nonMatching] tuple */
-	partition: CallableHigherOrderPartition<T, CK>;
-	/** First with higher-order support - returns T | undefined */
-	first: CallableHigherOrderFirst<T>;
-	/** Last with higher-order support - returns T | undefined */
-	last: CallableHigherOrderFirst<T>;
-	/** TakeWhile with higher-order support */
-	takeWhile: CallableHigherOrderFilter<T, CK>;
-	/** TakeUntil with higher-order support */
-	takeUntil: CallableHigherOrderFilter<T, CK>;
-	/** SkipWhile with higher-order support */
-	skipWhile: CallableHigherOrderFilter<T, CK>;
-	/** SkipUntil with higher-order support */
-	skipUntil: CallableHigherOrderFilter<T, CK>;
-	/** Average with higher-order support (alias for avg) */
-	average: CallableHigherOrderAggregate<T, number | null>;
-};
+export type ProxiedCollection<T, CK extends CollectionKind = 'array'> = Collection<T, CK> &
+	CollectionParam<T> & {
+		/** Map with higher-order support: users.map(fn) OR users.map.name */
+		map: CallableHigherOrderMap<T, CK>;
+		/** Filter with higher-order support: users.filter(fn) OR users.filter.active */
+		filter: CallableHigherOrderFilter<T, CK>;
+		/** Reject with higher-order support: users.reject(fn) OR users.reject.deleted */
+		reject: CallableHigherOrderFilter<T, CK>;
+		/** Each with higher-order support: users.each(fn) OR users.each.save() */
+		each: CallableHigherOrderEach<T, CK>;
+		/** Sum with higher-order support: users.sum(fn) OR users.sum.age */
+		sum: CallableHigherOrderAggregate<T, number>;
+		/** Avg with higher-order support: users.avg(fn) OR users.avg.score */
+		avg: CallableHigherOrderAggregate<T, number | null>;
+		/** Min with higher-order support: users.min(fn) OR users.min.age */
+		min: CallableHigherOrderAggregate<T, number | null>;
+		/** Max with higher-order support: users.max(fn) OR users.max.age */
+		max: CallableHigherOrderAggregate<T, number | null>;
+		/** SortBy with higher-order support: users.sortBy(fn) OR users.sortBy.name */
+		sortBy: CallableHigherOrderFilter<T, CK>;
+		/** SortByDesc with higher-order support: users.sortByDesc(fn) OR users.sortByDesc.name */
+		sortByDesc: CallableHigherOrderFilter<T, CK>;
+		/** GroupBy with higher-order support: users.groupBy(fn) OR users.groupBy.status */
+		groupBy: CallableHigherOrderMap<T, CK>;
+		/** KeyBy with higher-order support: users.keyBy(fn) OR users.keyBy.id */
+		keyBy: CallableHigherOrderFilter<T, CK>;
+		/** Unique with higher-order support: users.unique(fn) OR users.unique.email */
+		unique: CallableHigherOrderFilter<T, CK>;
+		/** FlatMap with higher-order support: users.flatMap(fn) OR users.flatMap.tags */
+		flatMap: CallableHigherOrderMap<T, CK>;
+		/** Contains with higher-order support: users.contains(fn) OR users.contains.active */
+		contains: CallableHigherOrderAggregate<T, boolean>;
+		/** Every with higher-order support: users.every(fn) OR users.every.valid */
+		every: CallableHigherOrderAggregate<T, boolean>;
+		/** Some with higher-order support (alias for contains) */
+		some: CallableHigherOrderAggregate<T, boolean>;
+		/** DoesntContain with higher-order support */
+		doesntContain: CallableHigherOrderAggregate<T, boolean>;
+		/** Partition with higher-order support - returns [matching, nonMatching] tuple */
+		partition: CallableHigherOrderPartition<T, CK>;
+		/** First with higher-order support - returns T | undefined */
+		first: CallableHigherOrderFirst<T>;
+		/** Last with higher-order support - returns T | undefined */
+		last: CallableHigherOrderFirst<T>;
+		/** TakeWhile with higher-order support */
+		takeWhile: CallableHigherOrderFilter<T, CK>;
+		/** TakeUntil with higher-order support */
+		takeUntil: CallableHigherOrderFilter<T, CK>;
+		/** SkipWhile with higher-order support */
+		skipWhile: CallableHigherOrderFilter<T, CK>;
+		/** SkipUntil with higher-order support */
+		skipUntil: CallableHigherOrderFilter<T, CK>;
+		/** Average with higher-order support (alias for avg) */
+		average: CallableHigherOrderAggregate<T, number | null>;
+	};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -380,9 +379,11 @@ function operatorForWhere<T>(
 		switch (op) {
 			case '=':
 			case '==':
+				// biome-ignore lint/suspicious/noDoubleEquals: Laravel where() uses loose comparison by design. Use whereStrict() for strict comparison.
 				return retrieved == compareValue;
 			case '!=':
 			case '<>':
+				// biome-ignore lint/suspicious/noDoubleEquals: Laravel where() uses loose comparison by design. Use whereStrict() for strict comparison.
 				return retrieved != compareValue;
 			case '<':
 				return (retrieved as number) < (compareValue as number);
@@ -392,11 +393,8 @@ function operatorForWhere<T>(
 				return (retrieved as number) <= (compareValue as number);
 			case '>=':
 				return (retrieved as number) >= (compareValue as number);
-			case '===':
-				return retrieved === compareValue;
-			case '!==':
-				return retrieved !== compareValue;
 			default:
+				// biome-ignore lint/suspicious/noDoubleEquals: Laravel where() uses loose comparison by design. Use whereStrict() for strict comparison.
 				return retrieved == compareValue;
 		}
 	};
@@ -407,10 +405,7 @@ function operatorForWhere<T>(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Handler type for higher-order proxy dispatch table */
-type HigherOrderHandler<T> = (
-	collection: Collection<T, CollectionKind>,
-	callback: (item: T) => unknown,
-) => unknown;
+type HigherOrderHandler<T> = (collection: Collection<T, CollectionKind>, callback: (item: T) => unknown) => unknown;
 
 /**
  * Methods that support higher-order messaging (Laravel's $proxies list)
@@ -511,6 +506,7 @@ const BYPASS_PROPERTIES = new Set<string | symbol>([
  * users.each.notify('Hi')  // Calls notify('Hi') on each user
  * ```
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: This class uses static methods to create typed proxies; converting to standalone functions would lose the clear namespace organization
 class HigherOrderCollectionProxy {
 	/**
 	 * Method dispatch table - maps method names to their handlers.
@@ -583,7 +579,7 @@ class HigherOrderCollectionProxy {
 		method: ProxyableMethod,
 		wrapResult?: (c: Collection<unknown, CollectionKind>) => unknown,
 	): TReturn {
-		const handlers = this.createHandlers<T>();
+		const handlers = HigherOrderCollectionProxy.createHandlers<T>();
 		const handler = handlers[method];
 
 		// Use an object as the proxy target (the Proxy traps handle all operations)
@@ -623,9 +619,7 @@ class HigherOrderCollectionProxy {
 
 				// For Collection results, wrap for chaining if wrapper provided
 				const wrappedResult =
-					propertyResult instanceof Collection && wrapResult
-						? wrapResult(propertyResult)
-						: propertyResult;
+					propertyResult instanceof Collection && wrapResult ? wrapResult(propertyResult) : propertyResult;
 
 				// Create a callable function for method invocation support
 				const methodInvoker = (...args: unknown[]) => {
@@ -697,7 +691,9 @@ class HigherOrderCollectionProxy {
  *
  * @internal
  */
-function wrapCollectionWithProxy<T, CK extends CollectionKind>(collection: Collection<T, CK>): ProxiedCollection<T, CK> {
+function wrapCollectionWithProxy<T, CK extends CollectionKind>(
+	collection: Collection<T, CK>,
+): ProxiedCollection<T, CK> {
 	return new Proxy(collection, {
 		get(target, prop: string | symbol, receiver) {
 			// Bypass symbols and special properties
@@ -921,7 +917,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * The return type is determined by the CK type parameter.
 	 */
 	all(): CK extends 'array' ? T[] : Record<string, T> {
-		return (this.isAssociative ? { ...this.items } : Object.values(this.items)) as CK extends 'array' ? T[] : Record<string, T>;
+		return (this.isAssociative ? { ...this.items } : Object.values(this.items)) as CK extends 'array'
+			? T[]
+			: Record<string, T>;
 	}
 
 	/**
@@ -952,10 +950,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Get the first item from the collection passing the given truth test.
 	 */
 	first(callback?: ((value: T, key: string) => boolean) | null): T | undefined;
-	first<D>(
-		callback: ((value: T, key: string) => boolean) | null | undefined,
-		defaultValue: D | (() => D),
-	): T | D;
+	first<D>(callback: ((value: T, key: string) => boolean) | null | undefined, defaultValue: D | (() => D)): T | D;
 	first<D = undefined>(
 		callback?: ((value: T, key: string) => boolean) | null,
 		defaultValue?: D | (() => D),
@@ -977,10 +972,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Get the last item from the collection.
 	 */
 	last(callback?: ((value: T, key: string) => boolean) | null): T | undefined;
-	last<D>(
-		callback: ((value: T, key: string) => boolean) | null | undefined,
-		defaultValue: D | (() => D),
-	): T | D;
+	last<D>(callback: ((value: T, key: string) => boolean) | null | undefined, defaultValue: D | (() => D)): T | D;
 	last<D = undefined>(
 		callback?: ((value: T, key: string) => boolean) | null,
 		defaultValue?: D | (() => D),
@@ -1120,6 +1112,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	reject(callback: T | ((value: T, key: string) => boolean)): Collection<T, CK> {
 		const useCallback = useAsCallable(callback);
 		return this.filter((value, key) => {
+			// biome-ignore lint/suspicious/noDoubleEquals: Laravel reject() uses loose comparison by design
 			return useCallback ? !(callback as (value: T, key: string) => boolean)(value, key) : value != callback;
 		});
 	}
@@ -1166,7 +1159,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * Get a flattened array of the items in the collection.
 	 */
-	flatten<U = unknown>(depth = Infinity): Collection<U> {
+	flatten<U = unknown>(depth = Number.POSITIVE_INFINITY): Collection<U> {
 		const doFlatten = (items: unknown[], currentDepth: number): unknown[] => {
 			const result: unknown[] = [];
 			for (const item of items) {
@@ -1212,7 +1205,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				chunks.push(new Collection(Object.fromEntries(chunkEntries), this.isAssociative));
 			} else {
 				// Always array when not preserving keys
-				chunks.push(new Collection(chunkEntries.map(([, v]) => v), false));
+				chunks.push(
+					new Collection(
+						chunkEntries.map(([, v]) => v),
+						false,
+					),
+				);
 			}
 		}
 
@@ -1362,6 +1360,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		operator?: unknown,
 		value?: unknown,
 	): boolean {
+		// biome-ignore lint/style/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
 		if (arguments.length === 1) {
 			if (useAsCallable(keyOrCallback)) {
 				for (const [key, val] of Object.entries(this.items)) {
@@ -1380,10 +1379,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * Determine if an item exists, using strict comparison.
 	 */
-	containsStrict(
-		keyOrValue: T | string | ((value: T, key: string) => boolean),
-		value?: T,
-	): boolean {
+	containsStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: T): boolean {
+		// biome-ignore lint/style/noArguments: Required to detect if caller passed 2 args (undefined value could be explicit)
 		if (arguments.length === 2) {
 			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
 		}
@@ -1419,10 +1416,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * Determine if an item is not contained in the collection, using strict comparison.
 	 */
-	doesntContainStrict(
-		keyOrValue: T | string | ((value: T, key: string) => boolean),
-		value?: T,
-	): boolean {
+	doesntContainStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: T): boolean {
 		// Only pass arguments that were actually provided (to respect arguments.length in containsStrict)
 		if (value !== undefined) {
 			return !this.containsStrict(keyOrValue, value);
@@ -1586,20 +1580,48 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Retrieve duplicate items from the collection.
+	 * Uses loose comparison (==) for detecting duplicates.
 	 */
-	duplicates(callback?: ValueRetriever<T, unknown>, _strict = false): Collection<T> {
+	duplicates(callback?: ValueRetriever<T, unknown>, strict = false): Collection<T> {
 		const retriever = valueRetriever(callback);
-		const seen = new Map<unknown, boolean>();
 		const result: Record<string, T> = {};
 
-		for (const [key, value] of Object.entries(this.items)) {
-			const id = retriever(value, key);
-			if (seen.has(id)) {
-				result[key] = value;
-			} else {
-				seen.set(id, true);
+		if (strict) {
+			// Strict comparison using Map (uses ===)
+			const seen = new Map<unknown, boolean>();
+			for (const [key, value] of Object.entries(this.items)) {
+				const id = retriever(value, key);
+				if (seen.has(id)) {
+					result[key] = value;
+				} else {
+					seen.set(id, true);
+				}
+			}
+		} else {
+			// Loose comparison - normalize values for comparison
+			const seenValues: unknown[] = [];
+			const seenKeys: string[] = [];
+
+			const looseFind = (arr: unknown[], val: unknown): number => {
+				for (let i = 0; i < arr.length; i++) {
+					// biome-ignore lint/suspicious/noDoubleEquals: Laravel duplicates() uses loose comparison by design. Use duplicatesStrict() for strict comparison.
+					if (arr[i] == val) return i;
+				}
+				return -1;
+			};
+
+			for (const [key, value] of Object.entries(this.items)) {
+				const id = retriever(value, key);
+				const foundIdx = looseFind(seenValues, id);
+				if (foundIdx !== -1) {
+					result[key] = value;
+				} else {
+					seenValues.push(id);
+					seenKeys.push(key);
+				}
 			}
 		}
+
 		return new Collection(result);
 	}
 
@@ -1641,9 +1663,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	mode(key?: string): T[] | null {
 		if (this.isEmpty()) return null;
 
-		const values = key
-			? Object.values(this.pluck(key as keyof T).items)
-			: Object.values(this.items);
+		const values = key ? Object.values(this.pluck(key as keyof T).items) : Object.values(this.items);
 		const counts = new Map<unknown, number>();
 
 		for (const value of values) {
@@ -1660,7 +1680,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			if (count === maxCount) modes.push(value as T);
 		}
 
-		return modes.sort() as T[];
+		// Return modes in the order they were first encountered (matches Laravel behavior)
+		return modes;
 	}
 
 	/**
@@ -1709,7 +1730,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		let count = 0;
 		for (const [key, value] of Object.entries(this.items)) {
 			const num = retriever(value, key);
-			if (typeof num === 'number' && !Number.isNaN(num) && num !== null) {
+			if (typeof num === 'number' && !Number.isNaN(num)) {
 				total += num;
 				count++;
 			}
@@ -1808,7 +1829,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 			return result;
 		};
-		return new Collection(mergeDeep(this.items as unknown as Record<string, unknown>, other), this.isAssociative) as Collection<unknown, CK>;
+		return new Collection(
+			mergeDeep(this.items as unknown as Record<string, unknown>, other),
+			this.isAssociative,
+		) as Collection<unknown, CK>;
 	}
 
 	/**
@@ -1841,9 +1865,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Cross join with the given lists, returning all possible permutations.
 	 */
 	crossJoin<U>(...lists: (U[] | CollectionParam<U>)[]): Collection<(T | U)[]> {
-		const arrays = lists.map((list) =>
-			Array.isArray(list) ? list : list.toArray(),
-		);
+		const arrays = lists.map((list) => (Array.isArray(list) ? list : list.toArray()));
 		const result: (T | U)[][] = [];
 
 		const combine = (current: (T | U)[], remaining: unknown[][]): void => {
@@ -1960,6 +1982,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		const results: T[] = [];
 		const toRemove = Math.min(count, keys.length);
 		for (let i = 0; i < toRemove; i++) {
+			// biome-ignore lint/style/noNonNullAssertion: We know keys exist because toRemove <= keys.length
 			const lastKey = Object.keys(this.items).pop()!;
 			results.push(this.items[lastKey]);
 			delete this.items[lastKey];
@@ -2064,11 +2087,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 */
 	select(keys: (string | number)[] | Collection<string | number, CollectionKind> | null): Collection<Partial<T>, CK> {
 		if (keys === null) {
-			return new Collection(this.items as unknown as Record<string, Partial<T>>, this.isAssociative) as Collection<Partial<T>, CK>;
+			return new Collection(this.items as unknown as Record<string, Partial<T>>, this.isAssociative) as Collection<
+				Partial<T>,
+				CK
+			>;
 		}
-		const keysArray = (
-			keys instanceof Collection ? Object.values(keys.items) : keys
-		).map(String);
+		const keysArray = (keys instanceof Collection ? Object.values(keys.items) : keys).map(String);
 		return this.map((item) => {
 			const result: Partial<T> = {};
 			for (const key of keysArray) {
@@ -2181,6 +2205,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		value?: unknown,
 	): [Collection<T>, Collection<T>] {
 		let callback: (value: T, key: string) => boolean;
+		// biome-ignore lint/style/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
 		const hasMultipleArgs = arguments.length > 1;
 		if (hasMultipleArgs) {
 			callback = operatorForWhere(keyOrCallback as string, operator, value);
@@ -2217,6 +2242,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	search(value: T | ((value: T, key: string) => boolean), strict = false): string | false {
 		if (!useAsCallable(value)) {
 			for (const [key, item] of Object.entries(this.items)) {
+				// biome-ignore lint/suspicious/noDoubleEquals: Laravel search() uses loose comparison by default (strict param controls this)
 				if (strict ? item === value : item == value) {
 					return key;
 				}
@@ -2285,6 +2311,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Sort items in descending order.
+	 * @param _options - Sorting options (reserved for Laravel API compatibility, not used in JS)
 	 */
 	sortDesc(_options?: number): Collection<T> {
 		const values = [...Object.values(this.items)];
@@ -2520,6 +2547,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	sole(keyOrCallback?: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): T {
 		let filter: ((value: T, key: string) => boolean) | undefined;
 
+		// biome-ignore lint/style/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
 		if (arguments.length > 1) {
 			filter = operatorForWhere(keyOrCallback as string, operator, value);
 		} else if (keyOrCallback) {
@@ -2539,6 +2567,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			throw new MultipleItemsFoundException(count);
 		}
 
+		// biome-ignore lint/style/noNonNullAssertion: Guaranteed to exist - count === 1 at this point
 		return items.first()!;
 	}
 
@@ -2548,6 +2577,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	firstOrFail(keyOrCallback?: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): T {
 		let filter: ((value: T, key: string) => boolean) | undefined;
 
+		// biome-ignore lint/style/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
 		if (arguments.length > 1) {
 			filter = operatorForWhere(keyOrCallback as string, operator, value);
 		} else if (keyOrCallback) {
@@ -2630,24 +2660,22 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			throw new Error(`You requested ${count} items, but there are only ${values.length} items available.`);
 		}
 
-		// Fisher-Yates shuffle for random selection
-		const shuffled = [...values];
-		for (let i = shuffled.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-		}
+		// Fisher-Yates shuffle helper
+		const shuffle = <U>(arr: U[]): U[] => {
+			const result = [...arr];
+			for (let i = result.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[result[i], result[j]] = [result[j], result[i]];
+			}
+			return result;
+		};
 
 		if (preserveKeys) {
-			const entries = Object.entries(this.items);
-			const shuffledEntries = [...entries];
-			for (let i = shuffledEntries.length - 1; i > 0; i--) {
-				const j = Math.floor(Math.random() * (i + 1));
-				[shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
-			}
+			const shuffledEntries = shuffle(Object.entries(this.items));
 			return new Collection(Object.fromEntries(shuffledEntries.slice(0, count)));
 		}
 
-		return new Collection(shuffled.slice(0, count));
+		return new Collection(shuffle(values).slice(0, count));
 	}
 
 	/**
@@ -2722,10 +2750,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		} else {
 			other = items as Record<string, unknown>;
 		}
-		const replaceDeep = (
-			target: Record<string, unknown>,
-			source: Record<string, unknown>,
-		): Record<string, unknown> => {
+		const replaceDeep = (target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> => {
 			const result = { ...target };
 			for (const key of Object.keys(source)) {
 				if (
@@ -2741,7 +2766,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 			return result;
 		};
-		return new Collection(replaceDeep(this.items as unknown as Record<string, unknown>, other), this.isAssociative) as Collection<unknown, CK>;
+		return new Collection(
+			replaceDeep(this.items as unknown as Record<string, unknown>, other),
+			this.isAssociative,
+		) as Collection<unknown, CK>;
 	}
 
 	/**
@@ -2825,6 +2853,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 		for (const [key, value] of Object.entries(this.items)) {
 			const id = retriever(value, key);
+			// biome-ignore lint/suspicious/noDoubleEquals: Laravel unique() uses loose comparison by default. Use uniqueStrict() for strict comparison.
 			const exists = strict ? seen.some((s) => s === id) : seen.some((s) => s == id);
 			if (!exists) {
 				seen.push(id);
@@ -2857,7 +2886,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Filter items by the given key value pair using strict comparison.
 	 */
 	whereStrict(key: string, value: unknown): Collection<T, CK> {
-		return this.where(key, '===', value);
+		return this.filter((item) => dataGet(item, key) === value);
 	}
 
 	/**
@@ -2866,6 +2895,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	whereIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
+			// biome-ignore lint/suspicious/noDoubleEquals: Laravel whereIn() uses loose comparison by default. Use whereInStrict() for strict comparison.
 			return strict ? values.some((v) => v === retrieved) : values.some((v) => v == retrieved);
 		});
 	}
@@ -2883,6 +2913,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	whereNotIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
+			// biome-ignore lint/suspicious/noDoubleEquals: Laravel whereNotIn() uses loose comparison by default. Use whereNotInStrict() for strict comparison.
 			return strict ? !values.some((v) => v === retrieved) : !values.some((v) => v == retrieved);
 		});
 	}
@@ -3008,6 +3039,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Determine if all items pass the given truth test.
 	 */
 	every(keyOrCallback: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): boolean {
+		// biome-ignore lint/style/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
 		if (arguments.length === 1) {
 			const callback = useAsCallable(keyOrCallback)
 				? (keyOrCallback as (value: T, key: string) => boolean)
@@ -3144,13 +3176,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * Ensure that every item in the collection is of the expected type.
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	ensure(
-		type: string | (new (...args: any[]) => any) | (string | (new (...args: any[]) => any))[],
-	): this {
+	// biome-ignore lint/suspicious/noExplicitAny: Constructor types require any for generic instantiation support
+	ensure(type: string | (new (...args: any[]) => any) | (string | (new (...args: any[]) => any))[]): this {
 		const allowedTypes = Array.isArray(type) ? type : [type];
 
-		this.each((item, index) => {
+		this.each((item, key) => {
 			const itemType = typeof item;
 
 			for (const allowedType of allowedTypes) {
@@ -3164,7 +3194,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 
 			throw new Error(
-				`Collection should only include [${allowedTypes.map((t) => (typeof t === 'string' ? t : t.name)).join(', ')}] items, but '${itemType}' found at position ${index}.`,
+				`Collection should only include [${allowedTypes.map((t) => (typeof t === 'string' ? t : t.name)).join(', ')}] items, but '${itemType}' found at key '${key}'.`,
 			);
 		});
 
@@ -3229,40 +3259,28 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * Apply the callback if the collection is empty.
 	 */
-	whenEmpty<U = this>(
-		callback: (collection: this) => U,
-		defaultCallback?: (collection: this) => U,
-	): this | U {
+	whenEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.when(this.isEmpty(), callback, defaultCallback);
 	}
 
 	/**
 	 * Apply the callback if the collection is not empty.
 	 */
-	whenNotEmpty<U = this>(
-		callback: (collection: this) => U,
-		defaultCallback?: (collection: this) => U,
-	): this | U {
+	whenNotEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.when(this.isNotEmpty(), callback, defaultCallback);
 	}
 
 	/**
 	 * Apply the callback unless the collection is empty.
 	 */
-	unlessEmpty<U = this>(
-		callback: (collection: this) => U,
-		defaultCallback?: (collection: this) => U,
-	): this | U {
+	unlessEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.whenNotEmpty(callback, defaultCallback);
 	}
 
 	/**
 	 * Apply the callback unless the collection is not empty.
 	 */
-	unlessNotEmpty<U = this>(
-		callback: (collection: this) => U,
-		defaultCallback?: (collection: this) => U,
-	): this | U {
+	unlessNotEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.whenEmpty(callback, defaultCallback);
 	}
 
