@@ -12,12 +12,9 @@
 			"import": "./dist/index.js"
 		}
 	},
-	"files": [
-		"dist",
-		"README.md",
-		"LICENSE"
-	],
+	"files": ["dist", "README.md", "LICENSE"],
 	"scripts": {
+		"prepare": "lefthook install",
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"test": "vitest run",
@@ -32,15 +29,7 @@
 		"docs:check": "tsx scripts/docs/check.ts",
 		"docs:update": "tsx scripts/docs/update.ts"
 	},
-	"keywords": [
-		"laravel",
-		"collection",
-		"typescript",
-		"collect",
-		"array",
-		"utilities",
-		"enumerable"
-	],
+	"keywords": ["laravel", "collection", "typescript", "collect", "array", "utilities", "enumerable"],
 	"author": "Omid van der Linden",
 	"license": "MIT",
 	"repository": {
@@ -55,6 +44,7 @@
 		"@biomejs/biome": "^1.9.4",
 		"@types/node": "^22.15.29",
 		"@vitest/coverage-v8": "^4.0.16",
+		"lefthook": "^2.0.13",
 		"tsup": "^8.5.1",
 		"tsx": "^4.20.3",
 		"typescript": "^5.8.3",

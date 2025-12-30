@@ -3,7 +3,8 @@
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
-		"useIgnoreFile": true
+		"useIgnoreFile": true,
+		"defaultBranch": "main"
 	},
 	"organizeImports": {
 		"enabled": true
@@ -11,13 +12,16 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"style": {
+				"useImportType": "error",
+				"useExportType": "error"
+			}
 		}
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
-		"indentWidth": 2,
 		"lineWidth": 120
 	},
 	"javascript": {
@@ -26,5 +30,20 @@
 			"semicolons": "always",
 			"trailingCommas": "all"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"include": ["tests/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
+					},
+					"suspicious": {
+						"noExplicitAny": "off"
+					}
+				}
+			}
+		}
+	]
 }
