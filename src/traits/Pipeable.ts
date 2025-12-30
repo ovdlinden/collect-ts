@@ -12,20 +12,21 @@
  * ```
  */
 
-type Constructor<T = {}> = new (...args: any[]) => T;
+// biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin pattern requires any[] for constructor rest parameter
+type Constructor<T = object> = new (...args: any[]) => T;
 
 export function Pipeable<TBase extends Constructor>(Base: TBase) {
-  return class extends Base {
-    /**
-     * Pass self to callback, return the callback's result.
-     *
-     * Unlike tap(), which is for side effects, pipe() returns
-     * whatever the callback returns.
-     *
-     * @param fn - Callback receiving self, returns any value
-     */
-    pipe<T, R>(this: T, fn: (self: T) => R): R {
-      return fn(this);
-    }
-  };
+	return class extends Base {
+		/**
+		 * Pass self to callback, return the callback's result.
+		 *
+		 * Unlike tap(), which is for side effects, pipe() returns
+		 * whatever the callback returns.
+		 *
+		 * @param fn - Callback receiving self, returns any value
+		 */
+		pipe<T, R>(this: T, fn: (self: T) => R): R {
+			return fn(this);
+		}
+	};
 }
