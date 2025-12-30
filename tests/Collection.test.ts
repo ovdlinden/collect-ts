@@ -5,8 +5,8 @@
  * @see https://github.com/laravel/framework/blob/12.x/tests/Support/SupportCollectionTest.php
  */
 
-import { describe, it, expect } from 'vitest';
-import { collect, Collection, MultipleItemsFoundException, type ProxiedCollection } from '../src';
+import { describe, expect, it } from 'vitest';
+import { Collection, MultipleItemsFoundException, type ProxiedCollection, collect } from '../src';
 
 // =============================================================================
 // BASIC TESTS
@@ -36,7 +36,7 @@ describe('Collection', () => {
 		});
 
 		it('returns the first element matching the callback', () => {
-			expect(collect([1, 2, 3]).first(v => v > 1)).toBe(2);
+			expect(collect([1, 2, 3]).first((v) => v > 1)).toBe(2);
 		});
 
 		it('returns undefined for empty collection', () => {
@@ -58,7 +58,7 @@ describe('Collection', () => {
 		});
 
 		it('returns the last element matching the callback', () => {
-			expect(collect([1, 2, 3]).last(v => v < 3)).toBe(2);
+			expect(collect([1, 2, 3]).last((v) => v < 3)).toBe(2);
 		});
 
 		it('returns undefined for empty collection', () => {
@@ -92,7 +92,7 @@ describe('Collection', () => {
 describe('Transformation', () => {
 	describe('map()', () => {
 		it('transforms each value', () => {
-			const result = collect([1, 2, 3]).map(v => v * 2);
+			const result = collect([1, 2, 3]).map((v) => v * 2);
 			expect(result.all()).toEqual([2, 4, 6]);
 		});
 
@@ -108,7 +108,7 @@ describe('Transformation', () => {
 				{ id: 1, name: 'A' },
 				{ id: 2, name: 'B' },
 			];
-			const result = collect(items).mapWithKeys(item => [String(item.id), item.name]);
+			const result = collect(items).mapWithKeys((item) => [String(item.id), item.name]);
 			expect(result.get('1')).toBe('A');
 			expect(result.get('2')).toBe('B');
 		});
@@ -116,7 +116,7 @@ describe('Transformation', () => {
 
 	describe('filter()', () => {
 		it('filters values by callback', () => {
-			const result = collect([1, 2, 3, 4, 5]).filter(v => v > 2);
+			const result = collect([1, 2, 3, 4, 5]).filter((v) => v > 2);
 			expect(result.values().all()).toEqual([3, 4, 5]);
 		});
 
@@ -128,7 +128,7 @@ describe('Transformation', () => {
 
 	describe('reject()', () => {
 		it('rejects values matching callback', () => {
-			const result = collect([1, 2, 3, 4, 5]).reject(v => v > 2);
+			const result = collect([1, 2, 3, 4, 5]).reject((v) => v > 2);
 			expect(result.values().all()).toEqual([1, 2]);
 		});
 
@@ -161,13 +161,19 @@ describe('Transformation', () => {
 
 	describe('flatten()', () => {
 		it('flattens nested arrays', () => {
-			const result = collect([[1, 2], [3, 4]]).flatten();
+			const result = collect([
+				[1, 2],
+				[3, 4],
+			]).flatten();
 			expect(result.all()).toEqual([1, 2, 3, 4]);
 		});
 
 		it('flattens to specified depth', () => {
 			const result = collect([[[1, 2]], [[3, 4]]]).flatten(1);
-			expect(result.all()).toEqual([[1, 2], [3, 4]]);
+			expect(result.all()).toEqual([
+				[1, 2],
+				[3, 4],
+			]);
 		});
 	});
 
@@ -180,7 +186,7 @@ describe('Transformation', () => {
 
 	describe('flatMap()', () => {
 		it('maps and flattens', () => {
-			const result = collect([1, 2, 3]).flatMap(v => [v, v * 10]);
+			const result = collect([1, 2, 3]).flatMap((v) => [v, v * 10]);
 			expect(result.all()).toEqual([1, 10, 2, 20, 3, 30]);
 		});
 	});
@@ -213,7 +219,7 @@ describe('Aggregation', () => {
 
 		it('sums values by callback', () => {
 			const items = [{ price: 10 }, { price: 20 }];
-			expect(collect(items).sum(item => item.price * 2)).toBe(60);
+			expect(collect(items).sum((item) => item.price * 2)).toBe(60);
 		});
 	});
 
@@ -275,7 +281,12 @@ describe('Sorting', () => {
 		});
 
 		it('sorts with custom comparator', () => {
-			expect(collect([1, 3, 2]).sort((a, b) => b - a).values().all()).toEqual([3, 2, 1]);
+			expect(
+				collect([1, 3, 2])
+					.sort((a, b) => b - a)
+					.values()
+					.all(),
+			).toEqual([3, 2, 1]);
 		});
 	});
 
@@ -283,13 +294,16 @@ describe('Sorting', () => {
 		it('sorts by key', () => {
 			const items = [{ name: 'B' }, { name: 'A' }, { name: 'C' }];
 			const result = collect(items).sortBy('name').values().all();
-			expect(result.map(i => i.name)).toEqual(['A', 'B', 'C']);
+			expect(result.map((i) => i.name)).toEqual(['A', 'B', 'C']);
 		});
 
 		it('sorts by callback', () => {
 			const items = [{ name: 'B' }, { name: 'A' }, { name: 'C' }];
-			const result = collect(items).sortBy(i => i.name).values().all();
-			expect(result.map(i => i.name)).toEqual(['A', 'B', 'C']);
+			const result = collect(items)
+				.sortBy((i) => i.name)
+				.values()
+				.all();
+			expect(result.map((i) => i.name)).toEqual(['A', 'B', 'C']);
 		});
 	});
 
@@ -297,7 +311,7 @@ describe('Sorting', () => {
 		it('sorts descending', () => {
 			const items = [{ name: 'B' }, { name: 'A' }, { name: 'C' }];
 			const result = collect(items).sortByDesc('name').values().all();
-			expect(result.map(i => i.name)).toEqual(['C', 'B', 'A']);
+			expect(result.map((i) => i.name)).toEqual(['C', 'B', 'A']);
 		});
 	});
 
@@ -347,7 +361,7 @@ describe('Slicing', () => {
 	describe('chunk()', () => {
 		it('chunks items', () => {
 			const chunks = collect([1, 2, 3, 4, 5]).chunk(2);
-			expect(chunks.all().map(c => c.all())).toEqual([[1, 2], [3, 4], [5]]);
+			expect(chunks.all().map((c) => c.all())).toEqual([[1, 2], [3, 4], [5]]);
 		});
 	});
 
@@ -374,7 +388,7 @@ describe('Contains', () => {
 		});
 
 		it('checks with callback', () => {
-			expect(collect([1, 2, 3]).contains(v => v > 2)).toBe(true);
+			expect(collect([1, 2, 3]).contains((v) => v > 2)).toBe(true);
 		});
 
 		it('checks with key-value pair', () => {
@@ -444,7 +458,7 @@ describe('Grouping', () => {
 
 	describe('partition()', () => {
 		it('partitions by callback', () => {
-			const [passed, failed] = collect([1, 2, 3, 4, 5]).partition(v => v > 2);
+			const [passed, failed] = collect([1, 2, 3, 4, 5]).partition((v) => v > 2);
 			expect(passed.all()).toEqual([3, 4, 5]);
 			expect(failed.all()).toEqual([1, 2]);
 		});
@@ -463,10 +477,8 @@ describe('Reduce', () => {
 		});
 
 		it('provides key to callback', () => {
-			const result = collect({ a: 1, b: 2 }).reduce(
-				(acc, val, key) => [...acc, `${key}:${val}`],
-				[] as string[]
-			);
+			// biome-ignore lint/performance/noAccumulatingSpread: Test with small data set, readability preferred
+			const result = collect({ a: 1, b: 2 }).reduce((acc, val, key) => [...acc, `${key}:${val}`], [] as string[]);
 			expect(result).toEqual(['a:1', 'b:2']);
 		});
 	});
@@ -615,7 +627,7 @@ describe('Merge and Union', () => {
 describe('Piping and Tap', () => {
 	describe('pipe()', () => {
 		it('passes collection to callback', () => {
-			const result = collect([1, 2, 3]).pipe(c => c.sum());
+			const result = collect([1, 2, 3]).pipe((c) => c.sum());
 			expect(result).toBe(6);
 		});
 	});
@@ -623,7 +635,9 @@ describe('Piping and Tap', () => {
 	describe('tap()', () => {
 		it('taps into collection and returns self', () => {
 			let tapped: number[] = [];
-			const result = collect([1, 2, 3]).tap(c => { tapped = c.all(); });
+			const result = collect([1, 2, 3]).tap((c) => {
+				tapped = c.all();
+			});
 			expect(tapped).toEqual([1, 2, 3]);
 			expect(result.all()).toEqual([1, 2, 3]);
 		});
@@ -632,13 +646,15 @@ describe('Piping and Tap', () => {
 	describe('each()', () => {
 		it('iterates over items', () => {
 			const values: number[] = [];
-			collect([1, 2, 3]).each(v => { values.push(v); });
+			collect([1, 2, 3]).each((v) => {
+				values.push(v);
+			});
 			expect(values).toEqual([1, 2, 3]);
 		});
 
 		it('breaks on false', () => {
 			const values: number[] = [];
-			collect([1, 2, 3]).each(v => {
+			collect([1, 2, 3]).each((v) => {
 				values.push(v);
 				if (v === 2) return false;
 				return;
@@ -746,7 +762,7 @@ describe('Before and After', () => {
 
 		it('returns item before using callback', () => {
 			const c = collect([1, 2, 3, 4, 5]);
-			expect(c.before(v => v > 4)).toBe(4);
+			expect(c.before((v) => v > 4)).toBe(4);
 		});
 
 		it('returns null when item not found', () => {
@@ -777,7 +793,7 @@ describe('Before and After', () => {
 
 		it('returns item after using callback', () => {
 			const c = collect([1, 2, 3, 4, 5]);
-			expect(c.after(v => v > 2)).toBe(4);
+			expect(c.after((v) => v > 2)).toBe(4);
 		});
 
 		it('returns null when item not found', () => {
@@ -879,13 +895,13 @@ describe('Multiply', () => {
 describe('Static Methods', () => {
 	describe('times()', () => {
 		it('creates collection with callback', () => {
-			const result = Collection.times(2, n => `slug-${n}`);
+			const result = Collection.times(2, (n) => `slug-${n}`);
 			expect(result.all()).toEqual(['slug-1', 'slug-2']);
 		});
 
 		it('returns empty for zero or negative', () => {
-			expect(Collection.times(0, n => `slug-${n}`).isEmpty()).toBe(true);
-			expect(Collection.times(-4, n => `slug-${n}`).isEmpty()).toBe(true);
+			expect(Collection.times(0, (n) => `slug-${n}`).isEmpty()).toBe(true);
+			expect(Collection.times(-4, (n) => `slug-${n}`).isEmpty()).toBe(true);
 		});
 
 		it('creates range without callback', () => {
@@ -949,8 +965,9 @@ describe('Static Methods', () => {
 describe('ChunkWhile', () => {
 	describe('chunkWhile()', () => {
 		it('chunks on equal elements', () => {
-			const data = collect(['A', 'A', 'B', 'B', 'C', 'C', 'C'])
-				.chunkWhile((current, _key, chunk) => chunk.last() === current);
+			const data = collect(['A', 'A', 'B', 'B', 'C', 'C', 'C']).chunkWhile(
+				(current, _key, chunk) => chunk.last() === current,
+			);
 
 			// First chunk has keys 0,1 (sequential from 0) → array
 			expect(data.first()?.toArray()).toEqual(['A', 'A']);
@@ -960,8 +977,9 @@ describe('ChunkWhile', () => {
 		});
 
 		it('chunks on contiguously increasing integers', () => {
-			const data = collect([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21])
-				.chunkWhile((current, _key, chunk) => (chunk.last() as number) + 1 === current);
+			const data = collect([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21]).chunkWhile(
+				(current, _key, chunk) => (chunk.last() as number) + 1 === current,
+			);
 
 			// First chunk has key 0 (sequential from 0) → array
 			expect(data.first()?.toArray()).toEqual([1]);
@@ -973,8 +991,9 @@ describe('ChunkWhile', () => {
 		});
 
 		it('preserves string keys', () => {
-			const data = collect({ a: 1, b: 1, c: 2, d: 2, e: 3, f: 3, g: 3 })
-				.chunkWhile((current, _key, chunk) => chunk.last() === current);
+			const data = collect({ a: 1, b: 1, c: 2, d: 2, e: 3, f: 3, g: 3 }).chunkWhile(
+				(current, _key, chunk) => chunk.last() === current,
+			);
 
 			expect(data.first()?.toArray()).toEqual({ a: 1, b: 1 });
 			expect(data.get(1)?.toArray()).toEqual({ c: 2, d: 2 });
@@ -1023,38 +1042,42 @@ describe('Chunk Edge Cases', () => {
 describe('Conditional', () => {
 	describe('when()', () => {
 		it('executes callback when true', () => {
-			const result = collect([1, 2, 3]).when(true, c => c.push(4));
+			const result = collect([1, 2, 3]).when(true, (c) => c.push(4));
 			expect(result.all()).toEqual([1, 2, 3, 4]);
 		});
 
 		it('does not execute when false', () => {
-			const result = collect([1, 2, 3]).when(false, c => c.push(4));
+			const result = collect([1, 2, 3]).when(false, (c) => c.push(4));
 			expect(result.all()).toEqual([1, 2, 3]);
 		});
 
 		it('executes default callback when false', () => {
-			const result = collect([1, 2, 3]).when(false, c => c.push(4), c => c.push(5));
+			const result = collect([1, 2, 3]).when(
+				false,
+				(c) => c.push(4),
+				(c) => c.push(5),
+			);
 			expect(result.all()).toEqual([1, 2, 3, 5]);
 		});
 	});
 
 	describe('unless()', () => {
 		it('executes callback when false', () => {
-			const result = collect([1, 2, 3]).unless(false, c => c.push(4));
+			const result = collect([1, 2, 3]).unless(false, (c) => c.push(4));
 			expect(result.all()).toEqual([1, 2, 3, 4]);
 		});
 	});
 
 	describe('whenEmpty()', () => {
 		it('executes when empty', () => {
-			const result = collect<number>([]).whenEmpty(c => c.push(1));
+			const result = collect<number>([]).whenEmpty((c) => c.push(1));
 			expect(result.all()).toEqual([1]);
 		});
 	});
 
 	describe('whenNotEmpty()', () => {
 		it('executes when not empty', () => {
-			const result = collect([1]).whenNotEmpty(c => c.push(2));
+			const result = collect([1]).whenNotEmpty((c) => c.push(2));
 			expect(result.all()).toEqual([1, 2]);
 		});
 	});
@@ -1076,8 +1099,13 @@ describe('CountBy', () => {
 
 		it('counts by key', () => {
 			const c = collect([
-				{ key: 'a' }, { key: 'a' }, { key: 'a' }, { key: 'a' },
-				{ key: 'b' }, { key: 'b' }, { key: 'b' },
+				{ key: 'a' },
+				{ key: 'a' },
+				{ key: 'a' },
+				{ key: 'a' },
+				{ key: 'b' },
+				{ key: 'b' },
+				{ key: 'b' },
 			]);
 			const result = c.countBy('key');
 			expect(result.get('a')).toBe(4);
@@ -1086,7 +1114,7 @@ describe('CountBy', () => {
 
 		it('counts by callback', () => {
 			const c = collect(['alice', 'aaron', 'bob', 'carla']);
-			const result = c.countBy(name => name.charAt(0));
+			const result = c.countBy((name) => name.charAt(0));
 			expect(result.get('a')).toBe(2);
 			expect(result.get('b')).toBe(1);
 			expect(result.get('c')).toBe(1);
@@ -1155,13 +1183,19 @@ describe('Splice', () => {
 describe('MapSpread', () => {
 	describe('mapSpread()', () => {
 		it('spreads array items as callback arguments', () => {
-			const c = collect([[1, 'a'], [2, 'b']]);
+			const c = collect([
+				[1, 'a'],
+				[2, 'b'],
+			]);
 			const result = c.mapSpread((number, character) => `${number}-${character}`);
 			expect(result.all()).toEqual(['1-a', '2-b']);
 		});
 
 		it('provides key as third argument', () => {
-			const c = collect([[1, 'a'], [2, 'b']]);
+			const c = collect([
+				[1, 'a'],
+				[2, 'b'],
+			]);
 			const result = c.mapSpread((number, character, key) => `${number}-${character}-${key}`);
 			expect(result.all()).toEqual(['1-a-0', '2-b-1']);
 		});
@@ -1178,7 +1212,7 @@ describe('MapToDictionary', () => {
 				{ id: 4, name: 'B' },
 			]);
 
-			const groups = data.mapToDictionary(item => [item.name, item.id]);
+			const groups = data.mapToDictionary((item) => [item.name, item.id]);
 
 			expect(groups.get('A')).toEqual([1]);
 			expect(groups.get('B')).toEqual([2, 4]);
@@ -1206,7 +1240,7 @@ describe('MapToGroups', () => {
 				{ id: 4, name: 'B' },
 			]);
 
-			const groups = data.mapToGroups(item => [item.name, item.id]);
+			const groups = data.mapToGroups((item) => [item.name, item.id]);
 
 			expect(groups).toBeInstanceOf(Collection);
 			expect(groups.get('A')).toBeInstanceOf(Collection);
@@ -1365,11 +1399,19 @@ describe('Edge Cases - Empty Collections', () => {
 	});
 
 	it('map on empty returns empty', () => {
-		expect(collect([]).map(x => x).all()).toEqual([]);
+		expect(
+			collect([])
+				.map((x) => x)
+				.all(),
+		).toEqual([]);
 	});
 
 	it('flatMap on empty returns empty', () => {
-		expect(collect([]).flatMap(x => [x]).all()).toEqual([]);
+		expect(
+			collect([])
+				.flatMap((x) => [x])
+				.all(),
+		).toEqual([]);
 	});
 
 	it('reduce on empty returns initial', () => {
@@ -1377,11 +1419,11 @@ describe('Edge Cases - Empty Collections', () => {
 	});
 
 	it('every returns true on empty (vacuous truth)', () => {
-		expect(collect([]).every(x => x === 'impossible')).toBe(true);
+		expect(collect([]).every((x) => x === 'impossible')).toBe(true);
 	});
 
 	it('some returns false on empty', () => {
-		expect(collect([]).some(x => x === 'anything')).toBe(false);
+		expect(collect([]).some((x) => x === 'anything')).toBe(false);
 	});
 });
 
@@ -1421,7 +1463,7 @@ describe('Edge Cases - Single Item Collections', () => {
 	});
 
 	it('partition splits correctly', () => {
-		const [truthy, falsy] = collect([1]).partition(x => x > 0);
+		const [truthy, falsy] = collect([1]).partition((x) => x > 0);
 		expect(truthy.all()).toEqual([1]);
 		expect(falsy.all()).toEqual([]);
 	});
@@ -1454,7 +1496,7 @@ describe('Edge Cases - Null and Undefined', () => {
 
 	it('reject removes matching null', () => {
 		const data = collect([1, null, 2]);
-		expect(data.reject(x => x === null).all()).toEqual([1, 2]);
+		expect(data.reject((x) => x === null).all()).toEqual([1, 2]);
 	});
 
 	it('firstWhere handles null key values', () => {
@@ -1479,16 +1521,12 @@ describe('Edge Cases - Where Operators', () => {
 		expect(users.where('age', '==', 30).count()).toBe(2);
 	});
 
-	it('where with === operator', () => {
-		expect(users.where('age', '===', 30).count()).toBe(2);
-	});
-
 	it('where with != operator', () => {
 		expect(users.where('age', '!=', 30).count()).toBe(2);
 	});
 
-	it('where with !== operator', () => {
-		expect(users.where('age', '!==', 30).count()).toBe(2);
+	it('whereStrict for strict comparison', () => {
+		expect(users.whereStrict('age', 30).count()).toBe(2);
 	});
 
 	it('where with <> operator (same as !=)', () => {
@@ -1518,7 +1556,7 @@ describe('Edge Cases - Where Operators', () => {
 
 describe('Edge Cases - Callback vs Value', () => {
 	it('first with callback', () => {
-		expect(collect([1, 2, 3]).first(x => x > 1)).toBe(2);
+		expect(collect([1, 2, 3]).first((x) => x > 1)).toBe(2);
 	});
 
 	it('first with default value', () => {
@@ -1526,7 +1564,7 @@ describe('Edge Cases - Callback vs Value', () => {
 	});
 
 	it('last with callback', () => {
-		expect(collect([1, 2, 3]).last(x => x < 3)).toBe(2);
+		expect(collect([1, 2, 3]).last((x) => x < 3)).toBe(2);
 	});
 
 	it('last with default value', () => {
@@ -1534,7 +1572,7 @@ describe('Edge Cases - Callback vs Value', () => {
 	});
 
 	it('contains with callback', () => {
-		expect(collect([1, 2, 3]).contains(x => x === 2)).toBe(true);
+		expect(collect([1, 2, 3]).contains((x) => x === 2)).toBe(true);
 	});
 
 	it('contains with key-value pair', () => {
@@ -1543,7 +1581,11 @@ describe('Edge Cases - Callback vs Value', () => {
 	});
 
 	it('reject with callback', () => {
-		expect(collect([1, 2, 3]).reject(x => x > 1).all()).toEqual([1]);
+		expect(
+			collect([1, 2, 3])
+				.reject((x) => x > 1)
+				.all(),
+		).toEqual([1]);
 	});
 
 	it('reject with value', () => {
@@ -1556,17 +1598,22 @@ describe('Edge Cases - Callback vs Value', () => {
 			{ type: 'b', val: 2 },
 			{ type: 'a', val: 3 },
 		]);
-		expect(data.unique(item => item.type).count()).toBe(2);
+		expect(data.unique((item) => item.type).count()).toBe(2);
 	});
 
 	it('sortBy with callback', () => {
 		const data = collect([{ n: 3 }, { n: 1 }, { n: 2 }]);
-		expect(data.sortBy(i => i.n).pluck('n').all()).toEqual([1, 2, 3]);
+		expect(
+			data
+				.sortBy((i) => i.n)
+				.pluck('n')
+				.all(),
+		).toEqual([1, 2, 3]);
 	});
 
 	it('groupBy with callback', () => {
 		const data = collect([1, 2, 3, 4, 5]);
-		const grouped = data.groupBy(n => (n % 2 === 0 ? 'even' : 'odd'));
+		const grouped = data.groupBy((n) => (n % 2 === 0 ? 'even' : 'odd'));
 		expect(grouped.get('even')?.all()).toEqual([2, 4]);
 		expect(grouped.get('odd')?.all()).toEqual([1, 3, 5]);
 	});
@@ -1581,10 +1628,12 @@ describe('Edge Cases - Type Coercion', () => {
 		expect(collect([1, 'two', 3, null]).sum()).toBe(4);
 	});
 
-	it('where handles numeric string comparison', () => {
+	it('where handles numeric string comparison (loose vs strict)', () => {
 		const data = collect([{ id: 1 }, { id: '1' }, { id: 2 }]);
-		expect(data.where('id', '===', 1).count()).toBe(1);
-		expect(data.where('id', '==', 1).count()).toBe(2);
+		// Loose comparison: '1' == 1 is true (Laravel default behavior)
+		expect(data.where('id', '=', 1).count()).toBe(2);
+		// Strict comparison: '1' === 1 is false (use whereStrict)
+		expect(data.whereStrict('id', 1).count()).toBe(1);
 	});
 
 	it('search returns key not index for objects', () => {
@@ -1600,57 +1649,48 @@ describe('Edge Cases - Type Coercion', () => {
 describe('Edge Cases - Chaining', () => {
 	it('chains filter then map', () => {
 		const result = collect([1, 2, 3, 4, 5])
-			.filter(n => n > 2)
-			.map(n => n * 2)
+			.filter((n) => n > 2)
+			.map((n) => n * 2)
 			.all();
 		expect(result).toEqual([6, 8, 10]);
 	});
 
 	it('chains map then filter then sum', () => {
 		const result = collect([1, 2, 3, 4, 5])
-			.map(n => n * 2)
-			.filter(n => n > 4)
+			.map((n) => n * 2)
+			.filter((n) => n > 4)
 			.sum();
 		expect(result).toBe(24);
 	});
 
 	it('chains groupBy then map', () => {
 		const result = collect([1, 2, 3, 4])
-			.groupBy(n => (n % 2 === 0 ? 'even' : 'odd'))
+			.groupBy((n) => (n % 2 === 0 ? 'even' : 'odd'))
 			.map((group: Collection<number>) => group.sum());
 		expect(result.get('odd')).toBe(4);
 		expect(result.get('even')).toBe(6);
 	});
 
 	it('chains pluck then unique', () => {
-		const data = collect([
-			{ type: 'a' },
-			{ type: 'b' },
-			{ type: 'a' },
-		]);
+		const data = collect([{ type: 'a' }, { type: 'b' }, { type: 'a' }]);
 		expect(data.pluck('type').unique().all()).toEqual(['a', 'b']);
 	});
 
 	it('chains sort then take', () => {
-		expect(
-			collect([5, 3, 1, 4, 2])
-				.sort()
-				.take(3)
-				.all(),
-		).toEqual([1, 2, 3]);
+		expect(collect([5, 3, 1, 4, 2]).sort().take(3).all()).toEqual([1, 2, 3]);
 	});
 });
 
 describe('Edge Cases - Immutability', () => {
 	it('map does not modify original', () => {
 		const original = collect([1, 2, 3]);
-		original.map(n => n * 2);
+		original.map((n) => n * 2);
 		expect(original.all()).toEqual([1, 2, 3]);
 	});
 
 	it('filter does not modify original', () => {
 		const original = collect([1, 2, 3]);
-		original.filter(n => n > 1);
+		original.filter((n) => n > 1);
 		expect(original.all()).toEqual([1, 2, 3]);
 	});
 
@@ -1680,7 +1720,7 @@ describe('Edge Cases - Immutability', () => {
 
 	it('transform modifies in place', () => {
 		const original = collect([1, 2, 3]);
-		original.transform(n => n * 2);
+		original.transform((n) => n * 2);
 		expect(original.all()).toEqual([2, 4, 6]);
 	});
 });
@@ -1733,11 +1773,11 @@ describe('Edge Cases - Object Collections', () => {
 
 describe('Edge Cases - Numeric Edge Cases', () => {
 	it('sum handles NaN in array', () => {
-		expect(collect([1, NaN, 2]).sum()).toBe(3);
+		expect(collect([1, Number.NaN, 2]).sum()).toBe(3);
 	});
 
 	it('sum handles Infinity', () => {
-		expect(collect([1, Infinity, 2]).sum()).toBe(Infinity);
+		expect(collect([1, Number.POSITIVE_INFINITY, 2]).sum()).toBe(Number.POSITIVE_INFINITY);
 	});
 
 	it('avg with decimal precision', () => {
@@ -1910,13 +1950,13 @@ describe('Concat (Laravel port)', () => {
 describe('Unless (Laravel port)', () => {
 	it('executes callback when condition is false', () => {
 		const data = collect(['michael', 'tom']);
-		const result = data.unless(false, c => c.concat(['caleb']));
+		const result = data.unless(false, (c) => c.concat(['caleb']));
 		expect(result.toArray()).toEqual(['michael', 'tom', 'caleb']);
 	});
 
 	it('does not execute callback when condition is true', () => {
 		const data = collect(['michael', 'tom']);
-		const result = data.unless(true, c => c.concat(['caleb']));
+		const result = data.unless(true, (c) => c.concat(['caleb']));
 		expect(result.toArray()).toEqual(['michael', 'tom']);
 	});
 
@@ -1924,8 +1964,8 @@ describe('Unless (Laravel port)', () => {
 		const data = collect(['michael', 'tom']);
 		const result = data.unless(
 			true,
-			c => c.concat(['caleb']),
-			c => c.concat(['taylor']),
+			(c) => c.concat(['caleb']),
+			(c) => c.concat(['taylor']),
 		);
 		expect(result.toArray()).toEqual(['michael', 'tom', 'taylor']);
 	});
@@ -1934,21 +1974,21 @@ describe('Unless (Laravel port)', () => {
 describe('WhenEmpty (Laravel port)', () => {
 	it('does not execute callback when not empty', () => {
 		const data = collect(['michael', 'tom']);
-		const result = data.whenEmpty(c => c.concat(['adam']));
+		const result = data.whenEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual(['michael', 'tom']);
 	});
 
 	it('executes callback when empty', () => {
 		const data = collect<string>([]);
-		const result = data.whenEmpty(c => c.concat(['adam']));
+		const result = data.whenEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual(['adam']);
 	});
 
 	it('executes default when not empty', () => {
 		const data = collect(['michael', 'tom']);
 		const result = data.whenEmpty(
-			c => c.concat(['adam']),
-			c => c.concat(['taylor']),
+			(c) => c.concat(['adam']),
+			(c) => c.concat(['taylor']),
 		);
 		expect(result.toArray()).toEqual(['michael', 'tom', 'taylor']);
 	});
@@ -1957,13 +1997,13 @@ describe('WhenEmpty (Laravel port)', () => {
 describe('WhenNotEmpty (Laravel port)', () => {
 	it('executes callback when not empty', () => {
 		const data = collect(['michael', 'tom']);
-		const result = data.whenNotEmpty(c => c.concat(['adam']));
+		const result = data.whenNotEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual(['michael', 'tom', 'adam']);
 	});
 
 	it('does not execute callback when empty', () => {
 		const data = collect<string>([]);
-		const result = data.whenNotEmpty(c => c.concat(['adam']));
+		const result = data.whenNotEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual([]);
 	});
 });
@@ -1971,13 +2011,13 @@ describe('WhenNotEmpty (Laravel port)', () => {
 describe('UnlessEmpty (Laravel port)', () => {
 	it('executes callback when not empty', () => {
 		const data = collect(['michael', 'tom']);
-		const result = data.unlessEmpty(c => c.concat(['adam']));
+		const result = data.unlessEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual(['michael', 'tom', 'adam']);
 	});
 
 	it('does not execute callback when empty', () => {
 		const data = collect<string>([]);
-		const result = data.unlessEmpty(c => c.concat(['adam']));
+		const result = data.unlessEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual([]);
 	});
 });
@@ -1985,13 +2025,13 @@ describe('UnlessEmpty (Laravel port)', () => {
 describe('UnlessNotEmpty (Laravel port)', () => {
 	it('does not execute callback when not empty', () => {
 		const data = collect(['michael', 'tom']);
-		const result = data.unlessNotEmpty(c => c.concat(['adam']));
+		const result = data.unlessNotEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual(['michael', 'tom']);
 	});
 
 	it('executes callback when empty', () => {
 		const data = collect<string>([]);
-		const result = data.unlessNotEmpty(c => c.concat(['adam']));
+		const result = data.unlessNotEmpty((c) => c.concat(['adam']));
 		expect(result.toArray()).toEqual(['adam']);
 	});
 });
@@ -2084,7 +2124,10 @@ describe('Join (Laravel port)', () => {
 
 describe('Implode (Laravel port)', () => {
 	it('implodes by key', () => {
-		const data = collect([{ name: 'taylor', email: 'foo' }, { name: 'dayle', email: 'bar' }]);
+		const data = collect([
+			{ name: 'taylor', email: 'foo' },
+			{ name: 'dayle', email: 'bar' },
+		]);
 		expect(data.implode('email')).toBe('foobar');
 		expect(data.implode('email', ',')).toBe('foo,bar');
 	});
@@ -2229,7 +2272,10 @@ describe('IntersectByKeys (Laravel port)', () => {
 
 	it('intersects multiple keys', () => {
 		const c = collect({ name: 'taylor', family: 'otwell', age: 26 });
-		expect(c.intersectByKeys(collect({ height: 180, name: 'amir', family: 'moharami' })).all()).toEqual({ name: 'taylor', family: 'otwell' });
+		expect(c.intersectByKeys(collect({ height: 180, name: 'amir', family: 'moharami' })).all()).toEqual({
+			name: 'taylor',
+			family: 'otwell',
+		});
 	});
 });
 
@@ -2276,7 +2322,10 @@ describe('Average (Laravel port)', () => {
 describe('EachSpread (Laravel port)', () => {
 	it('spreads array items as callback arguments', () => {
 		const results: string[] = [];
-		collect([[1, 'a'], [2, 'b']]).eachSpread((num, char) => {
+		collect([
+			[1, 'a'],
+			[2, 'b'],
+		]).eachSpread((num, char) => {
 			results.push(`${num}-${char}`);
 		});
 		expect(results).toEqual(['1-a', '2-b']);
@@ -2284,7 +2333,11 @@ describe('EachSpread (Laravel port)', () => {
 
 	it('stops iteration when callback returns false', () => {
 		const results: string[] = [];
-		collect([[1, 'a'], [2, 'b'], [3, 'c']]).eachSpread((num, char) => {
+		collect([
+			[1, 'a'],
+			[2, 'b'],
+			[3, 'c'],
+		]).eachSpread((num, char) => {
 			results.push(`${num}-${char}`);
 			if (num === 2) return false;
 			return;
@@ -2305,10 +2358,10 @@ describe('ReplaceRecursive (Laravel port)', () => {
 	it('replaces nested items', () => {
 		const c = collect({
 			name: 'taylor',
-			meta: { age: 25, city: 'NYC' }
+			meta: { age: 25, city: 'NYC' },
 		});
 		const replaced = c.replaceRecursive({
-			meta: { age: 30 }
+			meta: { age: 30 },
 		});
 		expect(replaced.get('name')).toBe('taylor');
 	});
@@ -2351,7 +2404,7 @@ describe('SkipUntil (Laravel port)', () => {
 
 	it('skips until callback returns true', () => {
 		const data = collect([1, 1, 2, 2, 3, 3, 4, 4]);
-		const result = data.skipUntil(v => v >= 3).values();
+		const result = data.skipUntil((v) => v >= 3).values();
 		expect(result.all()).toEqual([3, 3, 4, 4]);
 	});
 });
@@ -2369,7 +2422,7 @@ describe('SkipWhile (Laravel port)', () => {
 
 	it('skips while callback returns true', () => {
 		const data = collect([1, 1, 2, 2, 3, 3, 4, 4]);
-		const result = data.skipWhile(v => v < 3).values();
+		const result = data.skipWhile((v) => v < 3).values();
 		expect(result.all()).toEqual([3, 3, 4, 4]);
 	});
 });
@@ -2378,7 +2431,7 @@ describe('Chunk (Laravel port)', () => {
 	it('chunks items', () => {
 		const data = collect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).chunk(3);
 		expect(data.count()).toBe(4);
-		expect(data.first()!.toArray()).toEqual([1, 2, 3]);
+		expect(data.first()?.toArray()).toEqual([1, 2, 3]);
 	});
 
 	it('returns empty for zero size', () => {
@@ -2394,19 +2447,22 @@ describe('Chunk (Laravel port)', () => {
 
 describe('ChunkWhile (Laravel port)', () => {
 	it('chunks on equal elements', () => {
-		const data = collect(['A', 'A', 'B', 'B', 'C', 'C', 'C'])
-			.chunkWhile((current, _key, chunk) => chunk.last() === current);
-		expect(data.first()!.values().all()).toEqual(['A', 'A']);
-		expect(data.get(1)!.values().all()).toEqual(['B', 'B']);
-		expect(data.last()!.values().all()).toEqual(['C', 'C', 'C']);
+		const data = collect(['A', 'A', 'B', 'B', 'C', 'C', 'C']).chunkWhile(
+			(current, _key, chunk) => chunk.last() === current,
+		);
+		expect(data.first()?.values().all()).toEqual(['A', 'A']);
+		expect(data.get(1)?.values().all()).toEqual(['B', 'B']);
+		expect(data.last()?.values().all()).toEqual(['C', 'C', 'C']);
 	});
 
 	it('chunks contiguously increasing integers', () => {
-		const data = collect([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21])
-			.chunkWhile((current, _key, chunk) => chunk.last()! + 1 === current);
-		expect(data.first()!.values().all()).toEqual([1]);
-		expect(data.get(1)!.values().all()).toEqual([4]);
-		expect(data.get(2)!.values().all()).toEqual([9, 10, 11, 12]);
+		const data = collect([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21]).chunkWhile(
+			// biome-ignore lint/style/noNonNullAssertion: Test - chunk always has at least one item when callback is called
+			(current, _key, chunk) => chunk.last()! + 1 === current,
+		);
+		expect(data.first()?.values().all()).toEqual([1]);
+		expect(data.get(1)?.values().all()).toEqual([4]);
+		expect(data.get(2)?.values().all()).toEqual([9, 10, 11, 12]);
 	});
 });
 
@@ -2414,9 +2470,9 @@ describe('SplitIn (Laravel port)', () => {
 	it('splits into groups', () => {
 		const data = collect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).splitIn(3);
 		expect(data.count()).toBe(3);
-		expect(data.get(0)!.values().toArray()).toEqual([1, 2, 3, 4]);
-		expect(data.get(1)!.values().toArray()).toEqual([5, 6, 7, 8]);
-		expect(data.get(2)!.values().toArray()).toEqual([9, 10]);
+		expect(data.get(0)?.values().toArray()).toEqual([1, 2, 3, 4]);
+		expect(data.get(1)?.values().toArray()).toEqual([5, 6, 7, 8]);
+		expect(data.get(2)?.values().toArray()).toEqual([9, 10]);
 	});
 });
 
@@ -2438,7 +2494,9 @@ describe('ReduceSpread (Laravel port)', () => {
 		const data = collect([-1, 0, 1, 2, 3, 4, 5]);
 		const [sum, max, min] = data.reduceSpread(
 			(s, mx, mn, value) => [s + value, Math.max(mx, value), Math.min(mn, value)],
-			0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY
+			0,
+			Number.NEGATIVE_INFINITY,
+			Number.POSITIVE_INFINITY,
 		);
 		expect(sum).toBe(14);
 		expect(max).toBe(5);
@@ -2449,7 +2507,7 @@ describe('ReduceSpread (Laravel port)', () => {
 describe('Pipe (Laravel port)', () => {
 	it('pipes collection through callback', () => {
 		const data = collect([1, 2, 3]);
-		expect(data.pipe(d => d.sum())).toBe(6);
+		expect(data.pipe((d) => d.sum())).toBe(6);
 	});
 });
 
@@ -2458,7 +2516,7 @@ describe('PipeThrough (Laravel port)', () => {
 		const data = collect([1, 2, 3]);
 		const result = data.pipeThrough([
 			(d) => (d as Collection<number>).merge([4, 5]),
-			(d) => (d as Collection<number>).sum()
+			(d) => (d as Collection<number>).sum(),
 		]);
 		expect(result).toBe(15);
 	});
@@ -2475,8 +2533,8 @@ describe('Every (Laravel port)', () => {
 		const c = collect([{ age: 18 }, { age: 20 }, { age: 20 }]);
 		expect(c.every('age', 18)).toBe(false);
 		expect(c.every('age', '>=', 18)).toBe(true);
-		expect(c.every(item => item.age >= 18)).toBe(true);
-		expect(c.every(item => item.age >= 20)).toBe(false);
+		expect(c.every((item) => item.age >= 18)).toBe(true);
+		expect(c.every((item) => item.age >= 20)).toBe(false);
 	});
 
 	it('checks truthy values', () => {
@@ -2493,6 +2551,7 @@ describe('Except (Laravel port)', () => {
 
 	it('returns all when null passed', () => {
 		const data = collect({ first: 'Taylor', last: 'Otwell' });
+		// biome-ignore lint/suspicious/noExplicitAny: Testing null handling behavior
 		expect(data.except(null as any).all()).toEqual(data.all());
 	});
 });
@@ -2505,14 +2564,14 @@ describe('TakeUntil (Laravel port)', () => {
 
 	it('takes until callback returns true', () => {
 		const data = collect([1, 2, 3, 4]);
-		expect(data.takeUntil(v => v >= 3).all()).toEqual([1, 2]);
+		expect(data.takeUntil((v) => v >= 3).all()).toEqual([1, 2]);
 	});
 });
 
 describe('TakeWhile (Laravel port)', () => {
 	it('takes while value matches', () => {
 		const data = collect([1, 2, 3, 4]);
-		expect(data.takeWhile(v => v < 3).all()).toEqual([1, 2]);
+		expect(data.takeWhile((v) => v < 3).all()).toEqual([1, 2]);
 	});
 });
 
@@ -2520,13 +2579,13 @@ describe('Sliding (Laravel port)', () => {
 	it('slides with default step', () => {
 		const data = collect([1, 2, 3, 4, 5]).sliding(2);
 		expect(data.count()).toBe(4);
-		expect(data.first()!.all()).toEqual([1, 2]);
+		expect(data.first()?.all()).toEqual([1, 2]);
 	});
 
 	it('slides with custom step', () => {
 		const data = collect([1, 2, 3, 4, 5]).sliding(3, 2);
 		expect(data.count()).toBe(2);
-		expect(data.first()!.all()).toEqual([1, 2, 3]);
+		expect(data.first()?.all()).toEqual([1, 2, 3]);
 	});
 });
 
@@ -2549,7 +2608,7 @@ describe('Sole (Laravel port)', () => {
 	it('throws MultipleItemsFoundException with correct count', () => {
 		const data = collect(['foo', 'bar', 'bar']);
 		try {
-			data.sole(v => v === 'bar');
+			data.sole((v) => v === 'bar');
 			expect.fail('Should have thrown');
 		} catch (e) {
 			expect(e).toBeInstanceOf(MultipleItemsFoundException);
@@ -2604,14 +2663,17 @@ describe('Wrap and Unwrap (Laravel port)', () => {
 
 describe('Times (Laravel port)', () => {
 	it('creates collection from times', () => {
-		const result = Collection.times(5, i => i * 2);
+		const result = Collection.times(5, (i) => i * 2);
 		expect(result.all()).toEqual([2, 4, 6, 8, 10]);
 	});
 });
 
 describe('Flatten (Laravel port)', () => {
 	it('flattens nested arrays', () => {
-		const data = collect([[1, 2], [3, [4, 5]]]);
+		const data = collect([
+			[1, 2],
+			[3, [4, 5]],
+		]);
 		expect(data.flatten().all()).toEqual([1, 2, 3, 4, 5]);
 	});
 
@@ -2625,7 +2687,7 @@ describe('Pluck with keys (Laravel port)', () => {
 	it('plucks values with keys', () => {
 		const data = collect([
 			{ id: 1, name: 'Taylor' },
-			{ id: 2, name: 'Otwell' }
+			{ id: 2, name: 'Otwell' },
 		]);
 		expect(data.pluck('name', 'id').all()).toEqual({ '1': 'Taylor', '2': 'Otwell' });
 	});
@@ -2635,7 +2697,11 @@ describe('Zip (Laravel port)', () => {
 	it('zips arrays together', () => {
 		const data = collect([1, 2, 3]);
 		const zipped = data.zip(['a', 'b', 'c']);
-		expect(zipped.toArray()).toEqual([[1, 'a'], [2, 'b'], [3, 'c']]);
+		expect(zipped.toArray()).toEqual([
+			[1, 'a'],
+			[2, 'b'],
+			[3, 'c'],
+		]);
 	});
 });
 
@@ -2643,7 +2709,12 @@ describe('CrossJoin (Laravel port)', () => {
 	it('cross joins arrays', () => {
 		const data = collect([1, 2]);
 		const result = data.crossJoin(['a', 'b']);
-		expect(result.all()).toEqual([[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]);
+		expect(result.all()).toEqual([
+			[1, 'a'],
+			[1, 'b'],
+			[2, 'a'],
+			[2, 'b'],
+		]);
 	});
 });
 
@@ -2677,15 +2748,15 @@ describe('Median (Laravel port)', () => {
 describe('Percentage (Laravel port)', () => {
 	it('calculates percentage matching', () => {
 		const data = collect([1, 1, 2, 2, 2, 3]);
-		expect(data.percentage(v => v === 1)).toBeCloseTo(33.33, 1);
-		expect(data.percentage(v => v === 2)).toBeCloseTo(50, 1);
+		expect(data.percentage((v) => v === 1)).toBeCloseTo(33.33, 1);
+		expect(data.percentage((v) => v === 2)).toBeCloseTo(50, 1);
 	});
 });
 
 describe('CountBy (Laravel port)', () => {
 	it('counts by callback', () => {
 		const data = collect(['alice@example.com', 'bob@example.com', 'carlos@gmail.com']);
-		const counts = data.countBy(email => email.split('@')[1]);
+		const counts = data.countBy((email) => email.split('@')[1]);
 		expect(counts.get('example.com')).toBe(2);
 		expect(counts.get('gmail.com')).toBe(1);
 	});
@@ -2696,7 +2767,7 @@ describe('GroupBy deep (Laravel port)', () => {
 		const data = collect([
 			{ user: { city: 'NYC' }, name: 'Taylor' },
 			{ user: { city: 'NYC' }, name: 'Otwell' },
-			{ user: { city: 'LA' }, name: 'Adam' }
+			{ user: { city: 'LA' }, name: 'Adam' },
 		]);
 		const grouped = data.groupBy('user.city');
 		expect(grouped.get('NYC')?.count()).toBe(2);
@@ -2708,7 +2779,7 @@ describe('KeyBy (Laravel port)', () => {
 	it('keys by property', () => {
 		const data = collect([
 			{ id: 1, name: 'Taylor' },
-			{ id: 2, name: 'Otwell' }
+			{ id: 2, name: 'Otwell' },
 		]);
 		expect(data.keyBy('id').get(1)).toEqual({ id: 1, name: 'Taylor' });
 	});
@@ -2716,9 +2787,9 @@ describe('KeyBy (Laravel port)', () => {
 	it('keys by callback', () => {
 		const data = collect([
 			{ id: 1, name: 'Taylor' },
-			{ id: 2, name: 'Otwell' }
+			{ id: 2, name: 'Otwell' },
 		]);
-		expect(data.keyBy(item => `user_${item.id}`).get('user_1')).toEqual({ id: 1, name: 'Taylor' });
+		expect(data.keyBy((item) => `user_${item.id}`).get('user_1')).toEqual({ id: 1, name: 'Taylor' });
 	});
 });
 
@@ -2727,9 +2798,9 @@ describe('MapToGroups (Laravel port)', () => {
 		const data = collect([
 			{ id: 1, group: 'A' },
 			{ id: 2, group: 'A' },
-			{ id: 3, group: 'B' }
+			{ id: 3, group: 'B' },
 		]);
-		const grouped = data.mapToGroups(item => [item.group, item.id]);
+		const grouped = data.mapToGroups((item) => [item.group, item.id]);
 		expect(grouped.get('A')?.all()).toEqual([1, 2]);
 		expect(grouped.get('B')?.all()).toEqual([3]);
 	});
@@ -2739,10 +2810,10 @@ describe('MapWithKeys (Laravel port)', () => {
 	it('maps with keys', () => {
 		const data = collect([
 			{ id: 1, name: 'Taylor' },
-			{ id: 2, name: 'Otwell' }
+			{ id: 2, name: 'Otwell' },
 		]);
 		// @ts-expect-error testing numeric key
-		const mapped = data.mapWithKeys(item => [item.id, item.name]);
+		const mapped = data.mapWithKeys((item) => [item.id, item.name]);
 		expect(mapped.get(1)).toBe('Taylor');
 		expect(mapped.get(2)).toBe('Otwell');
 	});
@@ -2794,7 +2865,9 @@ describe('DiffAssocUsing (Laravel port)', () => {
 describe('IntersectUsing (Laravel port)', () => {
 	it('intersects using case-insensitive comparison', () => {
 		const c = collect(['green', 'brown', 'blue']);
-		const result = c.intersectUsing(['GREEN', 'brown', 'yellow'], (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+		const result = c.intersectUsing(['GREEN', 'brown', 'yellow'], (a, b) =>
+			a.toLowerCase().localeCompare(b.toLowerCase()),
+		);
 		expect(result.all()).toEqual(['green', 'brown']);
 	});
 });
@@ -2812,12 +2885,10 @@ describe('IntersectAssocUsing (Laravel port)', () => {
 		const c1 = collect({ a: 'green', b: 'brown', c: 'blue' });
 		const c2 = { A: 'green', b: 'brown', d: 'yellow' };
 		// Callback compares KEYS case-insensitively (per PHP's array_intersect_uassoc)
-		const result = c1.intersectAssocUsing(c2, (a, b) =>
-			a.toLowerCase().localeCompare(b.toLowerCase())
-		);
-		expect(result.get('a')).toBe('green');  // 'a' matches 'A' (case-insensitive key), values equal
-		expect(result.get('b')).toBe('brown');  // 'b' matches 'b', values equal
-		expect(result.has('c')).toBe(false);    // 'c' has no matching key
+		const result = c1.intersectAssocUsing(c2, (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+		expect(result.get('a')).toBe('green'); // 'a' matches 'A' (case-insensitive key), values equal
+		expect(result.get('b')).toBe('brown'); // 'b' matches 'b', values equal
+		expect(result.has('c')).toBe(false); // 'c' has no matching key
 		expect(result.count()).toBe(2);
 	});
 });
@@ -2826,15 +2897,15 @@ describe('DoesntContainStrict (Laravel port)', () => {
 	it('checks strict non-containment', () => {
 		const c = collect([1, 3, 5, '02']);
 		expect(c.doesntContainStrict(1)).toBe(false);
-		expect(c.doesntContainStrict('1')).toBe(true);  // strict: '1' !== 1
+		expect(c.doesntContainStrict('1')).toBe(true); // strict: '1' !== 1
 		expect(c.doesntContainStrict(2)).toBe(true);
 		expect(c.doesntContainStrict('02')).toBe(false);
 	});
 
 	it('checks with callback', () => {
 		const c = collect([1, 3, 5]);
-		expect(c.doesntContainStrict(v => v < 5)).toBe(false);  // 1 and 3 are < 5
-		expect(c.doesntContainStrict(v => v > 5)).toBe(true);   // nothing > 5
+		expect(c.doesntContainStrict((v) => v < 5)).toBe(false); // 1 and 3 are < 5
+		expect(c.doesntContainStrict((v) => v > 5)).toBe(true); // nothing > 5
 	});
 });
 
@@ -2860,11 +2931,11 @@ describe('Select (Laravel port)', () => {
 	it('selects specific keys from arrays', () => {
 		const data = collect([
 			{ first: 'Taylor', last: 'Otwell', email: 'taylorotwell@gmail.com' },
-			{ first: 'Jess', last: 'Archer', email: 'jessarcher@gmail.com' }
+			{ first: 'Jess', last: 'Archer', email: 'jessarcher@gmail.com' },
 		]);
 		expect(data.select(['first', 'email']).all()).toEqual([
 			{ first: 'Taylor', email: 'taylorotwell@gmail.com' },
-			{ first: 'Jess', email: 'jessarcher@gmail.com' }
+			{ first: 'Jess', email: 'jessarcher@gmail.com' },
 		]);
 	});
 
@@ -2886,13 +2957,10 @@ describe('CollapseWithKeys (Laravel port)', () => {
 	});
 
 	it('handles nested collections', () => {
-		const data = collect([
-			collect({ a: '1a', b: '1b' }),
-			collect({ b: '2b', c: '2c' })
-		]);
+		const data = collect([collect({ a: '1a', b: '1b' }), collect({ b: '2b', c: '2c' })]);
 		const result = data.collapseWithKeys();
 		expect(result.get('a')).toBe('1a');
-		expect(result.get('b')).toBe('2b');  // second overwrites first
+		expect(result.get('b')).toBe('2b'); // second overwrites first
 		expect(result.get('c')).toBe('2c');
 	});
 });
@@ -2944,7 +3012,10 @@ describe('Ensure (Laravel port)', () => {
 
 describe('Value (Laravel port)', () => {
 	it('gets value from first item', () => {
-		const c = collect([{ id: 1, name: 'Hello' }, { id: 2, name: 'World' }]);
+		const c = collect([
+			{ id: 1, name: 'Hello' },
+			{ id: 2, name: 'World' },
+		]);
 		expect(c.value('name')).toBe('Hello');
 		expect(c.where('id', 2).value('name')).toBe('World');
 	});
@@ -2952,7 +3023,7 @@ describe('Value (Laravel port)', () => {
 	it('supports dot notation', () => {
 		const c = collect([
 			{ id: 1, pivot: { value: 'foo' } },
-			{ id: 2, pivot: { value: 'bar' } }
+			{ id: 2, pivot: { value: 'bar' } },
 		]);
 		// @ts-expect-error testing dot notation
 		expect(c.value('pivot.value')).toBe('foo');
@@ -2988,7 +3059,10 @@ describe('Static wrap with iterables (Laravel port)', () => {
 	});
 
 	it('wraps generator', () => {
-		function* gen() { yield 1; yield 2; }
+		function* gen() {
+			yield 1;
+			yield 2;
+		}
 		const c = Collection.wrap(gen());
 		expect(c.all()).toEqual([1, 2]);
 	});
@@ -3008,7 +3082,7 @@ describe('PipeInto (Laravel port)', () => {
 describe('ToString (Laravel port)', () => {
 	it('converts to string', () => {
 		const c = collect([1, 2, 3]);
-		expect(c.toString()).toBe('1, 2, 3');  // Uses join(', ') internally
+		expect(c.toString()).toBe('1, 2, 3'); // Uses join(', ') internally
 	});
 });
 
@@ -3016,7 +3090,7 @@ describe('Dump (Laravel port)', () => {
 	it('dumps and returns collection', () => {
 		const c = collect([1, 2, 3]);
 		const result = c.dump();
-		expect(result).toBe(c);  // Returns same collection
+		expect(result).toBe(c); // Returns same collection
 	});
 });
 
@@ -3127,7 +3201,9 @@ describe('WithCollection helper', () => {
 		const related = collect([1, 1, 2]);
 		const with_ = new WithCollection(primary, related);
 		const counts: number[] = [];
-		with_.each((_item, rel) => { counts.push(rel.count()); });
+		with_.each((_item, rel) => {
+			counts.push(rel.count());
+		});
 		expect(counts).toEqual([2, 1]);
 	});
 
@@ -3187,7 +3263,10 @@ describe('Shift edge cases', () => {
 describe('Last with callable default', () => {
 	it('calls default function when no match', () => {
 		const c = collect([1, 2, 3]);
-		const result = c.last(v => v > 10, () => 'fallback');
+		const result = c.last(
+			(v) => v > 10,
+			() => 'fallback',
+		);
 		expect(result).toBe('fallback');
 	});
 });
@@ -3206,7 +3285,7 @@ describe('DoesntContain edge cases', () => {
 	it('handles operator and value arguments', () => {
 		const c = collect([{ val: 1 }, { val: 2 }, { val: 3 }]);
 		expect(c.doesntContain('val', '>', 2)).toBe(false); // 3 > 2
-		expect(c.doesntContain('val', '>', 5)).toBe(true);  // nothing > 5
+		expect(c.doesntContain('val', '>', 5)).toBe(true); // nothing > 5
 	});
 
 	it('handles just operator argument (as value)', () => {
@@ -3304,7 +3383,9 @@ describe('Sliding edge cases', () => {
 
 describe('Ensure with class instance', () => {
 	it('ensures items are instance of class', () => {
-		class MyClass { constructor(public value: number) {} }
+		class MyClass {
+			constructor(public value: number) {}
+		}
 		const obj1 = new MyClass(1);
 		const obj2 = new MyClass(2);
 		const c = collect([obj1, obj2]);
@@ -3312,7 +3393,9 @@ describe('Ensure with class instance', () => {
 	});
 
 	it('throws when item is not instance of class', () => {
-		class MyClass { constructor(public value: number) {} }
+		class MyClass {
+			constructor(public value: number) {}
+		}
 		const c = collect([{ value: 1 }, { value: 2 }]);
 		expect(() => c.ensure(MyClass)).toThrow();
 	});
@@ -3359,7 +3442,11 @@ describe('GroupBy edge cases', () => {
 	});
 
 	it('handles null/undefined group keys', () => {
-		const c = collect([{ name: 'Alice' }, { name: null as unknown as string }, { name: undefined as unknown as string }]);
+		const c = collect([
+			{ name: 'Alice' },
+			{ name: null as unknown as string },
+			{ name: undefined as unknown as string },
+		]);
 		const result = c.groupBy('name');
 		expect(result.has('')).toBe(true); // null/undefined become ''
 	});
@@ -3450,7 +3537,7 @@ describe('Random edge cases', () => {
 describe('ReduceWithKeys', () => {
 	it('reduces with key access', () => {
 		const c = collect({ a: 1, b: 2, c: 3 });
-		const result = c.reduceWithKeys((carry, val, key) => carry + `${key}:${val},`, '');
+		const result = c.reduceWithKeys((carry, val, key) => `${carry}${key}:${val},`, '');
 		expect(result).toBe('a:1,b:2,c:3,');
 	});
 });
@@ -3510,7 +3597,7 @@ describe('Replace edge case', () => {
 		const result = c.replace({ b: 99, c: 3 });
 		expect(result.get('a')).toBe(1);
 		expect(result.get('b')).toBe(99); // Replaced
-		expect(result.get('c')).toBe(3);  // New key added
+		expect(result.get('c')).toBe(3); // New key added
 	});
 });
 
@@ -3536,7 +3623,12 @@ describe('When/Unless conditional branches', () => {
 	it('when with function value resolves it', () => {
 		const c = collect([1, 2, 3]);
 		let called = false;
-		c.when(() => true, () => { called = true; });
+		c.when(
+			() => true,
+			() => {
+				called = true;
+			},
+		);
 		expect(called).toBe(true);
 	});
 
@@ -3555,7 +3647,9 @@ describe('When/Unless conditional branches', () => {
 	it('when falsy with defaultCallback calls it', () => {
 		const c = collect([1, 2, 3]);
 		let defaultCalled = false;
-		c.when(false, undefined, () => { defaultCalled = true; });
+		c.when(false, undefined, () => {
+			defaultCalled = true;
+		});
 		expect(defaultCalled).toBe(true);
 	});
 
@@ -3574,7 +3668,9 @@ describe('When/Unless conditional branches', () => {
 	it('unless truthy with defaultCallback calls it', () => {
 		const c = collect([1, 2, 3]);
 		let defaultCalled = false;
-		c.unless(true, undefined, () => { defaultCalled = true; });
+		c.unless(true, undefined, () => {
+			defaultCalled = true;
+		});
 		expect(defaultCalled).toBe(true);
 	});
 });
@@ -3586,7 +3682,10 @@ describe('Ensure type string branches', () => {
 	});
 
 	it('ensure accepts array type string', () => {
-		const c = collect([[1, 2], [3, 4]]);
+		const c = collect([
+			[1, 2],
+			[3, 4],
+		]);
 		expect(() => c.ensure('array')).not.toThrow();
 	});
 
@@ -3681,7 +3780,7 @@ describe('Diff/DiffUsing with Collection argument', () => {
 	it('diffUsing accepts Collection argument', () => {
 		const c1 = collect(['a', 'B', 'c']);
 		const c2 = collect(['A', 'b']);
-		const result = c1.diffUsing(c2, (a, b) => a.toLowerCase() === b.toLowerCase() ? 0 : 1);
+		const result = c1.diffUsing(c2, (a, b) => (a.toLowerCase() === b.toLowerCase() ? 0 : 1));
 		expect(result.all()).toEqual(['c']);
 	});
 });
@@ -3694,7 +3793,7 @@ describe('First/Last edge cases', () => {
 
 	it('last with callback returns last matching', () => {
 		const c = collect([1, 2, 3, 4]);
-		expect(c.last(v => v < 4)).toBe(3);
+		expect(c.last((v) => v < 4)).toBe(3);
 	});
 });
 
@@ -3709,7 +3808,12 @@ describe('Unless with function value', () => {
 	it('unless resolves function value', () => {
 		const c = collect([1, 2, 3]);
 		let called = false;
-		c.unless(() => false, () => { called = true; });
+		c.unless(
+			() => false,
+			() => {
+				called = true;
+			},
+		);
 		expect(called).toBe(true);
 	});
 });
@@ -3734,10 +3838,7 @@ describe('Intersect/IntersectByKeys with Collection', () => {
 describe('PipeThrough chain', () => {
 	it('pipes through multiple callbacks', () => {
 		const c = collect([1, 2, 3]);
-		const result = c.pipeThrough<number>([
-			(col) => (col as Collection<number>).sum(),
-			(sum) => (sum as number) * 2
-		]);
+		const result = c.pipeThrough<number>([(col) => (col as Collection<number>).sum(), (sum) => (sum as number) * 2]);
 		expect(result).toBe(12);
 	});
 });
@@ -3774,16 +3875,26 @@ describe('WhereNotNull branches', () => {
 
 describe('EachSpread branches', () => {
 	it('eachSpread spreads array items', () => {
-		const c = collect([[1, 2], [3, 4]]);
+		const c = collect([
+			[1, 2],
+			[3, 4],
+		]);
 		const results: number[][] = [];
-		c.eachSpread((a, b, _key) => { results.push([a as number, b as number]); });
-		expect(results).toEqual([[1, 2], [3, 4]]);
+		c.eachSpread((a, b, _key) => {
+			results.push([a as number, b as number]);
+		});
+		expect(results).toEqual([
+			[1, 2],
+			[3, 4],
+		]);
 	});
 
 	it('eachSpread handles non-array items', () => {
 		const c = collect({ a: 'hello', b: 'world' });
 		const results: string[] = [];
-		c.eachSpread((val, key) => { results.push(`${key}:${val}`); });
+		c.eachSpread((val, key) => {
+			results.push(`${key}:${val}`);
+		});
 		expect(results).toEqual(['a:hello', 'b:world']);
 	});
 });
@@ -3821,7 +3932,12 @@ describe('Callable defaults branches', () => {
 
 	it('first with callback and callable default, no match', () => {
 		const c = collect([1, 2, 3]);
-		expect(c.first((v) => v > 100, () => 'no-match')).toBe('no-match');
+		expect(
+			c.first(
+				(v) => v > 100,
+				() => 'no-match',
+			),
+		).toBe('no-match');
 	});
 
 	it('last with callable default on empty collection (no callback)', () => {
@@ -3831,7 +3947,12 @@ describe('Callable defaults branches', () => {
 
 	it('last with callback and callable default, no match', () => {
 		const c = collect([1, 2, 3]);
-		expect(c.last((v) => v > 100, () => 'no-last-match')).toBe('no-last-match');
+		expect(
+			c.last(
+				(v) => v > 100,
+				() => 'no-last-match',
+			),
+		).toBe('no-last-match');
 	});
 
 	it('last with callback and non-callable default, no match', () => {
@@ -3862,18 +3983,14 @@ describe('Collection argument branches', () => {
 	it('diffKeysUsing with Collection', () => {
 		const c1 = collect({ a: 1, b: 2, c: 3 });
 		const c2 = collect({ A: 99, B: 99 });
-		const result = c1.diffKeysUsing(c2, (a, b) =>
-			a.toLowerCase().localeCompare(b.toLowerCase())
-		);
+		const result = c1.diffKeysUsing(c2, (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 		expect(result.get('c')).toBe(3);
 		expect(result.count()).toBe(1);
 	});
 
 	it('diffKeysUsing with plain object', () => {
 		const c1 = collect({ a: 1, b: 2, c: 3 });
-		const result = c1.diffKeysUsing({ A: 99, B: 99 }, (a, b) =>
-			a.toLowerCase().localeCompare(b.toLowerCase())
-		);
+		const result = c1.diffKeysUsing({ A: 99, B: 99 }, (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 		expect(result.get('c')).toBe(3);
 		expect(result.count()).toBe(1);
 	});
@@ -3889,9 +4006,7 @@ describe('Collection argument branches', () => {
 	it('diffAssocUsing with Collection', () => {
 		const c1 = collect({ a: 1, b: 2, c: 3 });
 		const c2 = collect({ A: 1, B: 2 });
-		const result = c1.diffAssocUsing(c2, (a, b) =>
-			a.toLowerCase().localeCompare(b.toLowerCase())
-		);
+		const result = c1.diffAssocUsing(c2, (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 		expect(result.get('c')).toBe(3);
 	});
 
@@ -3923,8 +4038,8 @@ describe('Collection argument branches', () => {
 		const c2 = collect({ a: 1, c: 3 }); // Same keys 'a' and 'c', same values
 		// Callback compares keys (string comparison)
 		const result = c1.intersectAssocUsing(c2, (a, b) => a.localeCompare(b));
-		expect(result.get('a')).toBe(1);  // keys match, values equal
-		expect(result.get('c')).toBe(3);  // keys match, values equal
+		expect(result.get('a')).toBe(1); // keys match, values equal
+		expect(result.get('c')).toBe(3); // keys match, values equal
 		expect(result.count()).toBe(2);
 	});
 
@@ -4018,7 +4133,10 @@ describe('only/select/except with null and Collection keys', () => {
 	});
 
 	it('select with Collection keys', () => {
-		const c = collect([{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }]);
+		const c = collect([
+			{ a: 1, b: 2, c: 3 },
+			{ a: 4, b: 5, c: 6 },
+		]);
 		const keys = collect(['a', 'c']);
 		const result = c.select(keys as Collection<string | number>);
 		expect(result.first()).toEqual({ a: 1, c: 3 });
@@ -4172,23 +4290,26 @@ describe('Additional branch coverage tests', () => {
 	// Line 309: last with callback and callable default, no match
 	it('last with callback matching nothing and callable default', () => {
 		const c = collect([1, 2, 3]);
-		const result = c.last((v) => v > 100, () => 'fallback');
+		const result = c.last(
+			(v) => v > 100,
+			() => 'fallback',
+		);
 		expect(result).toBe('fallback');
 	});
 
 	// Lines 981, 1004, 1019: avg/min/max with NaN values
 	it('avg ignores NaN values', () => {
-		const c = collect([{ n: 1 }, { n: NaN }, { n: 2 }]);
+		const c = collect([{ n: 1 }, { n: Number.NaN }, { n: 2 }]);
 		expect(c.avg('n')).toBe(1.5);
 	});
 
 	it('min ignores NaN values', () => {
-		const c = collect([{ n: NaN }, { n: 5 }, { n: 2 }]);
+		const c = collect([{ n: Number.NaN }, { n: 5 }, { n: 2 }]);
 		expect(c.min('n')).toBe(2);
 	});
 
 	it('max ignores NaN values', () => {
-		const c = collect([{ n: NaN }, { n: 5 }, { n: 2 }]);
+		const c = collect([{ n: Number.NaN }, { n: 5 }, { n: 2 }]);
 		expect(c.max('n')).toBe(5);
 	});
 
@@ -4234,7 +4355,11 @@ describe('Additional branch coverage tests', () => {
 
 	// Line 1556: sortBy with equal values (no change needed)
 	it('sortBy with equal values maintains order', () => {
-		const c = collect([{ n: 1, id: 'a' }, { n: 1, id: 'b' }, { n: 1, id: 'c' }]);
+		const c = collect([
+			{ n: 1, id: 'a' },
+			{ n: 1, id: 'b' },
+			{ n: 1, id: 'c' },
+		]);
 		const result = c.sortBy('n');
 		// All have same n, so original order preserved
 		expect(result.values().all()).toEqual([
@@ -4411,14 +4536,24 @@ describe('Additional branch coverage tests', () => {
 		const c = collect([{ x: 3 }, { x: 1 }, { x: 2 }]);
 		// Use callback (not string key)
 		const result = c.sortBy((item) => (item as { x: number }).x);
-		expect(result.values().map((i) => (i as { x: number }).x).all()).toEqual([1, 2, 3]);
+		expect(
+			result
+				.values()
+				.map((i) => (i as { x: number }).x)
+				.all(),
+		).toEqual([1, 2, 3]);
 	});
 
 	it('sortBy with descending true reverses order', () => {
 		const c = collect([{ x: 1 }, { x: 3 }, { x: 2 }]);
 		// Third param is descending
 		const result = c.sortBy('x', undefined, true);
-		expect(result.values().map((i) => (i as { x: number }).x).all()).toEqual([3, 2, 1]);
+		expect(
+			result
+				.values()
+				.map((i) => (i as { x: number }).x)
+				.all(),
+		).toEqual([3, 2, 1]);
 	});
 
 	// Line 1435/1436: partition with operator (not just callback)
@@ -4732,8 +4867,8 @@ describe('Higher-Order Messaging', () => {
 
 		it('applies method through higher-order proxy', () => {
 			const items: { greet: (prefix: string) => string; name: string }[] = [
-				{ greet: (p) => p + 'John', name: 'John' },
-				{ greet: (p) => p + 'Jane', name: 'Jane' },
+				{ greet: (p) => `${p}John`, name: 'John' },
+				{ greet: (p) => `${p}Jane`, name: 'Jane' },
 			];
 			// Test method call through higher-order messaging
 			const result = collect(items).each.greet('Hi, ');
@@ -4749,7 +4884,7 @@ describe('Higher-Order Messaging', () => {
 		// Line 502: BYPASS_PROPERTIES check on higher-order proxy
 		it('returns undefined for bypass properties like then on higher-order proxy', () => {
 			// Access 'then' directly on the higher-order proxy (not on result)
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior
 			expect((users().map as any).then).toBeUndefined();
 		});
 
@@ -4757,7 +4892,7 @@ describe('Higher-Order Messaging', () => {
 		it('handles method invocation returning non-function property', () => {
 			const items = collect([{ x: 10 }, { x: 20 }]);
 			// Call the property access as a function - x is a number, not a function
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior
 			const result = (items.map as any).x();
 			// Returns the mapped values
 			expect(result.all()).toEqual([10, 20]);
@@ -4766,7 +4901,7 @@ describe('Higher-Order Messaging', () => {
 		it('method invocation returns non-Collection directly (line 547)', () => {
 			// first.active returns an object (User), calling it invokes methodInvoker
 			// which returns non-Collection result (User or undefined)
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior
 			const result = (users().first as any).active();
 			// Returns the first active user
 			expect(result?.name).toBe('John');
@@ -4775,7 +4910,7 @@ describe('Higher-Order Messaging', () => {
 		// Lines 556, 559: Symbol.toPrimitive and valueOf
 		it('supports Symbol.toPrimitive coercion', () => {
 			const result = users().map.name;
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore lint/suspicious/noExplicitAny: Testing Symbol.toPrimitive which isn't in ProxiedCollection type
 			expect((result as any)[Symbol.toPrimitive]()).toBeDefined();
 		});
 
@@ -4801,7 +4936,7 @@ describe('Higher-Order Messaging', () => {
 
 		it('handles null items in method invocation', () => {
 			const items = collect([{ x: 1 }, null, { x: 3 }] as ({ x: number } | null)[]);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior with null items
 			const result = (items.map as any).x();
 			expect(result.all()).toEqual([1, undefined, 3]);
 		});
