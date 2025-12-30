@@ -2,10 +2,14 @@
 
 **Laravel Collection for TypeScript — always in sync, TypeScript-first, modern.**
 
+[![Alpha](https://img.shields.io/badge/status-alpha-orange)]()
 [![Laravel 12.x](https://img.shields.io/badge/Laravel-12.x-FF2D20)](https://laravel.com/docs/12.x/collections)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org/)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Warning**
+> This package is in **alpha** and under active development. APIs may change before the 1.0.0 stable release. Not recommended for production use yet.
 
 ## Why collect-ts?
 
@@ -277,7 +281,7 @@ This package uses semantic versioning independently from Laravel, with Laravel c
 
 | Package Version | Laravel Collection |
 |-----------------|-------------------|
-| 1.x             | 12.x              |
+| 0.x             | 12.x              |
 
 The `laravelCollectionVersion` field in `package.json` indicates the exact Laravel Collection version this package implements.
 

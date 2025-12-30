@@ -1,6 +1,6 @@
 {
 	"name": "collect-ts",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"laravelCollectionVersion": "12.43",
 	"description": "TypeScript port of Laravel Collection (Laravel 12.x compatible) - fully typed",
 	"type": "module",

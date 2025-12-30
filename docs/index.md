@@ -28,6 +28,10 @@ features:
     details: ESM-only, Node 18+, zero dependencies. Built for 2025, not legacy compatibility.
 ---
 
+::: warning Alpha Release
+This package is in **alpha** and under active development. APIs may change before the 1.0.0 stable release. Not recommended for production use yet.
+:::
+
 ## Why collect-ts?
 
 **A living synchronization with Laravel Collections.**

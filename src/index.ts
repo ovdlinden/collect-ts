@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { collect } from 'laravel-collection-ts';
+ * import { collect } from 'collect-ts';
  *
  * const result = collect([1, 2, 3, 4, 5])
  *   .filter(n => n > 2)
@@ -19,7 +19,7 @@
  */
 
 /** Package version (semver) */
-export const VERSION = '1.0.0' as const;
+export const VERSION = '0.1.0' as const;
 
 /** Laravel Collection version this package implements */
 export const LARAVEL_COLLECTION_VERSION = '12.43' as const;
