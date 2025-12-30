@@ -73,6 +73,61 @@ export type WhereOperator = '=' | '==' | '!=' | '<>' | '<' | '>' | '<=' | '>=';
 export type ValueRetriever<T, R> = string | ((value: T, key: string) => R);
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FLATTEN/COLLAPSE TYPE UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Unwrap one level of array or Collection nesting.
+ * Returns T unchanged if not nested (safe fallback).
+ *
+ * @example Collapse<number[]> → number
+ * @example Collapse<Collection<string>> → string
+ * @example Collapse<number> → number (unchanged, not `never`)
+ * @example Collapse<(number | string)[]> → number | string
+ */
+export type Collapse<T> =
+	T extends readonly (infer U)[]
+		? U
+		: T extends Collection<infer U, CollectionKind>
+			? U
+			: T; // Return T unchanged, not `never`
+
+/**
+ * Recursively unwraps nested arrays/Collections to specified depth.
+ *
+ * HOW IT WORKS:
+ * - Uses conditional types to check if T is an array/Collection
+ * - Recursively applies itself, decrementing D via tuple indexing
+ * - The tuple [-1,0,1,2...] maps D → D-1 (TypeScript lacks arithmetic)
+ * - Stops when D reaches -1 (the 'done' branch)
+ *
+ * WHY THIS PATTERN:
+ * - This is the EXACT pattern TypeScript uses for Array.prototype.flat()
+ * - See: lib.es2019.array.d.ts, FlatArray type
+ *
+ * LIMITATIONS:
+ * - Maximum depth of 20 (tuple length)
+ * - Only works with literal number types, not `number` variables
+ *
+ * @example FlattenDepth<number[][][], 2> → number[]
+ * @example FlattenDepth<number[][][], 20> → number (fully flattened)
+ */
+export type FlattenDepth<T, D extends number> = {
+	done: T;
+	recur: T extends readonly (infer U)[]
+		? FlattenDepth<
+				U,
+				[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
+			>
+		: T extends Collection<infer U, CollectionKind>
+			? FlattenDepth<
+					U,
+					[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
+				>
+			: T;
+}[D extends -1 ? 'done' : 'recur'];
+
+// ═══════════════════════════════════════════════════════════════════════════
 // HIGHER-ORDER PROXY TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1203,8 +1258,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Map a collection and flatten the result by a single level.
+	 *
+	 * @example
+	 * collect([{ tags: ['a', 'b'] }, { tags: ['c'] }]).flatMap(u => u.tags) // Collection<string>
 	 */
 	flatMap<U>(callback: (value: T, key: string) => U[]): Collection<U, CK> {
+		// map(callback) returns Collection<U[], CK>
+		// collapse() returns Collection<Collapse<U[]>> = Collection<U>
+		// Cast preserves CK (collapse internally returns array-based)
 		return this.map(callback).collapse() as Collection<U, CK>;
 	}
 
@@ -1234,21 +1295,26 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Collapse the collection of items into a single array.
+	 * Automatically infers the inner type when T is an array or Collection.
+	 *
+	 * @example
+	 * collect([[1, 2], [3, 4]]).collapse() // Collection<number>
+	 * collect([collect(['a']), collect(['b'])]).collapse() // Collection<string>
 	 */
-	collapse<U = unknown>(): Collection<U> {
-		const result: U[] = [];
+	collapse(): Collection<Collapse<T>> {
+		const result: Collapse<T>[] = [];
 		for (const value of Object.values(this.items)) {
 			const isArray = Array.isArray(value);
 			if (isArray) {
-				result.push(...value);
+				result.push(...(value as Collapse<T>[]));
 				continue;
 			}
 			const isCollection = value instanceof Collection;
 			if (isCollection) {
-				result.push(...(value.all() as unknown as U[]));
+				result.push(...(value.all() as Collapse<T>[]));
 			}
 		}
-		return new Collection(result);
+		return new Collection(result) as Collection<Collapse<T>>;
 	}
 
 	/**
@@ -1273,8 +1339,28 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Get a flattened array of the items in the collection.
+	 * Type inference works for literal depth values (1-5).
+	 *
+	 * @param depth - Maximum depth to flatten (default: infinite)
+	 *
+	 * @example
+	 * collect([[1, 2], [3, 4]]).flatten() // Collection<number> - fully flattened
+	 * collect([[[1]]]).flatten(1) // Collection<number[]> - one level
+	 * collect([[[1]]]).flatten(2) // Collection<number> - two levels
+	 *
+	 * // Variable depth returns Collection<unknown> (TypeScript limitation)
+	 * const d = 2;
+	 * collect([[[1]]]).flatten(d) // Collection<unknown>
 	 */
-	flatten<U = unknown>(depth = Number.POSITIVE_INFINITY): Collection<U> {
+	flatten(): Collection<FlattenDepth<T, 20>>;
+	flatten(depth: 1): Collection<Collapse<T>>;
+	flatten(depth: 2): Collection<Collapse<Collapse<T>>>;
+	flatten(depth: 3): Collection<Collapse<Collapse<Collapse<T>>>>;
+	flatten(depth: 4): Collection<Collapse<Collapse<Collapse<Collapse<T>>>>>;
+	flatten(depth: 5): Collection<Collapse<Collapse<Collapse<Collapse<Collapse<T>>>>>>;
+	flatten(depth: number): Collection<unknown>;
+	// biome-ignore lint/suspicious/noExplicitAny: Implementation signature must be wider than all overloads
+	flatten(depth = Number.POSITIVE_INFINITY): Collection<any> {
 		const doFlatten = (items: unknown[], currentDepth: number): unknown[] => {
 			const result: unknown[] = [];
 			for (const item of items) {
@@ -1288,7 +1374,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 			return result;
 		};
-		return new Collection(doFlatten(Object.values(this.items), depth) as U[]);
+		return new Collection(doFlatten(Object.values(this.items), depth));
 	}
 
 	/**
@@ -1469,6 +1555,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Determine if an item exists in the collection.
+	 *
+	 * Uses "loose" comparison when checking item values, meaning a string
+	 * with an integer value will be considered equal to an integer of the
+	 * same value. Use containsStrict() for strict comparison.
+	 *
+	 * NOTE: JavaScript loose comparison differs from PHP in edge cases:
+	 * - 0 == false (true in JS)
+	 * - null == undefined (true in JS)
+	 * - "" == 0 (true in JS)
 	 */
 	contains(
 		keyOrCallback: T | string | ((value: T, key: string) => boolean),
@@ -1485,7 +1580,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				}
 				return false;
 			}
-			return Object.values(this.items).includes(keyOrCallback as T);
+			// biome-ignore lint/suspicious/noDoubleEquals: Laravel contains() uses loose comparison by design
+			return Object.values(this.items).some((item) => item == keyOrCallback);
 		}
 
 		return this.contains(operatorForWhere(keyOrCallback as string, operator, value));

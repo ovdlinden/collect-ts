@@ -5088,3 +5088,113 @@ describe('Higher-Order Messaging', () => {
 		});
 	});
 });
+
+// =============================================================================
+// TYPE INFERENCE TESTS
+// =============================================================================
+
+describe('Type Inference', () => {
+	describe('collapse() type inference', () => {
+		it('infers inner array type', () => {
+			const nested = collect([
+				[1, 2],
+				[3, 4],
+			]);
+			const collapsed = nested.collapse();
+
+			// Runtime assertion
+			expect(collapsed.first()).toBe(1);
+
+			// Type assertion - this line MUST compile without errors
+			const _typeCheck: number = collapsed.first()!;
+		});
+
+		it('preserves T when not nested (type check)', () => {
+			const flat = collect([1, 2, 3]);
+			const collapsed = flat.collapse();
+
+			// Type should be Collection<number> (not Collection<never>)
+			// Runtime: collapse on non-nested items returns empty collection
+			// because 1, 2, 3 are not arrays/Collections to flatten
+			const _typeCheck: number | undefined = collapsed.first();
+			expect(collapsed.isEmpty()).toBe(true);
+		});
+
+		it('handles Collection of Collections', () => {
+			const nested = collect([collect(['a', 'b']), collect(['c', 'd'])]);
+			const collapsed = nested.collapse();
+
+			// Type should be Collection<string>
+			const _typeCheck: string = collapsed.first()!;
+			expect(collapsed.first()).toBe('a');
+		});
+	});
+
+	describe('flatten() type inference', () => {
+		it('infers type for flatten(1)', () => {
+			const deep = collect([
+				[[1, 2]],
+				[[3, 4]],
+			]);
+			const flat1 = deep.flatten(1);
+
+			// number[][][] flattened 1 level = number[][]
+			const _typeCheck: number[] = flat1.first()!;
+			expect(flat1.first()).toEqual([1, 2]);
+		});
+
+		it('infers type for flatten(2)', () => {
+			const deep = collect([
+				[[1, 2]],
+				[[3, 4]],
+			]);
+			const flat2 = deep.flatten(2);
+
+			// number[][][] flattened 2 levels = number
+			const _typeCheck: number = flat2.first()!;
+			expect(flat2.first()).toBe(1);
+		});
+
+		it('infers type for flatten() (deep)', () => {
+			const deep = collect([[[[[1, 2]]]]]);
+			const flatDeep = deep.flatten();
+
+			// Should be fully flattened to number
+			const _typeCheck: number = flatDeep.first()!;
+			expect(flatDeep.first()).toBe(1);
+		});
+
+		it('returns Collection<unknown> for variable depth', () => {
+			const depth = 2 as number; // Variable, not literal
+			const flat = collect([[[1]]]).flatten(depth);
+
+			// Should be Collection<unknown> - honest about limitation
+			const _typeCheck: unknown = flat.first();
+			expect(flat.first()).toBe(1);
+		});
+	});
+
+	describe('flatMap() type inference', () => {
+		it('infers callback return type', () => {
+			const users = collect([{ tags: ['a', 'b'] }, { tags: ['c'] }]);
+			const allTags = users.flatMap((u) => u.tags);
+
+			const _typeCheck: string = allTags.first()!;
+			expect(allTags.all()).toEqual(['a', 'b', 'c']);
+		});
+	});
+
+	describe('contains() loose comparison', () => {
+		it('uses loose comparison for value-only check', () => {
+			// Test that "1" == 1 (loose comparison)
+			const c = collect([1, 2, 3]);
+			expect(c.contains('1' as unknown as number)).toBe(true);
+		});
+
+		it('containsStrict uses strict comparison', () => {
+			// Test that "1" !== 1 (strict comparison)
+			const c = collect([1, 2, 3]);
+			expect(c.containsStrict('1' as unknown as number)).toBe(false);
+		});
+	});
+});
