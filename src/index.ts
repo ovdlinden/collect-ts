@@ -26,7 +26,14 @@ export const LARAVEL_COLLECTION_VERSION = '12.43' as const;
 
 // Core Collection class
 export { collect, Collection, collectState, toArray, WithCollection } from './Collection.js';
-export type { CollectedState, CollectionKind, CollectionParam, ProxiedCollection, ValueRetriever, WhereOperator } from './Collection.js';
+export type {
+	CollectedState,
+	CollectionKind,
+	CollectionParam,
+	ProxiedCollection,
+	ValueRetriever,
+	WhereOperator,
+} from './Collection.js';
 
 // Exceptions
 export { ItemNotFoundException, MultipleItemsFoundException } from './exceptions/index.js';
