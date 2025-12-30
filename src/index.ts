@@ -45,3 +45,7 @@ export {
 
 // Traits (for extension)
 export { Conditionable, Pipeable, Tappable } from './traits/index.js';
+
+// Lazy Collections
+export { lazy, LazyCollection } from './LazyCollection.js';
+export type { ProxiedLazyCollection } from './LazyCollection.js';

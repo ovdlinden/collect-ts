@@ -51,19 +51,24 @@ You may also create a collection using the [make](#make) and [fromJson](#fromjso
 <a name="extending-collections"></a>
 ### Extending Collections
 
-Collections are "macroable", which allows you to add additional methods to the `Collection` class at run time. The `Illuminate\Support\Collection` class' `macro` method accepts a closure that will be executed when your macro is called. The macro closure may access the collection's other methods via `$this`, just as if it were a real method of the collection class. For example, the following code adds a `toUpper` method to the `Collection` class:
+Collections are "macroable", which allows you to add additional methods to the `Collection` class at runtime. The `Collection.macro()` static method accepts a name and a function that will be executed when your macro is called. The macro function may access the collection's methods via `this`, just as if it were a real method of the collection class. For example, the following code adds a `toUpper` method to the `Collection` class:
 
 ```typescript
-Collection.macro('toUpper', function() {
-    return this.map((value: string) => value.toUpperCase());
-});
-const collection = collect(['first', 'second']);
-const upper = collection.toUpper();
+import { Collection, collect } from 'laravel-collection-ts';
 
-// ['FIRST', 'SECOND']
+// Register the macro
+Collection.macro('toUpper', function(this: Collection<string>) {
+    return this.map((value) => value.toUpperCase());
+});
+
+// Use the macro (with type assertion for TypeScript)
+const collection = collect(['first', 'second']);
+const upper = (collection as Collection<string> & { toUpper: () => Collection<string> }).toUpper();
+
+console.log(upper.all()); // ['FIRST', 'SECOND']
 ```
 
-Typically, you should declare collection macros in the `boot` method of a [service provider](https://laravel.com/docs/12.x/$2).
+Typically, you should declare collection macros during your application's initialization.
 
 <a name="macro-arguments"></a>
 #### Macro Arguments
@@ -71,13 +76,30 @@ Typically, you should declare collection macros in the `boot` method of a [servi
 If necessary, you may define macros that accept additional arguments:
 
 ```typescript
-Collection.macro('toLocale', function(locale: string) {
-    return this.map((value: string) => Lang.get(value, [], locale));
+Collection.macro('multiply', function(this: Collection<number>, factor: number) {
+    return this.map((value) => value * factor);
 });
-const collection = collect(['first', 'second']);
-const translated = collection.toLocale('es');
 
-// ['primero', 'segundo'];
+const collection = collect([1, 2, 3]);
+const multiplied = (collection as Collection<number> & { multiply: (n: number) => Collection<number> })
+    .multiply(10);
+
+console.log(multiplied.all()); // [10, 20, 30]
+```
+
+<a name="macro-management"></a>
+#### Macro Management
+
+You can check if a macro exists and flush all macros:
+
+```typescript
+// Check if a macro exists
+Collection.hasMacro('toUpper'); // true
+
+// Remove all registered macros (useful for testing)
+Collection.flushMacros();
+
+Collection.hasMacro('toUpper'); // false
 ```
 
 <a name="available-methods"></a>
@@ -3576,10 +3598,10 @@ return users.sum.votes;
 <a name="lazy-collection-introduction"></a>
 ### Introduction
 
-> [!WARNING]
-> Before learning more about Laravel's lazy collections, take some time to familiarize yourself with [PHP generators](https://www.php.net/manual/en/language.generators.overview.php).
+> [!NOTE]
+> Before learning more about lazy collections, take some time to familiarize yourself with [JavaScript generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*).
 
-To supplement the already powerful `Collection` class, the `LazyCollection` class leverages PHP's [generators](https://www.php.net/manual/en/language.generators.overview.php) to allow you to work with very large datasets while keeping memory usage low.
+To supplement the already powerful `Collection` class, the `LazyCollection` class leverages JavaScript's [generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Iterators_and_Generators) to allow you to work with very large datasets while keeping memory usage low.
 
 For example, imagine your application needs to process a multi-gigabyte log file while taking advantage of Laravel's collection methods to parse the logs. Instead of reading the entire file into memory at once, lazy collections may be used to keep only a small part of the file in memory at a given time:
 
@@ -3617,25 +3639,54 @@ for (const user of users) {
 <a name="creating-lazy-collections"></a>
 ### Creating Lazy Collections
 
-To create a lazy collection instance, you should pass a PHP generator function to the collection's `make` method:
+To create a lazy collection instance, you can use the `lazy()` helper function or the `LazyCollection.make()` method with a generator function:
 
 ```typescript
-LazyCollection.make(function* () {
-    const fs = require('fs');
-    const readline = require('readline');
-    const fileStream = fs.createReadStream('log.txt');
-    const rl = readline.createInterface({ input: fileStream });
+import { lazy, LazyCollection } from 'laravel-collection-ts';
 
-    for await (const line of rl) {
-        yield line;
+// Using the lazy() helper with an array
+const lazyFromArray = lazy([1, 2, 3, 4, 5]);
+
+// Using lazy() with a generator function
+const lazyFromGenerator = lazy(function* () {
+    yield 1;
+    yield 2;
+    yield 3;
+});
+
+// Using LazyCollection.make() with a generator function
+const lazyFromMake = LazyCollection.make(function* () {
+    for (let i = 1; i <= 1000; i++) {
+        yield i;
     }
 });
+
+// Using static factory methods
+const range = LazyCollection.range(1, 100);      // Numbers 1 to 100
+const times = LazyCollection.times(5, i => i * 2); // [2, 4, 6, 8, 10]
+const empty = LazyCollection.empty();             // Empty lazy collection
+```
+
+You can also convert an existing Collection to a LazyCollection:
+
+```typescript
+import { collect } from 'laravel-collection-ts';
+
+const lazyCollection = collect([1, 2, 3, 4, 5]).lazy();
 ```
 
 <a name="the-enumerable-contract"></a>
-### The Enumerable Contract
+### Available Methods
 
-Almost all methods available on the `Collection` class are also available on the `LazyCollection` class. Both of these classes implement the `Illuminate\Support\Enumerable` contract, which defines the following methods:
+Almost all methods available on the `Collection` class are also available on the `LazyCollection` class. The `LazyCollection` implements approximately 12 truly lazy methods natively (such as `map`, `filter`, `take`, `skip`, etc.), and all other Collection methods are automatically delegated via a Proxy wrapper. This means you can use any Collection method on a LazyCollection - it will first materialize the lazy collection into a regular Collection, then call the method.
+
+**Truly lazy methods** (maintain laziness through chaining):
+- `map()`, `filter()`, `reject()`
+- `take()`, `skip()`, `takeWhile()`, `takeUntil()`, `skipWhile()`, `skipUntil()`
+- `flatMap()`, `chunk()`
+- `tapEach()`, `remember()`, `takeUntilTimeout()`
+
+**All other methods** (delegated to Collection):
 
 <style>
     .collection-method-list > p {
@@ -3824,57 +3875,26 @@ const items = lazyCollection.take(3).all();
 // 3
 ```
 
-<a name="method-throttle"></a>
-#### `throttle()`
-
-The `throttle` method will throttle the lazy collection such that each value is returned after the specified number of seconds. This method is especially useful for situations where you may be interacting with external APIs that rate limit incoming requests:
-
-```typescript
-User.where('vip', true)
-    .cursor()
-    .throttle(1)
-    .each((user) => {
-        // Call external API...
-    });
-```
-
 <a name="method-remember"></a>
 #### `remember()`
 
 The `remember` method returns a new lazy collection that will remember any values that have already been enumerated and will not retrieve them again on subsequent collection enumerations:
 
 ```typescript
-// No query has been executed yet...
-const users = User.cursor().remember();
-
-// The query is executed...
-// The first 5 users are hydrated from the database...
-users.take(5).all();
-
-// First 5 users come from the collection's cache...
-// The rest are hydrated from the database...
-users.take(20).all();
-```
-
-<a name="method-with-heartbeat"></a>
-#### `withHeartbeat()`
-
-The `withHeartbeat` method allows you to execute a callback at regular time intervals while a lazy collection is being enumerated. This is particularly useful for long-running operations that require periodic maintenance tasks, such as extending locks or sending progress updates:
-
-<!-- REVIEW: Contains complex patterns that may need adjustment -->
-```typescript
-const lock = Cache.lock('generate-reports', 60 * 5);
-
-if (lock.get()) {
-    try {
-        Report.where('status', 'pending')
-            .lazy()
-            .withHeartbeat(CarbonInterval.minutes(4),
-                () => lock.extend(CarbonInterval.minutes(5))
-            )
-            .each((report) => report.process());
-    } finally {
-        lock.release();
+let computeCount = 0;
+const lazyCollection = lazy(function* () {
+    for (let i = 1; i <= 10; i++) {
+        computeCount++;
+        yield i;
     }
-}
+}).remember();
+
+// First iteration - values are computed
+lazyCollection.take(5).all(); // [1, 2, 3, 4, 5]
+console.log(computeCount); // 5
+
+// Second iteration - first 5 values come from cache
+lazyCollection.take(8).all(); // [1, 2, 3, 4, 5, 6, 7, 8]
+console.log(computeCount); // 8 (only 3 new values computed)
 ```
+

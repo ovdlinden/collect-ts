@@ -44,6 +44,9 @@ import {
 	UnexpectedValueException,
 } from './exceptions';
 
+// Circular import - this works because both files only use imports in function bodies
+import { lazy as lazyFn, type ProxiedLazyCollection } from './LazyCollection.js';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -706,6 +709,19 @@ function wrapCollectionWithProxy<T, CK extends CollectionKind>(
 				return Reflect.get(target, prop, receiver);
 			}
 
+			// Check for registered macros first
+			if (Collection.hasMacro(prop as string)) {
+				const macro = Collection.getMacro(prop as string)!;
+				return function (this: Collection<T, CK>, ...args: unknown[]) {
+					const result = macro.apply(target, args);
+					// If the result is a Collection, wrap it for chaining
+					if (result instanceof Collection) {
+						return wrapCollectionWithProxy(result as Collection<unknown, CollectionKind>);
+					}
+					return result;
+				};
+			}
+
 			// Get the actual property/method from the collection
 			const value = Reflect.get(target, prop, receiver);
 
@@ -787,6 +803,57 @@ function wrapCollectionWithProxy<T, CK extends CollectionKind>(
 export class Collection<T, CK extends CollectionKind = 'array'> {
 	protected items: Record<string, T>;
 	protected isAssociative: boolean;
+
+	// ═══════════════════════════════════════════════════════════════════════════
+	// MACROS (Laravel's Macroable trait)
+	// ═══════════════════════════════════════════════════════════════════════════
+
+	/**
+	 * The registered collection macros.
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+	private static macros: Map<string, Function> = new Map();
+
+	/**
+	 * Register a custom macro on the Collection class.
+	 *
+	 * @example
+	 * ```ts
+	 * Collection.macro('toUpper', function(this: Collection<string>) {
+	 *   return this.map(val => val.toUpperCase());
+	 * });
+	 *
+	 * collect(['hello', 'world']).toUpper().all();
+	 * // => ['HELLO', 'WORLD']
+	 * ```
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+	static macro(name: string, fn: Function): void {
+		Collection.macros.set(name, fn);
+	}
+
+	/**
+	 * Check if a macro is registered.
+	 */
+	static hasMacro(name: string): boolean {
+		return Collection.macros.has(name);
+	}
+
+	/**
+	 * Remove all registered macros.
+	 */
+	static flushMacros(): void {
+		Collection.macros.clear();
+	}
+
+	/**
+	 * Get a registered macro by name.
+	 * @internal
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+	static getMacro(name: string): Function | undefined {
+		return Collection.macros.get(name);
+	}
 
 	constructor(items: Items<T> | Collection<T, CollectionKind> = [], isAssociative?: boolean) {
 		// Normalize items to record format
@@ -3345,6 +3412,27 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 */
 	with<U>(related: ProxiedCollection<U, CollectionKind>): WithCollection<T, U> {
 		return new WithCollection(this as unknown as ProxiedCollection<T>, related);
+	}
+
+	// ═══════════════════════════════════════════════════════════════════════════
+	// LAZY COLLECTION CONVERSION
+	// ═══════════════════════════════════════════════════════════════════════════
+
+	/**
+	 * Convert this collection to a lazy collection.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3, 4, 5])
+	 *   .lazy()
+	 *   .map(x => x * 2)
+	 *   .take(3)
+	 *   .all();
+	 * // => [2, 4, 6]
+	 * ```
+	 */
+	lazy(): ProxiedLazyCollection<T> {
+		return lazyFn(Object.values(this.items));
 	}
 }
 
