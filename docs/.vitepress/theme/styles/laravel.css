@@ -188,6 +188,12 @@
   color: var(--vp-c-brand-1);
 }
 
+/* Logo sizing */
+.VPImage.logo {
+  height: 24px;
+  width: auto;
+}
+
 /* Badge for TypeScript */
 .vp-doc .badge {
   display: inline-block;

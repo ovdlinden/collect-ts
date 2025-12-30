@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 145 32" width="145" height="32">
+  <defs>
+    <linearGradient id="collectGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF2D20"/>
+      <stop offset="100%" style="stop-color:#3178C6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Opening bracket -->
+  <text x="2" y="23" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="18" font-weight="600" fill="#FF2D20">[</text>
+
+  <!-- collect.ts text with gradient -->
+  <text x="14" y="23" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="18" font-weight="700" fill="url(#collectGradient)">collect.ts</text>
+
+  <!-- Closing bracket -->
+  <text x="123" y="23" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="18" font-weight="600" fill="#3178C6">]</text>
+</svg>
