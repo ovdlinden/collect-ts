@@ -3178,6 +3178,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
+	 * Get the collection of items as pretty JSON.
+	 */
+	toPrettyJson(): string {
+		return JSON.stringify(this.all(), null, 2);
+	}
+
+	/**
 	 * Collect the values into a collection.
 	 */
 	collect(): Collection<T> {

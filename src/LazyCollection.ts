@@ -423,31 +423,38 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	remember(): ProxiedLazyCollection<T> {
 		const cache: T[] = [];
-		let cacheComplete = false;
+		let iteratorInstance: Generator<[string, T]> | null = null;
+		let iteratorExhausted = false;
 		const source = this.source;
 
 		return wrapProxy(
 			new LazyCollection(function* () {
-				// First, yield any cached items
-				for (const item of cache) {
-					yield item;
+				// Create iterator once on first use, persist across invocations
+				if (iteratorInstance === null) {
+					iteratorInstance = makeIterator(source);
 				}
 
-				// If cache is complete, we're done
-				if (cacheComplete) return;
+				// Yield cached items first
+				let index = 0;
+				while (index < cache.length) {
+					yield cache[index];
+					index++;
+				}
 
-				// Continue iterating from where we left off
-				let index = cache.length;
-				for (const [, value] of makeIterator(source)) {
-					// Skip items we've already cached
-					if (index > 0) {
-						index--;
-						continue;
+				// If iterator is exhausted, we're done
+				if (iteratorExhausted) return;
+
+				// Continue from where iterator left off (no re-computation)
+				while (true) {
+					const result = iteratorInstance.next();
+					if (result.done) {
+						iteratorExhausted = true;
+						break;
 					}
+					const [, value] = result.value;
 					cache.push(value);
 					yield value;
 				}
-				cacheComplete = true;
 			}),
 		);
 	}

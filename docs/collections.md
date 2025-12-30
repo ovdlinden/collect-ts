@@ -188,6 +188,7 @@ For the majority of the remaining collection documentation, we'll discuss each m
 [map](#map)
 [mapInto](#mapinto)
 [mapSpread](#mapspread)
+[mapToDictionary](#maptodictionary)
 [mapToGroups](#maptogroups)
 [mapWithKeys](#mapwithkeys)
 [max](#max)
@@ -1610,6 +1611,28 @@ sequence.all();
 
 // [1, 5, 9, 13, 17]
 ```
+
+<a name="method-maptodictionary"></a>
+#### `mapToDictionary()`
+
+The `mapToDictionary` method groups the collection's items by the given closure. The closure should return a tuple containing a single key / value pair. Unlike `mapToGroups`, this method returns plain arrays instead of Collection instances:
+
+```typescript
+const collection = collect([
+    { id: 1, name: 'A' },
+    { id: 2, name: 'B' },
+    { id: 3, name: 'A' },
+]);
+
+const groups = collection.mapToDictionary((item) => [item.name, item.id]);
+
+groups.all();
+
+// { A: [1, 3], B: [2] }
+```
+
+> [!NOTE]
+> The `mapToDictionary` method returns a collection of arrays, while `mapToGroups` returns a collection of `Collection` instances. Use `mapToDictionary` when you need plain arrays for each group.
 
 <a name="method-maptogroups"></a>
 #### `mapToGroups()`
@@ -3754,6 +3777,7 @@ Almost all methods available on the `Collection` class are also available on the
 [map](#map)
 [mapInto](#mapinto)
 [mapSpread](#mapspread)
+[mapToDictionary](#maptodictionary)
 [mapToGroups](#maptogroups)
 [mapWithKeys](#mapwithkeys)
 [max](#max)

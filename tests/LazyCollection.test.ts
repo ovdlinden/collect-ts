@@ -321,12 +321,11 @@ describe('LazyCollection', () => {
 				expect(lc.take(2).all()).toEqual([1, 2]);
 				expect(computeCount).toBe(2);
 
-				// Full iteration - yields cached values first, then skips already-cached
-				// items from source before continuing. Source generator restarts each time,
-				// so computeCount increases, but the CACHED VALUES are reused.
+				// Full iteration - yields cached values first (no re-computation),
+				// then continues from where the persistent iterator left off.
 				expect(lc.all()).toEqual([1, 2, 3, 4, 5]);
-				// 2 from first take() + 5 from full iteration (source restarts, skips 2)
-				expect(computeCount).toBe(7);
+				// 2 from first take() + 3 more to complete (iterator persists position)
+				expect(computeCount).toBe(5);
 			});
 		});
 

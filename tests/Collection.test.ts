@@ -2224,6 +2224,36 @@ describe('ToJson (Laravel port)', () => {
 	});
 });
 
+describe('ToPrettyJson (Laravel port)', () => {
+	it('converts to formatted JSON string', () => {
+		const c = collect(['foo', 'bar']);
+		expect(c.toPrettyJson()).toBe('[\n  "foo",\n  "bar"\n]');
+	});
+
+	it('converts object to pretty JSON preserving keys', () => {
+		const c = collect({ name: 'taylor', email: 'foo' });
+		const expected = '{\n  "name": "taylor",\n  "email": "foo"\n}';
+		expect(c.toPrettyJson()).toBe(expected);
+	});
+
+	it('handles nested structures', () => {
+		const c = collect({
+			user: { name: 'John', age: 30 },
+			tags: ['admin', 'user'],
+		});
+		const result = JSON.parse(c.toPrettyJson());
+		expect(result).toEqual({
+			user: { name: 'John', age: 30 },
+			tags: ['admin', 'user'],
+		});
+	});
+
+	it('handles empty collection', () => {
+		expect(collect([]).toPrettyJson()).toBe('[]');
+		expect(collect({}).toPrettyJson()).toBe('{}');
+	});
+});
+
 describe('ForPage (Laravel port)', () => {
 	it('returns correct page', () => {
 		const c = collect([1, 2, 3, 4, 5, 6, 7, 8, 9]);
