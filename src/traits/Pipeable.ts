@@ -15,7 +15,13 @@
 // biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin pattern requires any[] for constructor rest parameter
 type Constructor<T = object> = new (...args: any[]) => T;
 
-export function Pipeable<TBase extends Constructor>(Base: TBase) {
+interface PipeableMethods {
+	pipe<T, R>(this: T, fn: (self: T) => R): R;
+}
+
+export function Pipeable<TBase extends Constructor>(
+	Base: TBase,
+): TBase & (new (...args: ConstructorParameters<TBase>) => PipeableMethods) {
 	return class extends Base {
 		/**
 		 * Pass self to callback, return the callback's result.

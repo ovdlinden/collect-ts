@@ -14,7 +14,24 @@
 // biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin pattern requires any[] for constructor rest parameter
 type Constructor<T = object> = new (...args: any[]) => T;
 
-export function Conditionable<TBase extends Constructor>(Base: TBase) {
+interface ConditionableMethods {
+	when<T, V>(
+		this: T,
+		value: V | ((self: T) => V),
+		callback?: (self: T, value: V) => T,
+		defaultCallback?: (self: T, value: V) => T,
+	): T;
+	unless<T, V>(
+		this: T,
+		value: V | ((self: T) => V),
+		callback?: (self: T, value: V) => T,
+		defaultCallback?: (self: T, value: V) => T,
+	): T;
+}
+
+export function Conditionable<TBase extends Constructor>(
+	Base: TBase,
+): TBase & (new (...args: ConstructorParameters<TBase>) => ConditionableMethods) {
 	return class extends Base {
 		/**
 		 * Apply callback when value is truthy.

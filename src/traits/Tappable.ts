@@ -14,7 +14,13 @@
 // biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin pattern requires any[] for constructor rest parameter
 type Constructor<T = object> = new (...args: any[]) => T;
 
-export function Tappable<TBase extends Constructor>(Base: TBase) {
+interface TappableMethods {
+	tap<T>(this: T, callback?: (self: T) => void): T;
+}
+
+export function Tappable<TBase extends Constructor>(
+	Base: TBase,
+): TBase & (new (...args: ConstructorParameters<TBase>) => TappableMethods) {
 	return class extends Base {
 		/**
 		 * Execute callback for side effects, return self unchanged.
