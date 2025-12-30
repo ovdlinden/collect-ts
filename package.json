@@ -1,0 +1,64 @@
+{
+	"name": "laravel-collection-ts",
+	"version": "1.0.0",
+	"laravelCollectionVersion": "12.43",
+	"description": "TypeScript port of Laravel Collection (Laravel 12.x compatible) - fully typed",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "biome check src tests",
+		"format": "biome format --write src tests",
+		"sync": "tsx scripts/sync/index.ts",
+		"prepublishOnly": "npm run build",
+		"docs:dev": "vitepress dev docs",
+		"docs:build": "vitepress build docs",
+		"docs:preview": "vitepress preview docs",
+		"docs:check": "tsx scripts/docs/check.ts",
+		"docs:update": "tsx scripts/docs/update.ts"
+	},
+	"keywords": [
+		"laravel",
+		"collection",
+		"typescript",
+		"collect",
+		"array",
+		"utilities",
+		"enumerable"
+	],
+	"author": "",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/your-org/laravel-collection-ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^22.15.29",
+		"@vitest/coverage-v8": "^4.0.16",
+		"tsup": "^8.5.1",
+		"tsx": "^4.20.3",
+		"typescript": "^5.8.3",
+		"vitepress": "^1.5.0",
+		"vitest": "^4.0.16"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"packageManager": "pnpm@9.15.1"
+}

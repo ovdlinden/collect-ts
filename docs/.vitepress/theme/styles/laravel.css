@@ -1,0 +1,247 @@
+/**
+ * Laravel Documentation Theme
+ * Matches the look and feel of https://laravel.com/docs
+ */
+
+:root {
+  /* Laravel brand colors */
+  --vp-c-brand-1: #FF2D20;
+  --vp-c-brand-2: #FF6B61;
+  --vp-c-brand-3: #FF2D20;
+  --vp-c-brand-soft: rgba(255, 45, 32, 0.14);
+
+  /* Typography */
+  --vp-font-family-base: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Content width - match Laravel's wider layout */
+  --vp-layout-max-width: 1400px;
+}
+
+/* Light mode colors - Laravel inspired */
+:root {
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f8fafc;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #f1f5f9;
+
+  --vp-c-text-1: #1e293b;
+  --vp-c-text-2: #475569;
+  --vp-c-text-3: #64748b;
+
+  --vp-c-divider: #e2e8f0;
+  --vp-c-gutter: #e2e8f0;
+
+  --vp-code-block-bg: #f8fafc;
+  --vp-code-block-divider-color: #e2e8f0;
+}
+
+/* Dark mode colors - Laravel dark theme */
+.dark {
+  --vp-c-bg: #0f172a;
+  --vp-c-bg-alt: #1e293b;
+  --vp-c-bg-elv: #1e293b;
+  --vp-c-bg-soft: #1e293b;
+
+  --vp-c-text-1: #f1f5f9;
+  --vp-c-text-2: #cbd5e1;
+  --vp-c-text-3: #94a3b8;
+
+  --vp-c-divider: #334155;
+  --vp-c-gutter: #334155;
+
+  --vp-code-block-bg: #0f172a;
+  --vp-code-block-divider-color: #1e293b;
+}
+
+/* Hero section styling */
+.VPHero .name {
+  background: linear-gradient(135deg, #FF2D20 0%, #FF6B61 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.VPHero .tagline {
+  color: var(--vp-c-text-2);
+}
+
+/* Method documentation styling - matches Laravel's .collection-method */
+.vp-doc h4 code {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-brand-soft);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* Code blocks - match Torchlight-style */
+.vp-doc div[class*='language-'] {
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.vp-doc div[class*='language-'] pre {
+  padding: 1.25rem 1.5rem;
+}
+
+.vp-doc div[class*='language-'] code {
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+/* Line numbers styling */
+.vp-doc div[class*='language-'].line-numbers-mode .line-numbers {
+  padding-top: 1.25rem;
+  border-right-color: var(--vp-code-block-divider-color);
+}
+
+/* Inline code styling */
+.vp-doc :not(pre) > code {
+  background-color: var(--vp-c-bg-soft);
+  color: var(--vp-c-brand-1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+/* Links - Laravel red on hover */
+.vp-doc a {
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.vp-doc a:hover {
+  border-bottom-color: var(--vp-c-brand-1);
+}
+
+/* Tables styling */
+.vp-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.vp-doc th {
+  background-color: var(--vp-c-bg-soft);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--vp-c-divider);
+}
+
+.vp-doc td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+/* Blockquote / Note styling */
+.vp-doc blockquote {
+  background-color: var(--vp-c-brand-soft);
+  border-left: 4px solid var(--vp-c-brand-1);
+  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.vp-doc blockquote p {
+  margin: 0;
+  color: var(--vp-c-text-1);
+}
+
+/* Custom container styling for notes/warnings */
+.vp-doc .custom-block.tip {
+  background-color: var(--vp-c-brand-soft);
+  border-color: var(--vp-c-brand-1);
+}
+
+.vp-doc .custom-block.warning {
+  background-color: rgba(234, 179, 8, 0.14);
+  border-color: #eab308;
+}
+
+.vp-doc .custom-block.danger {
+  background-color: rgba(239, 68, 68, 0.14);
+  border-color: #ef4444;
+}
+
+/* Sidebar styling */
+.VPSidebar {
+  font-size: 0.9rem;
+}
+
+.VPSidebarItem.level-0 .text {
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+/* Navigation styling */
+.VPNavBar .title {
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+}
+
+/* Badge for TypeScript */
+.vp-doc .badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background-color: #3178c6;
+  color: white;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Method list - multi-column layout like Laravel */
+.method-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem 2rem;
+  margin: 1.5rem 0;
+}
+
+.method-list a {
+  display: block;
+  padding: 0.25rem 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.9rem;
+}
+
+/* TypeScript note callout */
+.ts-note {
+  background: linear-gradient(135deg, rgba(49, 120, 198, 0.1) 0%, rgba(49, 120, 198, 0.05) 100%);
+  border-left: 4px solid #3178c6;
+  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.ts-note::before {
+  content: 'TypeScript Note';
+  display: block;
+  font-weight: 600;
+  color: #3178c6;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .method-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .method-list {
+    grid-template-columns: 1fr;
+  }
+}
