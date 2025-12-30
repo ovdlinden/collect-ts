@@ -5,8 +5,19 @@
  * and auto-delegation to Collection via Proxy.
  */
 
-import { describe, expect, it, vi } from 'vitest';
-import { Collection, LazyCollection, lazy, collect } from '../src';
+import { describe, expect, it } from 'vitest';
+import { Collection, LazyCollection, lazy, collect, type ProxiedCollection } from '../src';
+
+// Augment CollectionMacros for test macros (must use _T to match base interface)
+declare module '../src' {
+	interface CollectionMacros<_T> {
+		toUpper: _T extends string ? () => ProxiedCollection<string> : never;
+		multiply: _T extends number ? (factor: number) => ProxiedCollection<number> : never;
+		double: _T extends number ? () => ProxiedCollection<number> : never;
+		total: _T extends number ? () => number : never;
+		customMethod: () => ProxiedCollection<_T>;
+	}
+}
 
 // =============================================================================
 // BASIC TESTS
@@ -513,6 +524,189 @@ describe('LazyCollection', () => {
 	});
 
 	// =============================================================================
+	// NATIVE AGGREGATE METHODS (single-pass, short-circuit)
+	// =============================================================================
+
+	describe('native aggregate methods', () => {
+		describe('sum()', () => {
+			it('calculates sum in single pass', () => {
+				let consumed = 0;
+				const lc = lazy(function* () {
+					for (let i = 1; i <= 5; i++) {
+						consumed++;
+						yield i;
+					}
+				});
+				expect(lc.sum()).toBe(15);
+				expect(consumed).toBe(5); // All items consumed
+			});
+
+			it('handles objects with key', () => {
+				const lc = lazy([{ val: 1 }, { val: 2 }, { val: 3 }]);
+				expect(lc.sum('val')).toBe(6);
+			});
+
+			it('handles callback', () => {
+				const lc = lazy([{ val: 1 }, { val: 2 }, { val: 3 }]);
+				expect(lc.sum((item) => item.val * 2)).toBe(12);
+			});
+
+			it('returns 0 for empty collection', () => {
+				expect(lazy([]).sum()).toBe(0);
+			});
+
+			it('skips non-numeric values', () => {
+				const lc = lazy([1, 'two', null, 3, undefined, NaN, 5] as unknown[]);
+				expect(lc.sum()).toBe(9); // 1 + 3 + 5
+			});
+
+			it('skips NaN values from callback', () => {
+				const lc = lazy([{ val: 1 }, { val: 'x' }, { val: 3 }]);
+				expect(lc.sum('val')).toBe(4); // 1 + 3, 'x' is skipped
+			});
+		});
+
+		describe('min()', () => {
+			it('finds minimum in single pass', () => {
+				expect(lazy([3, 1, 4, 1, 5]).min()).toBe(1);
+			});
+
+			it('handles objects with key', () => {
+				const lc = lazy([{ val: 5 }, { val: 2 }, { val: 8 }]);
+				expect(lc.min('val')).toBe(2);
+			});
+
+			it('returns null for empty collection', () => {
+				expect(lazy([]).min()).toBeNull();
+			});
+		});
+
+		describe('max()', () => {
+			it('finds maximum in single pass', () => {
+				expect(lazy([3, 1, 4, 1, 5]).max()).toBe(5);
+			});
+
+			it('handles objects with key', () => {
+				const lc = lazy([{ val: 5 }, { val: 2 }, { val: 8 }]);
+				expect(lc.max('val')).toBe(8);
+			});
+
+			it('returns null for empty collection', () => {
+				expect(lazy([]).max()).toBeNull();
+			});
+		});
+
+		describe('avg() / average()', () => {
+			it('calculates average in single pass', () => {
+				expect(lazy([1, 2, 3, 4, 5]).avg()).toBe(3);
+			});
+
+			it('handles objects with key', () => {
+				const lc = lazy([{ val: 10 }, { val: 20 }, { val: 30 }]);
+				expect(lc.avg('val')).toBe(20);
+			});
+
+			it('average() is alias for avg()', () => {
+				expect(lazy([1, 2, 3]).average()).toBe(2);
+			});
+
+			it('returns null for empty collection', () => {
+				expect(lazy([]).avg()).toBeNull();
+			});
+
+			it('skips non-numeric values', () => {
+				const lc = lazy([1, 'two', null, 3, undefined, NaN, 5] as unknown[]);
+				expect(lc.avg()).toBe(3); // (1 + 3 + 5) / 3
+			});
+		});
+
+		describe('contains() - short-circuit', () => {
+			it('short-circuits on first match', () => {
+				let consumed = 0;
+				const lc = lazy(function* () {
+					for (let i = 1; i <= 100; i++) {
+						consumed++;
+						yield i;
+					}
+				});
+				expect(lc.contains(3)).toBe(true);
+				expect(consumed).toBe(3); // Only consumed up to match!
+			});
+
+			it('consumes all when not found', () => {
+				let consumed = 0;
+				const lc = lazy(function* () {
+					for (let i = 1; i <= 5; i++) {
+						consumed++;
+						yield i;
+					}
+				});
+				expect(lc.contains(10)).toBe(false);
+				expect(consumed).toBe(5);
+			});
+
+			it('short-circuits with callback', () => {
+				let consumed = 0;
+				const lc = lazy(function* () {
+					for (let i = 1; i <= 100; i++) {
+						consumed++;
+						yield i;
+					}
+				});
+				expect(lc.contains((x) => x === 5)).toBe(true);
+				expect(consumed).toBe(5);
+			});
+
+			it('uses loose equality', () => {
+				expect(lazy([1, 2, '3']).contains(3)).toBe(true);
+			});
+
+			it('handles key/operator/value form', () => {
+				const lc = lazy([{ val: 1 }, { val: 2 }, { val: 3 }]);
+				expect(lc.contains('val', 2)).toBe(true);
+				expect(lc.contains('val', '>', 2)).toBe(true);
+			});
+		});
+
+		describe('containsStrict() - short-circuit', () => {
+			it('short-circuits on first strict match', () => {
+				let consumed = 0;
+				const lc = lazy(function* () {
+					for (let i = 1; i <= 100; i++) {
+						consumed++;
+						yield i;
+					}
+				});
+				expect(lc.containsStrict(3)).toBe(true);
+				expect(consumed).toBe(3);
+			});
+
+			it('uses strict equality', () => {
+				expect(lazy([1, 2, '3']).containsStrict(3)).toBe(false);
+				expect(lazy([1, 2, '3']).containsStrict('3')).toBe(true);
+			});
+
+			it('handles key/value form', () => {
+				const lc = lazy([{ val: 1 }, { val: '2' }, { val: 3 }]);
+				expect(lc.containsStrict('val', 2)).toBe(false);
+				expect(lc.containsStrict('val', '2')).toBe(true);
+			});
+
+			it('short-circuits with callback', () => {
+				let consumed = 0;
+				const lc = lazy(function* () {
+					for (let i = 1; i <= 100; i++) {
+						consumed++;
+						yield i;
+					}
+				});
+				expect(lc.containsStrict((x) => x === 5)).toBe(true);
+				expect(consumed).toBe(5);
+			});
+		});
+	});
+
+	// =============================================================================
 	// ITERATOR PROTOCOL
 	// =============================================================================
 
@@ -554,9 +748,7 @@ describe('Collection.macro()', () => {
 			return this.map((val) => val.toUpperCase());
 		});
 
-		const result = (collect(['hello', 'world']) as Collection<string> & { toUpper: () => Collection<string> })
-			.toUpper()
-			.all();
+		const result = collect(['hello', 'world']).toUpper().all();
 		expect(result).toEqual(['HELLO', 'WORLD']);
 
 		Collection.flushMacros();
@@ -567,11 +759,7 @@ describe('Collection.macro()', () => {
 			return this.map((val) => val * factor);
 		});
 
-		const result = (
-			collect([1, 2, 3]) as Collection<number> & { multiply: (factor: number) => Collection<number> }
-		)
-			.multiply(10)
-			.all();
+		const result = collect([1, 2, 3]).multiply(10).all();
 		expect(result).toEqual([10, 20, 30]);
 
 		Collection.flushMacros();
@@ -590,10 +778,7 @@ describe('Collection.macro()', () => {
 			return this.map((n) => n * 2);
 		});
 
-		const result = (collect([1, 2]) as Collection<number> & { double: () => Collection<number> })
-			.double()
-			.filter((n) => n > 2)
-			.all();
+		const result = collect([1, 2]).double().filter((n) => n > 2).all();
 		expect(result).toEqual([4]);
 
 		Collection.flushMacros();
@@ -604,7 +789,7 @@ describe('Collection.macro()', () => {
 			return this.sum();
 		});
 
-		const result = (collect([1, 2, 3]) as Collection<number> & { total: () => number }).total();
+		const result = collect([1, 2, 3]).total();
 		expect(result).toBe(6);
 
 		Collection.flushMacros();

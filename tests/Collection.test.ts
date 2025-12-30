@@ -4987,4 +4987,104 @@ describe('Higher-Order Messaging', () => {
 			expect(result.get('a')).toBe(1);
 		});
 	});
+
+	// =============================================================================
+	// PERFORMANCE OPTIMIZATIONS
+	// =============================================================================
+
+	describe('performance optimizations', () => {
+		describe('push() optimization with cached nextNumericKey', () => {
+			it('push() uses correct next key', () => {
+				const c = collect([1, 2, 3]);
+				c.push(4, 5);
+				expect(c.all()).toEqual([1, 2, 3, 4, 5]);
+			});
+
+			it('multiple push() calls maintain correct keys', () => {
+				const c = collect<number>([]);
+				c.push(1);
+				c.push(2);
+				c.push(3);
+				expect(c.all()).toEqual([1, 2, 3]);
+			});
+
+			it('push() after pop() maintains correct keys', () => {
+				const c = collect([1, 2, 3]);
+				c.pop();
+				c.push(4);
+				// After pop, the cache is invalidated and recalculated
+				expect(c.all()).toEqual([1, 2, 4]);
+			});
+
+			it('push() after shift() maintains correct keys', () => {
+				const c = collect([1, 2, 3]);
+				c.shift();
+				c.push(4);
+				expect(c.values().all()).toEqual([2, 3, 4]);
+			});
+
+			it('push() after forget() maintains correct keys', () => {
+				const c = collect([1, 2, 3]);
+				c.forget(1);
+				c.push(4);
+				expect(c.values().all()).toEqual([1, 3, 4]);
+			});
+
+			it('push() after pull() maintains correct keys', () => {
+				const c = collect([1, 2, 3]);
+				c.pull(1);
+				c.push(4);
+				expect(c.values().all()).toEqual([1, 3, 4]);
+			});
+
+			it('pull() with non-numeric key does not invalidate cache', () => {
+				const c = collect<number | string>({ 0: 'a', 1: 'b', foo: 'c' });
+				c.pull('foo'); // Non-numeric key - should NOT invalidate cache
+				c.push('d');
+				expect(c.get(2)).toBe('d'); // Next numeric key is still 2
+			});
+
+			it('handles mixed numeric and string keys', () => {
+				const c = collect<number | string>({ 0: 'a', 1: 'b', foo: 'c' });
+				c.push('d');
+				expect(c.get(2)).toBe('d');
+			});
+
+			it('push() on empty collection starts at 0', () => {
+				const c = collect<number>([]);
+				c.push(1);
+				expect(c.keys().all()).toEqual(['0']);
+			});
+		});
+
+		describe('pop(n) optimization', () => {
+			it('pop() removes last item', () => {
+				const c = collect([1, 2, 3]);
+				expect(c.pop()).toBe(3);
+				expect(c.all()).toEqual([1, 2]);
+			});
+
+			it('pop(n) removes last n items efficiently', () => {
+				const c = collect([1, 2, 3, 4, 5]);
+				const result = c.pop(3);
+				expect(result.all()).toEqual([3, 4, 5]);
+				expect(c.all()).toEqual([1, 2]);
+			});
+		});
+
+		describe('shift(n) optimization', () => {
+			it('shift() removes first item', () => {
+				const c = collect([1, 2, 3]);
+				expect(c.shift()).toBe(1);
+				expect(c.values().all()).toEqual([2, 3]);
+			});
+
+			it('shift(n) removes first n items efficiently', () => {
+				const c = collect([1, 2, 3, 4, 5]);
+				const result = c.shift(3);
+				expect(result.all()).toEqual([1, 2, 3]);
+				expect(c.values().all()).toEqual([4, 5]);
+			});
+		});
+	});
 });

@@ -29,6 +29,7 @@ export { collect, Collection, collectState, toArray, WithCollection } from './Co
 export type {
 	CollectedState,
 	CollectionKind,
+	CollectionMacros,
 	CollectionParam,
 	ProxiedCollection,
 	ValueRetriever,

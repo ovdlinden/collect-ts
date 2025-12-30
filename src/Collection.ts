@@ -258,6 +258,20 @@ type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
 } & ([T] extends [never] ? object : HigherOrderPartitionProxy<T, CK>);
 
 /**
+ * Interface for user-defined macros. Extend via module augmentation:
+ * @example
+ * ```ts
+ * declare module 'laravel-collection-ts' {
+ *   interface CollectionMacros<T> {
+ *     toUpper: T extends string ? () => ProxiedCollection<string> : never;
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface CollectionMacros<_T> {}
+
+/**
  * Collection type with higher-order messaging support.
  * Methods like `map`, `filter`, etc. work as BOTH callable methods AND property accessors.
  * CK tracks whether collection is array-based or associative for proper `all()` return type.
@@ -271,7 +285,8 @@ type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
  * ```
  */
 export type ProxiedCollection<T, CK extends CollectionKind = 'array'> = Collection<T, CK> &
-	CollectionParam<T> & {
+	CollectionParam<T> &
+	CollectionMacros<T> & {
 		/** Map with higher-order support: users.map(fn) OR users.map.name */
 		map: CallableHigherOrderMap<T, CK>;
 		/** Filter with higher-order support: users.filter(fn) OR users.filter.active */
@@ -331,7 +346,7 @@ export type ProxiedCollection<T, CK extends CollectionKind = 'array'> = Collecti
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Get a value from an object by dot notation key */
-function dataGet(target: unknown, key: string | null): unknown {
+export function dataGet(target: unknown, key: string | null): unknown {
 	if (key === null) return target;
 	if (typeof target !== 'object' || target === null) return undefined;
 	const obj = target as Record<string, unknown>;
@@ -347,12 +362,12 @@ function dataGet(target: unknown, key: string | null): unknown {
 }
 
 /** Check if a value is callable (function) but not a string */
-function useAsCallable(value: unknown): value is (...args: unknown[]) => unknown {
+export function useAsCallable(value: unknown): value is (...args: unknown[]) => unknown {
 	return typeof value === 'function';
 }
 
 /** Get a value retriever function from a key or callback */
-function valueRetriever<T, R>(keyOrCallback: ValueRetriever<T, R> | null | undefined): (value: T, key: string) => R {
+export function valueRetriever<T, R>(keyOrCallback: ValueRetriever<T, R> | null | undefined): (value: T, key: string) => R {
 	if (keyOrCallback === null || keyOrCallback === undefined) {
 		return (value: T) => value as unknown as R;
 	}
@@ -363,7 +378,7 @@ function valueRetriever<T, R>(keyOrCallback: ValueRetriever<T, R> | null | undef
 }
 
 /** Create an operator checker for where clauses */
-function operatorForWhere<T>(
+export function operatorForWhere<T>(
 	key: string | ((value: T, key: string) => boolean),
 	operator?: WhereOperator | unknown,
 	value?: unknown,
@@ -804,6 +819,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	protected items: Record<string, T>;
 	protected isAssociative: boolean;
 
+	/**
+	 * Cached next numeric key for O(1) push() operations.
+	 * Null means cache is invalid and needs recalculation.
+	 */
+	private _nextNumericKey: number | null = null;
+
 	// ═══════════════════════════════════════════════════════════════════════════
 	// MACROS (Laravel's Macroable trait)
 	// ═══════════════════════════════════════════════════════════════════════════
@@ -890,6 +911,28 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return (items as CollectionParam<U>).all() as Record<string, U>;
 		}
 		return items as Record<string, U>;
+	}
+
+	/**
+	 * Get the next numeric key for push operations.
+	 * Calculates and caches the result for O(1) subsequent calls.
+	 */
+	protected getNextNumericKey(): number {
+		if (this._nextNumericKey === null) {
+			const numericKeys = Object.keys(this.items)
+				.map(Number)
+				.filter((n) => !Number.isNaN(n));
+			this._nextNumericKey = numericKeys.length > 0 ? Math.max(...numericKeys) + 1 : 0;
+		}
+		return this._nextNumericKey;
+	}
+
+	/**
+	 * Invalidate the cached next numeric key.
+	 * Called when items are removed or keys change.
+	 */
+	protected invalidateNextNumericKey(): void {
+		this._nextNumericKey = null;
 	}
 
 	// ═══════════════════════════════════════════════════════════════════════════
@@ -1989,6 +2032,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		if (k in this.items) {
 			const value = this.items[k];
 			delete this.items[k];
+			// Invalidate cache if numeric key was removed
+			if (!Number.isNaN(Number(k))) {
+				this.invalidateNextNumericKey();
+			}
 			return value;
 		}
 		return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
@@ -1996,15 +2043,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Push one or more items onto the end of the collection.
+	 * Optimized: O(1) amortized via cached next key.
 	 */
 	push(...values: T[]): this {
-		const currentKeys = Object.keys(this.items)
-			.map(Number)
-			.filter((n) => !Number.isNaN(n));
-		let nextKey = currentKeys.length > 0 ? Math.max(...currentKeys) + 1 : 0;
+		let nextKey = this.getNextNumericKey();
 		for (const value of values) {
 			this.items[String(nextKey++)] = value;
 		}
+		this._nextNumericKey = nextKey;
 		return this;
 	}
 
@@ -2033,6 +2079,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Get and remove the last N items from the collection.
+	 * Optimized: O(n) instead of O(n²) for multi-item pop.
 	 */
 	pop(count = 1): T | Collection<T> | null {
 		if (count < 1) {
@@ -2048,22 +2095,25 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			const lastKey = keys[keys.length - 1];
 			const value = this.items[lastKey];
 			delete this.items[lastKey];
+			this.invalidateNextNumericKey();
 			return value;
 		}
 
+		// O(n) approach: collect keys to remove first, then batch delete
 		const results: T[] = [];
 		const toRemove = Math.min(count, keys.length);
-		for (let i = 0; i < toRemove; i++) {
-			// biome-ignore lint/style/noNonNullAssertion: We know keys exist because toRemove <= keys.length
-			const lastKey = Object.keys(this.items).pop()!;
-			results.push(this.items[lastKey]);
-			delete this.items[lastKey];
+		const keysToRemove = keys.slice(-toRemove);
+		for (const key of keysToRemove) {
+			results.push(this.items[key]);
+			delete this.items[key];
 		}
+		this.invalidateNextNumericKey();
 		return new Collection(results);
 	}
 
 	/**
 	 * Get and remove the first N items from the collection.
+	 * Optimized: O(n) instead of O(n²) for multi-item shift.
 	 */
 	shift(count = 1): T | Collection<T> | null {
 		if (count < 0) {
@@ -2083,16 +2133,19 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			const firstKey = keys[0];
 			const value = this.items[firstKey];
 			delete this.items[firstKey];
+			this.invalidateNextNumericKey();
 			return value;
 		}
 
+		// O(n) approach: collect keys to remove first, then batch delete
 		const results: T[] = [];
 		const toRemove = Math.min(count, keys.length);
-		for (let i = 0; i < toRemove; i++) {
-			const firstKey = Object.keys(this.items)[0];
-			results.push(this.items[firstKey]);
-			delete this.items[firstKey];
+		const keysToRemove = keys.slice(0, toRemove);
+		for (const key of keysToRemove) {
+			results.push(this.items[key]);
+			delete this.items[key];
 		}
+		this.invalidateNextNumericKey();
 		return new Collection(results);
 	}
 
@@ -2108,8 +2161,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 */
 	forget(keys: string | number | (string | number)[]): this {
 		const keysArray = Array.isArray(keys) ? keys : [keys];
+		let hasNumericKey = false;
 		for (const key of keysArray) {
-			delete this.items[String(key)];
+			const k = String(key);
+			if (!hasNumericKey && !Number.isNaN(Number(k))) {
+				hasNumericKey = true;
+			}
+			delete this.items[k];
+		}
+		if (hasNumericKey) {
+			this.invalidateNextNumericKey();
 		}
 		return this;
 	}

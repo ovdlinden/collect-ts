@@ -7,7 +7,16 @@
  * @see https://laravel.com/docs/collections#lazy-collections
  */
 
-import { Collection, collect } from './Collection.js';
+import {
+	Collection,
+	collect,
+	dataGet,
+	operatorForWhere,
+	useAsCallable,
+	valueRetriever,
+	type ValueRetriever,
+	type WhereOperator,
+} from './Collection.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -537,6 +546,132 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	isNotEmpty(): boolean {
 		return !this.isEmpty();
+	}
+
+	// ═══════════════════════════════════════════════════════════════════════════
+	// NATIVE AGGREGATE METHODS (single-pass, no intermediate array)
+	// ═══════════════════════════════════════════════════════════════════════════
+
+	/**
+	 * Get the sum of the given values.
+	 * Optimized: single pass through iterator, no array allocation.
+	 */
+	sum(keyOrCallback?: ValueRetriever<T, number>): number {
+		const retriever = valueRetriever<T, number>(keyOrCallback);
+		let total = 0;
+		for (const [key, value] of makeIterator(this.source)) {
+			const num = retriever(value, key);
+			if (typeof num === 'number' && !Number.isNaN(num)) {
+				total += num;
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * Get the minimum value of a given key.
+	 * Optimized: single pass through iterator, no array allocation.
+	 */
+	min(keyOrCallback?: ValueRetriever<T, number>): number | null {
+		const retriever = valueRetriever<T, number>(keyOrCallback);
+		let min: number | null = null;
+		for (const [key, value] of makeIterator(this.source)) {
+			const num = retriever(value, key);
+			if (typeof num === 'number' && !Number.isNaN(num) && (min === null || num < min)) {
+				min = num;
+			}
+		}
+		return min;
+	}
+
+	/**
+	 * Get the maximum value of a given key.
+	 * Optimized: single pass through iterator, no array allocation.
+	 */
+	max(keyOrCallback?: ValueRetriever<T, number>): number | null {
+		const retriever = valueRetriever<T, number>(keyOrCallback);
+		let max: number | null = null;
+		for (const [key, value] of makeIterator(this.source)) {
+			const num = retriever(value, key);
+			if (typeof num === 'number' && !Number.isNaN(num) && (max === null || num > max)) {
+				max = num;
+			}
+		}
+		return max;
+	}
+
+	/**
+	 * Get the average value of a given key.
+	 * Optimized: single pass through iterator, no array allocation.
+	 */
+	avg(keyOrCallback?: ValueRetriever<T, number>): number | null {
+		const retriever = valueRetriever<T, number>(keyOrCallback);
+		let total = 0;
+		let count = 0;
+		for (const [key, value] of makeIterator(this.source)) {
+			const num = retriever(value, key);
+			if (typeof num === 'number' && !Number.isNaN(num)) {
+				total += num;
+				count++;
+			}
+		}
+		return count > 0 ? total / count : null;
+	}
+
+	/**
+	 * Alias for the "avg" method.
+	 */
+	average(keyOrCallback?: ValueRetriever<T, number>): number | null {
+		return this.avg(keyOrCallback);
+	}
+
+	/**
+	 * Determine if an item exists in the collection.
+	 * SHORT-CIRCUITS: stops at first match (Laravel behavior).
+	 */
+	contains(
+		keyOrCallback: T | string | ((value: T, key: string) => boolean),
+		operator?: WhereOperator | unknown,
+		value?: unknown,
+	): boolean {
+		// Single argument: value or callback
+		if (arguments.length === 1) {
+			if (useAsCallable(keyOrCallback)) {
+				return this.first(keyOrCallback as (v: T, k: string) => boolean) !== undefined;
+			}
+			// Loose equality check
+			for (const [, val] of makeIterator(this.source)) {
+				// biome-ignore lint/suspicious/noDoubleEquals: Laravel uses loose comparison
+				if (val == keyOrCallback) {
+					return true;
+				}
+			}
+			return false;
+		}
+		// Multiple arguments: key/operator/value form
+		return this.contains(operatorForWhere<T>(keyOrCallback as string, operator, value));
+	}
+
+	/**
+	 * Determine if an item exists in the collection using strict comparison.
+	 * SHORT-CIRCUITS: stops at first match.
+	 */
+	containsStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: unknown): boolean {
+		// Two arguments: key and value
+		if (arguments.length === 2) {
+			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
+		}
+		// Single argument: callback or value
+		if (useAsCallable(keyOrValue)) {
+			return this.first(keyOrValue as (v: T, k: string) => boolean) !== undefined;
+		}
+		// Strict equality check
+		for (const [, item] of makeIterator(this.source)) {
+			if (item === keyOrValue) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
 
