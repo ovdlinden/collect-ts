@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { Collection, LazyCollection, lazy, collect, type ProxiedCollection } from '../src';
+import { Collection, LazyCollection, type ProxiedCollection, collect, lazy } from '../src';
 
 // Augment CollectionMacros for test macros (must use _T to match base interface)
 declare module '../src' {
@@ -43,9 +43,7 @@ describe('LazyCollection', () => {
 			function* gen() {
 				yield 1;
 			}
-			expect(() => lazy(gen() as unknown as Iterable<number>)).toThrow(
-				'Generators should not be passed directly',
-			);
+			expect(() => lazy(gen() as unknown as Iterable<number>)).toThrow('Generators should not be passed directly');
 		});
 
 		it('creates an empty lazy collection', () => {
@@ -139,11 +137,7 @@ describe('LazyCollection', () => {
 			});
 
 			it('filters falsy values when no callback provided', () => {
-				expect(lazy([0, 1, '', 'hello', null, undefined, false, true]).filter().all()).toEqual([
-					1,
-					'hello',
-					true,
-				]);
+				expect(lazy([0, 1, '', 'hello', null, undefined, false, true]).filter().all()).toEqual([1, 'hello', true]);
 			});
 		});
 
@@ -244,7 +238,10 @@ describe('LazyCollection', () => {
 
 			it('chunks evenly divisible arrays', () => {
 				// When array length is divisible by chunk size, no partial chunk at end
-				expect(lazy([1, 2, 3, 4]).chunk(2).all()).toEqual([[1, 2], [3, 4]]);
+				expect(lazy([1, 2, 3, 4]).chunk(2).all()).toEqual([
+					[1, 2],
+					[3, 4],
+				]);
 			});
 
 			it('returns empty for size <= 0', () => {
@@ -556,7 +553,7 @@ describe('LazyCollection', () => {
 			});
 
 			it('skips non-numeric values', () => {
-				const lc = lazy([1, 'two', null, 3, undefined, NaN, 5] as unknown[]);
+				const lc = lazy([1, 'two', null, 3, undefined, Number.NaN, 5] as unknown[]);
 				expect(lc.sum()).toBe(9); // 1 + 3 + 5
 			});
 
@@ -615,7 +612,7 @@ describe('LazyCollection', () => {
 			});
 
 			it('skips non-numeric values', () => {
-				const lc = lazy([1, 'two', null, 3, undefined, NaN, 5] as unknown[]);
+				const lc = lazy([1, 'two', null, 3, undefined, Number.NaN, 5] as unknown[]);
 				expect(lc.avg()).toBe(3); // (1 + 3 + 5) / 3
 			});
 		});
@@ -778,7 +775,10 @@ describe('Collection.macro()', () => {
 			return this.map((n) => n * 2);
 		});
 
-		const result = collect([1, 2]).double().filter((n) => n > 2).all();
+		const result = collect([1, 2])
+			.double()
+			.filter((n) => n > 2)
+			.all();
 		expect(result).toEqual([4]);
 
 		Collection.flushMacros();

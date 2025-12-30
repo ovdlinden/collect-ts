@@ -45,7 +45,7 @@ import {
 } from './exceptions';
 
 // Circular import - this works because both files only use imports in function bodies
-import { lazy as lazyFn, type ProxiedLazyCollection } from './LazyCollection.js';
+import { type ProxiedLazyCollection, lazy as lazyFn } from './LazyCollection.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -85,14 +85,13 @@ export type ValueRetriever<T, R> = string | ((value: T, key: string) => R);
  * @example Collapse<number> → number (unchanged, not `never`)
  * @example Collapse<(number | string)[]> → number | string
  */
-export type Collapse<T> =
-	T extends readonly (infer U)[]
+export type Collapse<T> = T extends readonly (infer U)[]
+	? U
+	: T extends ProxiedCollection<infer U, CollectionKind>
 		? U
-		: T extends ProxiedCollection<infer U, CollectionKind>
+		: T extends Collection<infer U, CollectionKind>
 			? U
-			: T extends Collection<infer U, CollectionKind>
-				? U
-				: T; // Return T unchanged, not `never`
+			: T; // Return T unchanged, not `never`
 
 /**
  * Recursively unwraps nested arrays/Collections to specified depth.
@@ -117,20 +116,11 @@ export type Collapse<T> =
 export type FlattenDepth<T, D extends number> = {
 	done: T;
 	recur: T extends readonly (infer U)[]
-		? FlattenDepth<
-				U,
-				[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
-			>
+		? FlattenDepth<U, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]>
 		: T extends ProxiedCollection<infer U, CollectionKind>
-			? FlattenDepth<
-					U,
-					[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
-				>
+			? FlattenDepth<U, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]>
 			: T extends Collection<infer U, CollectionKind>
-				? FlattenDepth<
-						U,
-						[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]
-					>
+				? FlattenDepth<U, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][D]>
 				: T;
 }[D extends -1 ? 'done' : 'recur'];
 
@@ -330,8 +320,11 @@ type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
  * }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface CollectionMacros<_T> {}
+// Extended via module augmentation - see README for macro usage
+export interface CollectionMacros<_T> {
+	// Intentionally empty - extend via module augmentation
+	readonly [key: string]: ((...args: never[]) => unknown) | undefined;
+}
 
 /**
  * Collection type with higher-order messaging support.
@@ -429,7 +422,9 @@ export function useAsCallable(value: unknown): value is (...args: unknown[]) => 
 }
 
 /** Get a value retriever function from a key or callback */
-export function valueRetriever<T, R>(keyOrCallback: ValueRetriever<T, R> | null | undefined): (value: T, key: string) => R {
+export function valueRetriever<T, R>(
+	keyOrCallback: ValueRetriever<T, R> | null | undefined,
+): (value: T, key: string) => R {
 	if (keyOrCallback === null || keyOrCallback === undefined) {
 		return (value: T) => value as unknown as R;
 	}
@@ -787,8 +782,8 @@ function wrapCollectionWithProxy<T, CK extends CollectionKind>(
 			}
 
 			// Check for registered macros first
-			if (Collection.hasMacro(prop as string)) {
-				const macro = Collection.getMacro(prop as string)!;
+			const macro = Collection.getMacro(prop as string);
+			if (macro) {
 				return function (this: Collection<T, CK>, ...args: unknown[]) {
 					const result = macro.apply(target, args);
 					// If the result is a Collection, wrap it for chaining
@@ -891,11 +886,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	// MACROS (Laravel's Macroable trait)
 	// ═══════════════════════════════════════════════════════════════════════════
 
-	/**
-	 * The registered collection macros.
-	 */
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-	private static macros: Map<string, Function> = new Map();
+	/** Type for macro functions */
+	private static macros: Map<string, (...args: unknown[]) => unknown> = new Map();
 
 	/**
 	 * Register a custom macro on the Collection class.
@@ -910,8 +902,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * // => ['HELLO', 'WORLD']
 	 * ```
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-	static macro(name: string, fn: Function): void {
+	static macro(name: string, fn: (...args: unknown[]) => unknown): void {
 		Collection.macros.set(name, fn);
 	}
 
@@ -933,8 +924,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Get a registered macro by name.
 	 * @internal
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-	static getMacro(name: string): Function | undefined {
+	static getMacro(name: string): ((...args: unknown[]) => unknown) | undefined {
 		return Collection.macros.get(name);
 	}
 

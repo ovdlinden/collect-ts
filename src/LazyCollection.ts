@@ -8,14 +8,14 @@
  */
 
 import {
-	Collection,
+	type Collection,
+	type ValueRetriever,
+	type WhereOperator,
 	collect,
 	dataGet,
 	operatorForWhere,
 	useAsCallable,
 	valueRetriever,
-	type ValueRetriever,
-	type WhereOperator,
 } from './Collection.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -89,11 +89,12 @@ function* makeIterator<T>(source: LazySource<T>): Generator<[string, T]> {
 }
 
 /**
- * Forward reference to the proxy wrapper.
- * Set after the class is defined to allow lazy methods to return ProxiedLazyCollection.
+ * Wraps a LazyCollection with a Proxy for higher-order messaging.
+ * Uses function declaration hoisting - wrapLazyWithProxy is defined below.
  */
-// Initialized to null, set to wrapLazyWithProxy after class definition
-let wrapProxy: <U>(lc: LazyCollection<U>) => ProxiedLazyCollection<U> = null!;
+function wrap<U>(lc: LazyCollection<U>): ProxiedLazyCollection<U> {
+	return wrapLazyWithProxy(lc);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LAZY COLLECTION CLASS
@@ -195,7 +196,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	map<U>(callback: (value: T, key: string) => U): ProxiedLazyCollection<U> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [key, value] of makeIterator(source)) {
 					yield callback(value, key);
@@ -209,7 +210,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	filter(callback?: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [key, value] of makeIterator(source)) {
 					if (callback ? callback(value, key) : Boolean(value)) {
@@ -235,11 +236,11 @@ export class LazyCollection<T> implements Iterable<T> {
 			// For negative limit, we need to collect and take from end
 			// This breaks laziness but matches Laravel behavior
 			const all = [...this];
-			return wrapProxy(new LazyCollection(all.slice(limit)));
+			return wrap(new LazyCollection(all.slice(limit)));
 		}
 
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				let count = 0;
 				for (const [, value] of makeIterator(source)) {
@@ -255,7 +256,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	skip(count: number): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				let skipped = 0;
 				for (const [, value] of makeIterator(source)) {
@@ -271,7 +272,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	takeWhile(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [key, value] of makeIterator(source)) {
 					if (!callback(value, key)) break;
@@ -286,7 +287,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	takeUntil(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [key, value] of makeIterator(source)) {
 					if (callback(value, key)) break;
@@ -301,7 +302,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	skipWhile(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				let skipping = true;
 				for (const [key, value] of makeIterator(source)) {
@@ -318,7 +319,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	skipUntil(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				let skipping = true;
 				for (const [key, value] of makeIterator(source)) {
@@ -335,7 +336,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	flatMap<U>(callback: (value: T, key: string) => Iterable<U>): ProxiedLazyCollection<U> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [key, value] of makeIterator(source)) {
 					yield* callback(value, key);
@@ -349,11 +350,11 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	chunk(size: number): ProxiedLazyCollection<T[]> {
 		if (size <= 0) {
-			return wrapProxy(new LazyCollection<T[]>([]));
+			return wrap(new LazyCollection<T[]>([]));
 		}
 
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				let chunk: T[] = [];
 				for (const [, value] of makeIterator(source)) {
@@ -399,7 +400,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	tapEach(callback: (value: T, key: string) => void): ProxiedLazyCollection<T> {
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [key, value] of makeIterator(source)) {
 					callback(value, key);
@@ -415,7 +416,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	takeUntilTimeout(timeout: Date): ProxiedLazyCollection<T> {
 		const timeoutMs = timeout.getTime();
 		const source = this.source;
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				for (const [, value] of makeIterator(source)) {
 					if (Date.now() >= timeoutMs) break;
@@ -436,7 +437,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		let iteratorExhausted = false;
 		const source = this.source;
 
-		return wrapProxy(
+		return wrap(
 			new LazyCollection(function* () {
 				// Create iterator once on first use, persist across invocations
 				if (iteratorInstance === null) {
@@ -635,7 +636,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		value?: unknown,
 	): boolean {
 		// Single argument: value or callback
-		if (arguments.length === 1) {
+		if (operator === undefined && value === undefined) {
 			if (useAsCallable(keyOrCallback)) {
 				return this.first(keyOrCallback as (v: T, k: string) => boolean) !== undefined;
 			}
@@ -658,7 +659,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	containsStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: unknown): boolean {
 		// Two arguments: key and value
-		if (arguments.length === 2) {
+		if (value !== undefined) {
 			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
 		}
 		// Single argument: callback or value
@@ -722,9 +723,6 @@ function wrapLazyWithProxy<T>(lazyCollection: LazyCollection<T>): ProxiedLazyCol
 		},
 	}) as ProxiedLazyCollection<T>;
 }
-
-// Set the forward reference so lazy methods can use the wrapper
-wrapProxy = wrapLazyWithProxy;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FACTORY FUNCTION

@@ -2487,7 +2487,6 @@ describe('ChunkWhile (Laravel port)', () => {
 
 	it('chunks contiguously increasing integers', () => {
 		const data = collect([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21]).chunkWhile(
-			// biome-ignore lint/style/noNonNullAssertion: Test - chunk always has at least one item when callback is called
 			(current, _key, chunk) => chunk.last()! + 1 === current,
 		);
 		expect(data.first()?.values().all()).toEqual([1]);
@@ -2581,7 +2580,6 @@ describe('Except (Laravel port)', () => {
 
 	it('returns all when null passed', () => {
 		const data = collect({ first: 'Taylor', last: 'Otwell' });
-		// biome-ignore lint/suspicious/noExplicitAny: Testing null handling behavior
 		expect(data.except(null as any).all()).toEqual(data.all());
 	});
 });
@@ -4914,7 +4912,6 @@ describe('Higher-Order Messaging', () => {
 		// Line 502: BYPASS_PROPERTIES check on higher-order proxy
 		it('returns undefined for bypass properties like then on higher-order proxy', () => {
 			// Access 'then' directly on the higher-order proxy (not on result)
-			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior
 			expect((users().map as any).then).toBeUndefined();
 		});
 
@@ -4922,7 +4919,6 @@ describe('Higher-Order Messaging', () => {
 		it('handles method invocation returning non-function property', () => {
 			const items = collect([{ x: 10 }, { x: 20 }]);
 			// Call the property access as a function - x is a number, not a function
-			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior
 			const result = (items.map as any).x();
 			// Returns the mapped values
 			expect(result.all()).toEqual([10, 20]);
@@ -4931,7 +4927,6 @@ describe('Higher-Order Messaging', () => {
 		it('method invocation returns non-Collection directly (line 547)', () => {
 			// first.active returns an object (User), calling it invokes methodInvoker
 			// which returns non-Collection result (User or undefined)
-			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior
 			const result = (users().first as any).active();
 			// Returns the first active user
 			expect(result?.name).toBe('John');
@@ -4940,7 +4935,6 @@ describe('Higher-Order Messaging', () => {
 		// Lines 556, 559: Symbol.toPrimitive and valueOf
 		it('supports Symbol.toPrimitive coercion', () => {
 			const result = users().map.name;
-			// biome-ignore lint/suspicious/noExplicitAny: Testing Symbol.toPrimitive which isn't in ProxiedCollection type
 			expect((result as any)[Symbol.toPrimitive]()).toBeDefined();
 		});
 
@@ -4966,7 +4960,6 @@ describe('Higher-Order Messaging', () => {
 
 		it('handles null items in method invocation', () => {
 			const items = collect([{ x: 1 }, null, { x: 3 }] as ({ x: number } | null)[]);
-			// biome-ignore lint/suspicious/noExplicitAny: Testing internal proxy behavior with null items
 			const result = (items.map as any).x();
 			expect(result.all()).toEqual([1, undefined, 3]);
 		});
@@ -5132,10 +5125,7 @@ describe('Type Inference', () => {
 
 	describe('flatten() type inference', () => {
 		it('infers type for flatten(1)', () => {
-			const deep = collect([
-				[[1, 2]],
-				[[3, 4]],
-			]);
+			const deep = collect([[[1, 2]], [[3, 4]]]);
 			const flat1 = deep.flatten(1);
 
 			// number[][][] flattened 1 level = number[][]
@@ -5144,10 +5134,7 @@ describe('Type Inference', () => {
 		});
 
 		it('infers type for flatten(2)', () => {
-			const deep = collect([
-				[[1, 2]],
-				[[3, 4]],
-			]);
+			const deep = collect([[[1, 2]], [[3, 4]]]);
 			const flat2 = deep.flatten(2);
 
 			// number[][][] flattened 2 levels = number
