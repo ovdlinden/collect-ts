@@ -7,8 +7,14 @@
   /* Laravel brand colors */
   --vp-c-brand-1: #FF2D20;
   --vp-c-brand-2: #FF6B61;
-  --vp-c-brand-3: #FF2D20;
+  --vp-c-brand-3: #FF5349;
   --vp-c-brand-soft: rgba(255, 45, 32, 0.14);
+
+  /* Info blocks - TypeScript blue */
+  --vp-c-info-1: #3178c6;
+  --vp-c-info-2: #4b9cd3;
+  --vp-c-info-3: #2563eb;
+  --vp-c-info-soft: rgba(49, 120, 198, 0.14);
 
   /* Typography */
   --vp-font-family-base: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
@@ -86,7 +92,7 @@
 }
 
 .vp-doc div[class*='language-'] pre {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1rem;
 }
 
 .vp-doc div[class*='language-'] code {
@@ -94,10 +100,9 @@
   line-height: 1.7;
 }
 
-/* Line numbers styling */
-.vp-doc div[class*='language-'].line-numbers-mode .line-numbers {
-  padding-top: 1.25rem;
-  border-right-color: var(--vp-code-block-divider-color);
+/* Code block - tighter left padding (high specificity to override default) */
+.vp-doc div[class*='language-'] pre code {
+  padding-left: 6px;
 }
 
 /* Inline code styling */
@@ -162,6 +167,15 @@
   border-color: var(--vp-c-brand-1);
 }
 
+.vp-doc .custom-block.info {
+  background-color: var(--vp-c-info-soft);
+  border-color: var(--vp-c-info-1);
+}
+
+.vp-doc .custom-block.info a {
+  color: var(--vp-c-info-1);
+}
+
 .vp-doc .custom-block.warning {
   background-color: rgba(234, 179, 8, 0.14);
   border-color: #eab308;
@@ -201,10 +215,16 @@
   font-weight: 600;
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
-  background-color: #3178c6;
+  background-color: var(--vp-c-info-1);
   color: white;
   margin-left: 0.5rem;
   vertical-align: middle;
+}
+
+/* Badge styling for dark mode */
+.dark .vp-doc .badge {
+  background-color: var(--vp-c-info-2);
+  color: #0f172a;
 }
 
 /* Method list - multi-column layout like Laravel */
