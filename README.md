@@ -21,6 +21,7 @@
 - 🎯 **TypeScript-First** — Advanced generics, conditional types, full inference.
 - ⚡ **LazyCollection** — Generator-based lazy evaluation for large datasets.
 - 🛠️ **Modern Stack** — ESM-only, Node 18+, zero dependencies.
+- 🚀 **Inertia.js Ready** — Same Collection API from Laravel to React/Vue.
 
 ## Installation
 
@@ -49,6 +50,45 @@ const result = collect([1, 2, 3, 4, 5])
   .sum();
 // => 24
 ```
+
+## With Inertia.js
+
+If you're building with Laravel and Inertia.js, you already know Collections. The same `where()`, `pluck()`, and `sortBy()` you use in your controllers work identically in your React components:
+
+```tsx
+import { usePage } from '@inertiajs/react'
+import { collect } from 'collect-ts'
+import { useState } from 'react'
+
+export default function ProductList() {
+    const { products } = usePage().props  // Data from controller
+    const [search, setSearch] = useState('')
+    const [sortBy, setSortBy] = useState('name')
+
+    // Instant search + sorting — no server round-trip
+    const displayed = collect(products)
+        .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+        .sortBy(sortBy)
+
+    return (
+        <div>
+            <input
+                placeholder="Search..."
+                onChange={e => setSearch(e.target.value)}
+            />
+            <button onClick={() => setSortBy('name')}>Sort by Name</button>
+            <button onClick={() => setSortBy('price')}>Sort by Price</button>
+            <ul>
+                {displayed.map(p => (
+                    <li key={p.id}>{p.name} — ${p.price}</li>
+                )).all()}
+            </ul>
+        </div>
+    )
+}
+```
+
+Same methods. Same arguments. Same behavior. No new paradigm to learn.
 
 ## Features
 
