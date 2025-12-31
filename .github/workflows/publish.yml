@@ -12,7 +12,39 @@ on:
         type: boolean
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate version match
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          JSR_VERSION=$(node -p "require('./jsr.json').version")
+          TAG_VERSION="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+
+          echo "package.json version: $PKG_VERSION"
+          echo "jsr.json version: $JSR_VERSION"
+          echo "Release tag version: $TAG_VERSION"
+
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch: package.json ($PKG_VERSION) != tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+          if [ "$JSR_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch: jsr.json ($JSR_VERSION) != tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+          echo "All versions match: $TAG_VERSION"
+
   test:
+    needs: validate
+    if: always() && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
