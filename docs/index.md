@@ -17,15 +17,15 @@ features:
   - icon: 🔄
     title: Always in Sync
     details: Synchronized with Laravel 12.x. When Laravel adds methods or fixes bugs, we update. Not a one-time port.
+  - icon: 🚀
+    title: Inertia.js Ready
+    details: Same Collection API from Laravel to React/Vue. No new paradigm to learn—the where() you know just works.
   - icon: 🎯
     title: TypeScript-First
     details: Built from the ground up in TypeScript with advanced generics, conditional types, and full type inference.
   - icon: ⚡
     title: LazyCollection
     details: Generator-based lazy evaluation for memory-efficient processing of large datasets.
-  - icon: 🛠️
-    title: Modern Stack
-    details: ESM-only, Node 18+, zero dependencies. Built for 2025, not legacy compatibility.
 ---
 
 ::: warning Alpha Release
@@ -106,8 +106,12 @@ const emails = collect(users).map.email // Collection<string>
 const flat = collect([[1, 2], [3, 4]]).collapse() // Collection<number>
 ```
 
-## Documentation
+## Next Steps
 
-Full documentation synced from [Laravel's official docs](https://laravel.com/docs/collections), converted to TypeScript.
+Choose your path:
 
-[Read the documentation →](/collections)
+- **[TypeScript Guide](/guide/typescript)** — Understand type safety and inference
+- **[Common Patterns](/guide/patterns)** — Sorting, grouping, and real-world examples
+- **[LazyCollection](/guide/lazy)** — Process huge files without memory issues
+- **[Inertia.js Guide](/guide/inertia)** — Use collections in React/Vue components
+- **[Full API Reference](/collections)** — All 140+ methods documented
