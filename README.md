@@ -3,6 +3,8 @@
 **Laravel Collection for TypeScript — always in sync, TypeScript-first, modern.**
 
 [![Alpha](https://img.shields.io/badge/status-alpha-orange)]()
+[![npm version](https://img.shields.io/npm/v/collect-ts)](https://www.npmjs.com/package/collect-ts)
+[![JSR](https://jsr.io/badges/@ovdlinden/collect-ts)](https://jsr.io/@ovdlinden/collect-ts)
 [![Laravel 12.x](https://img.shields.io/badge/Laravel-12.x-FF2D20)](https://laravel.com/docs/12.x/collections)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org/)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
