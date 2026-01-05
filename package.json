@@ -1,6 +1,6 @@
 {
 	"name": "collect-ts",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"laravelCollectionVersion": "12.43",
 	"description": "TypeScript port of Laravel Collection (Laravel 12.x compatible) - fully typed",
 	"type": "module",
@@ -19,15 +19,16 @@
 		"dev": "tsup --watch",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
 		"lint": "biome check src tests",
 		"format": "biome format --write src tests",
-		"sync": "tsx scripts/sync/index.ts",
+		"coverage": "vitest run --coverage",
 		"prepublishOnly": "npm run build",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
 		"docs:preview": "vitepress preview docs",
-		"docs:check": "tsx scripts/docs/check.ts",
-		"docs:update": "tsx scripts/docs/update.ts"
+		"docs:check": "tsx scripts/docs/index.ts check",
+		"docs:sync": "tsx scripts/docs/index.ts sync"
 	},
 	"keywords": ["laravel", "collection", "typescript", "collect", "array", "utilities", "enumerable"],
 	"author": "Omid van der Linden",

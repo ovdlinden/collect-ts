@@ -1,0 +1,79 @@
+name: Laravel Sync Check
+
+on:
+  schedule:
+    # Run Wednesday 2 AM UTC (after Tuesday Laravel releases, off-peak)
+    - cron: '0 2 * * 3'
+  workflow_dispatch:
+    inputs:
+      force_issue:
+        description: 'Create issue even if no changes'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-sync:
+    runs-on: ubuntu-latest
+    outputs:
+      has_issues: ${{ steps.sync.outputs.has_issues }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check Laravel documentation sync
+        id: sync
+        run: |
+          set +e
+          OUTPUT=$(pnpm docs:check 2>&1)
+          EXIT_CODE=$?
+          set -e
+
+          # Write to file for issue template
+          echo "$OUTPUT" > sync-output.txt
+
+          # Set outputs
+          if [ $EXIT_CODE -ne 0 ] || [ "${{ inputs.force_issue }}" = "true" ]; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          fi
+
+          echo "$OUTPUT"
+
+      - name: Read sync output
+        if: steps.sync.outputs.has_issues == 'true'
+        id: read-output
+        run: |
+          {
+            echo 'SYNC_OUTPUT<<EOF'
+            cat sync-output.txt
+            echo 'EOF'
+          } >> $GITHUB_ENV
+
+      - name: Create or update sync issue
+        if: steps.sync.outputs.has_issues == 'true'
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_OUTPUT: ${{ env.SYNC_OUTPUT }}
+        with:
+          filename: .github/laravel-sync-issue.md
+          update_existing: true
+          search_existing: open
+
+  notify-success:
+    needs: check-sync
+    if: success() && needs.check-sync.outputs.has_issues != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✅ Laravel sync check passed - no issues detected"

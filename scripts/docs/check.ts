@@ -1,265 +1,252 @@
-#!/usr/bin/env tsx
 /**
- * Documentation Change Detection Script
+ * Check Command
+ * Checks method sync status and baseline freshness.
  *
- * Compares our TypeScript documentation with Laravel's PHP documentation
- * to detect new methods, removed methods, and changes.
- *
- * Usage: pnpm docs:check
+ * Flow:
+ * 1. Load baseline file (if exists)
+ * 2. Fetch current Laravel docs
+ * 3. Compare baseline vs fetched (simple string comparison)
+ * 4. Parse Laravel docs → extract method names
+ * 5. Parse TypeScript source → extract method names
+ * 6. Compare method lists → report coverage
+ * 7. Exit code: 1 if missing methods OR baseline outdated
  */
 
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { parseCollectionsDocs, compareDocumentation, generateDocsHash, type DocChanges } from './parser.js'
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { collect } from '../../src/index.js';
+import { compareBaseline } from './core/comparator.js';
+import { extractPublicMethodsFromSource } from './core/extractor.js';
+import { parseCollectionsDocs } from './core/parser.js';
+import {
+	BASELINE_PATH,
+	type BaselineStatus,
+	type FetchError,
+	type FileError,
+	LARAVEL_VERSION,
+	type Result,
+	err,
+	ok,
+} from './core/types.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const ROOT_DIR = join(__dirname, '..', '..')
-const DOCS_DIR = join(ROOT_DIR, 'docs')
-const CACHE_DIR = join(__dirname, 'cache')
-const OUR_DOCS_FILE = join(DOCS_DIR, 'collections.md')
-const CACHE_FILE = join(CACHE_DIR, 'laravel-hash.json')
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = join(__dirname, '..', '..');
+const DOCS_URL = `https://raw.githubusercontent.com/laravel/docs/${LARAVEL_VERSION}/collections.md`;
 
-// Laravel docs source
-const LARAVEL_DOCS_URL = 'https://raw.githubusercontent.com/laravel/docs/12.x/collections.md'
-const LARAVEL_VERSION = '12.x'
+// ============================================================================
+// Types
+// ============================================================================
 
-interface CacheData {
-  hash: string
-  checkedAt: string
-  laravelVersion: string
+export interface MethodSyncStatus {
+	laravelCount: number;
+	tsCount: number;
+	inSyncCount: number;
+	missingFromTs: string[];
+	tsOnly: string[];
 }
 
-interface CheckResult {
-  hasChanges: boolean
-  changes: DocChanges
-  laravelHash: string
-  ourHash: string
-  cacheHit: boolean
+export interface CheckResult {
+	baselineStatus: BaselineStatus;
+	syncStatus: MethodSyncStatus;
 }
+
+export interface CheckDeps {
+	fetchDocs: () => Promise<Result<string, FetchError>>;
+	readFile: (path: string) => Result<string, FileError>;
+	fileExists: (path: string) => boolean;
+	log: (message: string) => void;
+}
+
+export type CheckError = { type: 'fetch' | 'file' | 'parse'; message: string };
+
+// ============================================================================
+// Default Implementations
+// ============================================================================
+
+const defaultFetchDocs = async (): Promise<Result<string, FetchError>> => {
+	try {
+		const response = await fetch(DOCS_URL);
+		if (!response.ok) {
+			return err({
+				type: 'http',
+				message: `HTTP ${response.status}: ${response.statusText}`,
+				status: response.status,
+			});
+		}
+		return ok(await response.text());
+	} catch (error) {
+		return err({
+			type: 'network',
+			message: error instanceof Error ? error.message : String(error),
+		});
+	}
+};
+
+const defaultReadFile = (path: string): Result<string, FileError> => {
+	try {
+		if (!existsSync(path)) {
+			return err({ type: 'not_found', path, message: `File not found: ${path}` });
+		}
+		return ok(readFileSync(path, 'utf-8'));
+	} catch (error) {
+		return err({
+			type: 'read',
+			path,
+			message: error instanceof Error ? error.message : String(error),
+		});
+	}
+};
+
+const defaultFileExists = (path: string): boolean => existsSync(path);
+
+// ============================================================================
+// Output Formatting
+// ============================================================================
+
+function printMethodSyncStatus(log: (msg: string) => void, status: MethodSyncStatus): void {
+	const syncPercent = status.laravelCount > 0 ? ((status.inSyncCount / status.laravelCount) * 100).toFixed(1) : '0.0';
+
+	log('📊 Method Sync Status');
+	log(`   Laravel: ${status.laravelCount} methods`);
+	log(`   collect-ts: ${status.tsCount} methods`);
+	log(`   Coverage: ${status.inSyncCount}/${status.laravelCount} (${syncPercent}%)`);
+
+	if (status.missingFromTs.length > 0) {
+		log('');
+		log(`   ⚠️  Missing from collect-ts (${status.missingFromTs.length}):`);
+		for (const m of status.missingFromTs) {
+			log(`      • ${m}`);
+		}
+	}
+
+	if (status.tsOnly.length > 0) {
+		log('');
+		log(`   ℹ️  TS-only methods (${status.tsOnly.length}):`);
+		for (const m of status.tsOnly) {
+			log(`      • ${m}`);
+		}
+	}
+}
+
+function printBaselineStatus(log: (msg: string) => void, status: BaselineStatus): void {
+	log('');
+	log('📋 Laravel Baseline');
+
+	if (!status.exists) {
+		log('   ⚠️  No baseline file found!');
+		log('      Run: pnpm docs:sync');
+		log('      Then: git add scripts/docs/baseline/');
+	} else if (status.upToDate) {
+		log(`   ✅ Up to date with laravel/docs@${LARAVEL_VERSION}`);
+	} else {
+		log('   ⚠️  Laravel docs changed!');
+		log('      Run: pnpm docs:sync');
+		log('      Then: git diff scripts/docs/baseline/');
+	}
+}
+
+// ============================================================================
+// Main Check Function
+// ============================================================================
+
+export const runCheck = async (deps: Partial<CheckDeps> = {}): Promise<Result<CheckResult, CheckError>> => {
+	const {
+		fetchDocs = defaultFetchDocs,
+		readFile = defaultReadFile,
+		fileExists = defaultFileExists,
+		log = console.log,
+	} = deps;
+
+	const baselineFile = join(ROOT_DIR, BASELINE_PATH);
+
+	log('\n🔄 Documentation Check\n');
+
+	// Step 1: Load baseline file (if exists)
+	const baseline = fileExists(baselineFile) ? readFile(baselineFile) : null;
+	const baselineContent = baseline?.ok ? baseline.value : null;
+
+	// Step 2: Fetch current Laravel docs
+	log('🌐 Fetching Laravel documentation...');
+	const remoteResult = await fetchDocs();
+
+	if (!remoteResult.ok) {
+		// Network failure - warn but continue with method coverage
+		log(`   ⚠️  Could not fetch: ${remoteResult.error.message}`);
+		log('   Skipping baseline check...\n');
+
+		// Can still do method coverage if we have the baseline
+		if (baselineContent) {
+			const laravelDocs = parseCollectionsDocs(baselineContent);
+			const syncStatus = await computeMethodSync(laravelDocs, readFile);
+			printMethodSyncStatus(log, syncStatus);
+
+			log('\n📋 Laravel Baseline');
+			log('   ⚠️  Could not check (network unavailable)');
+
+			log(syncStatus.missingFromTs.length > 0 ? '\n⚠️  Completed with issues\n' : '\n✅ Done\n');
+
+			return ok({
+				baselineStatus: { exists: true, upToDate: true, baselinePath: BASELINE_PATH },
+				syncStatus,
+			});
+		}
+
+		return err({ type: 'fetch', message: remoteResult.error.message });
+	}
+
+	log(`   ✅ Fetched from laravel/docs@${LARAVEL_VERSION}\n`);
+
+	// Step 3: Compare baseline vs fetched
+	const baselineStatus = compareBaseline(baselineContent, remoteResult.value);
+
+	// Step 4-5: Parse and compare methods
+	const laravelDocs = parseCollectionsDocs(remoteResult.value);
+	const syncStatus = await computeMethodSync(laravelDocs, readFile);
+
+	// Step 6: Print results
+	printMethodSyncStatus(log, syncStatus);
+	printBaselineStatus(log, baselineStatus);
+
+	// Step 7: Determine exit status
+	const hasIssues = syncStatus.missingFromTs.length > 0 || !baselineStatus.exists || !baselineStatus.upToDate;
+	log(hasIssues ? '\n⚠️  Completed with issues\n' : '\n✅ Done\n');
+
+	return ok({ baselineStatus, syncStatus });
+};
 
 /**
- * Fetch the Laravel documentation from GitHub
+ * Compute method sync status between Laravel docs and TypeScript source
  */
-async function fetchLaravelDocs(): Promise<string> {
-  console.log(`\n📥 Fetching Laravel ${LARAVEL_VERSION} documentation...`)
-  console.log(`   Source: ${LARAVEL_DOCS_URL}\n`)
+async function computeMethodSync(
+	laravelDocs: ReturnType<typeof parseCollectionsDocs>,
+	readFile: (path: string) => Result<string, FileError>,
+): Promise<MethodSyncStatus> {
+	const laravelMethods = laravelDocs.methods.pluck('name').sort();
 
-  const response = await fetch(LARAVEL_DOCS_URL)
+	// Read source files
+	const collectionSource = readFile(join(ROOT_DIR, 'src', 'Collection.ts'));
+	const lazySource = readFile(join(ROOT_DIR, 'src', 'LazyCollection.ts'));
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch documentation: ${response.status} ${response.statusText}`)
-  }
+	const collectionMethods = collectionSource.ok
+		? extractPublicMethodsFromSource(collectionSource.value, 'Collection.ts', 'Collection')
+		: [];
+	const lazyMethods = lazySource.ok
+		? extractPublicMethodsFromSource(lazySource.value, 'LazyCollection.ts', 'LazyCollection')
+		: [];
 
-  return response.text()
+	const tsMethods = collect([...collectionMethods, ...lazyMethods])
+		.unique()
+		.sort();
+
+	const missingFromTs = laravelMethods.diff(tsMethods);
+	const tsOnly = tsMethods.diff(laravelMethods);
+
+	return {
+		laravelCount: laravelMethods.count(),
+		tsCount: tsMethods.count(),
+		inSyncCount: laravelMethods.count() - missingFromTs.count(),
+		missingFromTs: missingFromTs.all(),
+		tsOnly: tsOnly.all(),
+	};
 }
-
-/**
- * Load cached hash data
- */
-function loadCache(): CacheData | null {
-  if (!existsSync(CACHE_FILE)) {
-    return null
-  }
-
-  try {
-    return JSON.parse(readFileSync(CACHE_FILE, 'utf-8'))
-  } catch {
-    return null
-  }
-}
-
-/**
- * Save hash data to cache
- */
-function saveCache(data: CacheData): void {
-  if (!existsSync(CACHE_DIR)) {
-    mkdirSync(CACHE_DIR, { recursive: true })
-  }
-  writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2))
-}
-
-/**
- * Format a diff preview for description changes
- */
-function formatDiffPreview(oldText: string, newText: string, maxLen = 80): string {
-  const oldPreview = oldText.length > maxLen ? oldText.slice(0, maxLen) + '...' : oldText
-  const newPreview = newText.length > maxLen ? newText.slice(0, maxLen) + '...' : newText
-
-  if (oldPreview === newPreview) {
-    return '(whitespace/formatting changes)'
-  }
-
-  return `\n      - "${oldPreview}"\n      + "${newPreview}"`
-}
-
-/**
- * Print the check results in a nice format
- */
-function printResults(result: CheckResult): void {
-  const { changes, hasChanges, cacheHit } = result
-
-  console.log('\n' + '='.repeat(60))
-  console.log('📊 Documentation Sync Check Results')
-  console.log('='.repeat(60))
-
-  if (cacheHit) {
-    console.log('\n💾 Using cached Laravel docs hash (no changes since last check)')
-  }
-
-  // Summary stats
-  const totalChanges =
-    changes.newMethods.length +
-    changes.removedMethods.length +
-    changes.changedDescriptions.length +
-    changes.changedExamples.length
-
-  console.log(`\n✅ ${changes.unchangedCount} methods unchanged`)
-
-  if (!hasChanges) {
-    console.log('\n🎉 Documentation is in sync with Laravel!')
-    console.log('='.repeat(60) + '\n')
-    return
-  }
-
-  console.log(`⚠️  ${totalChanges} change(s) detected\n`)
-
-  // New methods
-  if (changes.newMethods.length > 0) {
-    console.log(`\n🆕 New in Laravel (${changes.newMethods.length}):`)
-    for (const method of changes.newMethods) {
-      const desc = method.description.length > 60
-        ? method.description.slice(0, 60) + '...'
-        : method.description
-      console.log(`   • ${method.name}() - "${desc}"`)
-    }
-  }
-
-  // Removed methods
-  if (changes.removedMethods.length > 0) {
-    console.log(`\n🗑️  Removed from Laravel (${changes.removedMethods.length}):`)
-    for (const name of changes.removedMethods) {
-      console.log(`   • ${name}()`)
-    }
-  }
-
-  // Changed descriptions
-  if (changes.changedDescriptions.length > 0) {
-    console.log(`\n📝 Descriptions changed (${changes.changedDescriptions.length}):`)
-    for (const change of changes.changedDescriptions) {
-      console.log(`   • ${change.name}()${formatDiffPreview(change.oldDescription, change.newDescription)}`)
-    }
-  }
-
-  // Changed examples
-  if (changes.changedExamples.length > 0) {
-    console.log(`\n💻 Examples changed (${changes.changedExamples.length}):`)
-    for (const change of changes.changedExamples) {
-      const oldCount = change.oldExamples.filter(e => e.language === 'php').length
-      const newCount = change.newExamples.filter(e => e.language === 'php').length
-      console.log(`   • ${change.name}() - PHP examples: ${oldCount} → ${newCount}`)
-    }
-  }
-
-  console.log('\n' + '-'.repeat(60))
-  console.log('💡 Run `pnpm docs:update` to apply these changes with Claude')
-  console.log('='.repeat(60) + '\n')
-}
-
-/**
- * Main check function
- */
-async function check(): Promise<CheckResult> {
-  try {
-    // Check if our docs exist
-    if (!existsSync(OUR_DOCS_FILE)) {
-      console.log('\n⚠️  Our documentation does not exist yet.')
-      console.log('   Run `pnpm docs:convert` first to create initial TypeScript docs.\n')
-
-      // Still fetch and parse Laravel docs to show what we'd need
-      const laravelMarkdown = await fetchLaravelDocs()
-      const laravelDocs = parseCollectionsDocs(laravelMarkdown)
-
-      console.log(`📊 Laravel has ${laravelDocs.methods.size} documented methods`)
-
-      return {
-        hasChanges: true,
-        changes: {
-          newMethods: Array.from(laravelDocs.methods.values()),
-          removedMethods: [],
-          changedDescriptions: [],
-          changedExamples: [],
-          unchangedCount: 0
-        },
-        laravelHash: generateDocsHash(laravelDocs),
-        ourHash: '',
-        cacheHit: false
-      }
-    }
-
-    // Load our docs
-    console.log('📖 Loading our TypeScript documentation...')
-    const ourMarkdown = readFileSync(OUR_DOCS_FILE, 'utf-8')
-    const ourDocs = parseCollectionsDocs(ourMarkdown)
-    const ourHash = generateDocsHash(ourDocs)
-    console.log(`   Found ${ourDocs.methods.size} methods\n`)
-
-    // Check cache to see if Laravel docs changed
-    const cache = loadCache()
-
-    // Fetch Laravel docs
-    const laravelMarkdown = await fetchLaravelDocs()
-    const laravelDocs = parseCollectionsDocs(laravelMarkdown)
-    const laravelHash = generateDocsHash(laravelDocs)
-    console.log(`✅ Found ${laravelDocs.methods.size} methods in Laravel docs\n`)
-
-    // Check if Laravel docs are unchanged since last check
-    const cacheHit = cache?.hash === laravelHash && cache?.laravelVersion === LARAVEL_VERSION
-
-    if (cacheHit) {
-      console.log('💾 Laravel docs unchanged since last check')
-    }
-
-    // Compare documentation
-    console.log('🔍 Comparing documentation...')
-    const changes = compareDocumentation(ourDocs, laravelDocs)
-
-    const hasChanges =
-      changes.newMethods.length > 0 ||
-      changes.removedMethods.length > 0 ||
-      changes.changedDescriptions.length > 0 ||
-      changes.changedExamples.length > 0
-
-    // Update cache
-    saveCache({
-      hash: laravelHash,
-      checkedAt: new Date().toISOString(),
-      laravelVersion: LARAVEL_VERSION
-    })
-
-    const result: CheckResult = {
-      hasChanges,
-      changes,
-      laravelHash,
-      ourHash,
-      cacheHit
-    }
-
-    printResults(result)
-
-    return result
-
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error(`\n❌ Error: ${message}\n`)
-    throw error
-  }
-}
-
-// Export for programmatic use
-export { check, fetchLaravelDocs, type CheckResult }
-
-// Run if executed directly
-check().catch(() => {
-  process.exit(1)
-})
