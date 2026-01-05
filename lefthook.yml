@@ -8,6 +8,30 @@ pre-commit:
       skip:
         - merge
         - rebase
+    version-sync:
+      run: |
+        VERSION=$(node -e "console.log(require('./package.json').version)")
+        if ! grep -q "\"version\": \"$VERSION\"" jsr.json; then
+          echo "Error: jsr.json version does not match package.json ($VERSION)"
+          exit 1
+        fi
+        if ! grep -q "VERSION = '$VERSION'" src/index.ts; then
+          echo "Error: src/index.ts VERSION does not match package.json ($VERSION)"
+          exit 1
+        fi
+      skip:
+        - merge
+        - rebase
+    docs-package-name:
+      glob: "docs/**/*.md"
+      run: |
+        if [ -n "{staged_files}" ] && grep -q 'laravel-collection-ts' {staged_files}; then
+          echo "Error: Use 'collect-ts' not 'laravel-collection-ts' in docs"
+          exit 1
+        fi
+      skip:
+        - merge
+        - rebase
 
 pre-push:
   commands:
