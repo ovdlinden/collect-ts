@@ -51,7 +51,7 @@ You may also create a collection using the [make](#make) and [fromJson](#fromjso
 Collections are "macroable", which allows you to add additional methods to the `Collection` class at runtime. The `Collection.macro()` static method accepts a name and a function that will be executed when your macro is called. The macro function may access the collection's methods via `this`, just as if it were a real method of the collection class. For example, the following code adds a `toUpper` method to the `Collection` class:
 
 ```typescript
-import { Collection, collect } from 'laravel-collection-ts';
+import { Collection, collect } from 'collect-ts';
 
 // Register the macro
 Collection.macro('toUpper', function(this: Collection<string>) {
@@ -3552,7 +3552,7 @@ for (const user of users) {
 To create a lazy collection instance, you can use the `lazy()` helper function or the `LazyCollection.make()` method with a generator function:
 
 ```typescript
-import { lazy, LazyCollection } from 'laravel-collection-ts';
+import { lazy, LazyCollection } from 'collect-ts';
 
 // Using the lazy() helper with an array
 const lazyFromArray = lazy([1, 2, 3, 4, 5]);
@@ -3580,7 +3580,7 @@ const empty = LazyCollection.empty();             // Empty lazy collection
 You can also convert an existing Collection to a LazyCollection:
 
 ```typescript
-import { collect } from 'laravel-collection-ts';
+import { collect } from 'collect-ts';
 
 const lazyCollection = collect([1, 2, 3, 4, 5]).lazy();
 ```

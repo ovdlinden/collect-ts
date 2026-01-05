@@ -19,7 +19,7 @@
  */
 
 /** Package version (semver) */
-export const VERSION = '0.1.0' as const;
+export const VERSION = '0.3.0' as const;
 
 /** Laravel Collection version this package implements */
 export const LARAVEL_COLLECTION_VERSION = '12.43' as const;

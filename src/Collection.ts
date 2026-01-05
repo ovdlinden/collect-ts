@@ -392,7 +392,7 @@ type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
  * Interface for user-defined macros. Extend via module augmentation:
  * @example
  * ```ts
- * declare module 'laravel-collection-ts' {
+ * declare module 'collect-ts' {
  *   interface CollectionMacros<T> {
  *     toUpper: T extends string ? () => ProxiedCollection<string> : never;
  *   }
