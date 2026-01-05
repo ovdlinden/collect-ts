@@ -22,7 +22,7 @@ import {
 // TYPE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-type LazySource<T> = (() => Generator<[string, T]>) | T[];
+type LazySource<T> = (() => Generator<[number, T]>) | T[];
 
 /**
  * ProxiedLazyCollection type - LazyCollection with all Collection methods available via delegation.
@@ -66,7 +66,7 @@ function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefin
 		return function* () {
 			let index = 0;
 			for (const value of source()) {
-				yield [String(index++), value] as [string, T];
+				yield [index++, value] as [number, T];
 			}
 		};
 	}
@@ -78,10 +78,10 @@ function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefin
 /**
  * Create an iterator from the source.
  */
-function* makeIterator<T>(source: LazySource<T>): Generator<[string, T]> {
+function* makeIterator<T>(source: LazySource<T>): Generator<[number, T]> {
 	if (Array.isArray(source)) {
 		for (let i = 0; i < source.length; i++) {
-			yield [String(i), source[i]];
+			yield [i, source[i]];
 		}
 	} else {
 		yield* source();
@@ -137,7 +137,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Iterate over entries (key-value pairs).
 	 */
-	*entries(): Generator<[string, T]> {
+	*entries(): Generator<[number, T]> {
 		yield* makeIterator(this.source);
 	}
 
@@ -194,7 +194,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Map each item using a callback.
 	 */
-	map<U>(callback: (value: T, key: string) => U): ProxiedLazyCollection<U> {
+	map<U>(callback: (value: T, key: number) => U): ProxiedLazyCollection<U> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -208,7 +208,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Filter items using a callback.
 	 */
-	filter(callback?: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
+	filter(callback?: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -224,7 +224,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Reject items using a callback (inverse of filter).
 	 */
-	reject(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
+	reject(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		return this.filter((value, key) => !callback(value, key));
 	}
 
@@ -270,7 +270,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Take items while the callback returns true.
 	 */
-	takeWhile(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
+	takeWhile(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -285,7 +285,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Take items until the callback returns true.
 	 */
-	takeUntil(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
+	takeUntil(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -300,7 +300,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Skip items while the callback returns true.
 	 */
-	skipWhile(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
+	skipWhile(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -317,7 +317,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Skip items until the callback returns true.
 	 */
-	skipUntil(callback: (value: T, key: string) => boolean): ProxiedLazyCollection<T> {
+	skipUntil(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -334,7 +334,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Map and flatten the result.
 	 */
-	flatMap<U>(callback: (value: T, key: string) => Iterable<U>): ProxiedLazyCollection<U> {
+	flatMap<U>(callback: (value: T, key: number) => Iterable<U>): ProxiedLazyCollection<U> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -374,7 +374,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Execute a callback on each item (consuming the iterator).
 	 */
-	each(callback: (value: T, key: string) => unknown): this {
+	each(callback: (value: T, key: number) => unknown): this {
 		for (const [key, value] of makeIterator(this.source)) {
 			if (callback(value, key) === false) break;
 		}
@@ -398,7 +398,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 * Execute a callback on each item lazily (vs eager `each`).
 	 * The callback is executed when the item is yielded, not immediately.
 	 */
-	tapEach(callback: (value: T, key: string) => void): ProxiedLazyCollection<T> {
+	tapEach(callback: (value: T, key: number) => void): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
@@ -433,7 +433,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 */
 	remember(): ProxiedLazyCollection<T> {
 		const cache: T[] = [];
-		let iteratorInstance: Generator<[string, T]> | null = null;
+		let iteratorInstance: Generator<[number, T]> | null = null;
 		let iteratorExhausted = false;
 		const source = this.source;
 
@@ -452,7 +452,7 @@ export class LazyCollection<T> implements Iterable<T> {
 				}
 
 				// If iterator is exhausted, we're done
-				if (iteratorExhausted) return;
+				if (iteratorExhausted || !iteratorInstance) return;
 
 				// Continue from where iterator left off (no re-computation)
 				while (true) {
@@ -463,6 +463,34 @@ export class LazyCollection<T> implements Iterable<T> {
 					}
 					const [, value] = result.value;
 					cache.push(value);
+					yield value;
+				}
+			}),
+		);
+	}
+
+	/**
+	 * Execute a callback at regular intervals during iteration.
+	 * The callback is invoked when at least `intervalSeconds` have passed
+	 * since the last heartbeat. Useful for long-running iterations to
+	 * report progress or check for cancellation.
+	 *
+	 * @see https://laravel.com/docs/collections#method-withheartbeat
+	 */
+	withHeartbeat(intervalSeconds: number, callback: () => void): ProxiedLazyCollection<T> {
+		const source = this.source;
+		const intervalMs = intervalSeconds * 1000;
+
+		return wrap(
+			new LazyCollection(function* () {
+				let lastHeartbeat = Date.now();
+
+				for (const [, value] of makeIterator(source)) {
+					const now = Date.now();
+					if (now - lastHeartbeat >= intervalMs) {
+						callback();
+						lastHeartbeat = now;
+					}
 					yield value;
 				}
 			}),
@@ -497,7 +525,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	/**
 	 * Get the first item.
 	 */
-	first(callback?: (value: T, key: string) => boolean): T | undefined {
+	first(callback?: (value: T, key: number) => boolean): T | undefined {
 		for (const [key, value] of makeIterator(this.source)) {
 			if (!callback || callback(value, key)) {
 				return value;
@@ -510,7 +538,7 @@ export class LazyCollection<T> implements Iterable<T> {
 	 * Get the last item.
 	 * Note: This consumes the entire iterator.
 	 */
-	last(callback?: (value: T, key: string) => boolean): T | undefined {
+	last(callback?: (value: T, key: number) => boolean): T | undefined {
 		let lastValue: T | undefined;
 		for (const [key, value] of makeIterator(this.source)) {
 			if (!callback || callback(value, key)) {
@@ -631,14 +659,14 @@ export class LazyCollection<T> implements Iterable<T> {
 	 * SHORT-CIRCUITS: stops at first match (Laravel behavior).
 	 */
 	contains(
-		keyOrCallback: T | string | ((value: T, key: string) => boolean),
+		keyOrCallback: T | string | ((value: T, key: number) => boolean),
 		operator?: WhereOperator | unknown,
 		value?: unknown,
 	): boolean {
 		// Single argument: value or callback
 		if (operator === undefined && value === undefined) {
 			if (useAsCallable(keyOrCallback)) {
-				return this.first(keyOrCallback as (v: T, k: string) => boolean) !== undefined;
+				return this.first(keyOrCallback as (v: T, k: number) => boolean) !== undefined;
 			}
 			// Loose equality check
 			for (const [, val] of makeIterator(this.source)) {
@@ -650,21 +678,21 @@ export class LazyCollection<T> implements Iterable<T> {
 			return false;
 		}
 		// Multiple arguments: key/operator/value form
-		return this.contains(operatorForWhere<T>(keyOrCallback as string, operator, value));
+		return this.contains(operatorForWhere<T>(keyOrCallback as string, operator, value) as (v: T, k: number) => boolean);
 	}
 
 	/**
 	 * Determine if an item exists in the collection using strict comparison.
 	 * SHORT-CIRCUITS: stops at first match.
 	 */
-	containsStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: unknown): boolean {
+	containsStrict(keyOrValue: T | string | ((value: T, key: number) => boolean), value?: unknown): boolean {
 		// Two arguments: key and value
 		if (value !== undefined) {
 			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
 		}
 		// Single argument: callback or value
 		if (useAsCallable(keyOrValue)) {
-			return this.first(keyOrValue as (v: T, k: string) => boolean) !== undefined;
+			return this.first(keyOrValue as (v: T, k: number) => boolean) !== undefined;
 		}
 		// Strict equality check
 		for (const [, item] of makeIterator(this.source)) {

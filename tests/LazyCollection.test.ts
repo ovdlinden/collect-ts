@@ -350,6 +350,78 @@ describe('LazyCollection', () => {
 				expect(lc.all()).toEqual([]);
 			});
 		});
+
+		describe('withHeartbeat()', () => {
+			it('calls callback on every item with zero interval', () => {
+				let callCount = 0;
+				const items = lazy([1, 2, 3, 4, 5])
+					.withHeartbeat(0, () => callCount++)
+					.all();
+
+				expect(items).toEqual([1, 2, 3, 4, 5]);
+				expect(callCount).toBe(5); // Zero interval = fires every iteration
+			});
+
+			it('does not call callback if interval not reached', () => {
+				let callCount = 0;
+				const items = lazy([1, 2, 3])
+					.withHeartbeat(10, () => callCount++) // 10 second interval
+					.all();
+
+				expect(items).toEqual([1, 2, 3]);
+				expect(callCount).toBe(0); // Too fast to trigger
+			});
+
+			it('preserves all items from the source', () => {
+				const items = lazy([1, 2, 3, 4, 5])
+					.withHeartbeat(0, () => {})
+					.all();
+
+				expect(items).toEqual([1, 2, 3, 4, 5]);
+			});
+
+			it('handles empty collection', () => {
+				let callCount = 0;
+				const items = lazy([])
+					.withHeartbeat(0, () => callCount++)
+					.all();
+
+				expect(items).toEqual([]);
+				expect(callCount).toBe(0);
+			});
+
+			it('executes callback lazily', () => {
+				let callCount = 0;
+				const lc = lazy([1, 2, 3]).withHeartbeat(0, () => callCount++);
+
+				// Not executed yet (lazy)
+				expect(callCount).toBe(0);
+
+				// Now execute
+				lc.all();
+				expect(callCount).toBe(3);
+			});
+
+			it('chains with other lazy methods', () => {
+				let callCount = 0;
+				const items = lazy([1, 2, 3, 4, 5])
+					.withHeartbeat(0, () => callCount++)
+					.filter((x) => x % 2 === 0)
+					.map((x) => x * 10)
+					.all();
+
+				expect(items).toEqual([20, 40]);
+				expect(callCount).toBe(5); // Heartbeat fires for all 5, filter happens after
+			});
+
+			it('propagates callback errors', () => {
+				const lc = lazy([1, 2, 3]).withHeartbeat(0, () => {
+					throw new Error('heartbeat error');
+				});
+
+				expect(() => lc.all()).toThrow('heartbeat error');
+			});
+		});
 	});
 
 	// =============================================================================
@@ -722,14 +794,14 @@ describe('LazyCollection', () => {
 
 		it('supports entries() for key-value iteration', () => {
 			const lc = new LazyCollection(['a', 'b', 'c']);
-			const entries: [string, string][] = [];
+			const entries: [number, string][] = [];
 			for (const entry of lc.entries()) {
 				entries.push(entry);
 			}
 			expect(entries).toEqual([
-				['0', 'a'],
-				['1', 'b'],
-				['2', 'c'],
+				[0, 'a'],
+				[1, 'b'],
+				[2, 'c'],
 			]);
 		});
 	});

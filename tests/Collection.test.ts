@@ -124,6 +124,16 @@ describe('Transformation', () => {
 			const result = collect([0, 1, '', 'hello', null, undefined, false, true]);
 			expect(result.filter().values().all()).toEqual([1, 'hello', true]);
 		});
+
+		it('uses string keys for associative collections', () => {
+			const collection = collect({ a: 1, b: 2, c: 3 });
+			const keys: string[] = [];
+			collection.filter((value, key) => {
+				keys.push(key);
+				return value > 1;
+			});
+			expect(keys).toEqual(['a', 'b', 'c']);
+		});
 	});
 
 	describe('reject()', () => {
@@ -156,6 +166,53 @@ describe('Transformation', () => {
 			const result = collect(items).pluck('name', 'id');
 			expect(result.get('1')).toBe('A');
 			expect(result.get('2')).toBe('B');
+		});
+
+		it('plucks nested properties with dot notation', () => {
+			const users = collect([
+				{ name: 'John', address: { city: 'NYC', zip: 10001 } },
+				{ name: 'Jane', address: { city: 'LA', zip: 90001 } },
+			]);
+			expect(users.pluck('address.city').all()).toEqual(['NYC', 'LA']);
+			expect(users.pluck('address.zip').all()).toEqual([10001, 90001]);
+		});
+
+		it('plucks deeply nested properties', () => {
+			const data = collect([{ a: { b: { c: { d: 'deep' } } } }, { a: { b: { c: { d: 'value' } } } }]);
+			expect(data.pluck('a.b.c.d').all()).toEqual(['deep', 'value']);
+		});
+
+		it('plucks deeply nested properties (5-6 levels)', () => {
+			const data = collect([{ a: { b: { c: { d: { e: { f: 'deep6' } } } } } }]);
+			expect(data.pluck('a.b.c.d.e').all()).toEqual([{ f: 'deep6' }]);
+			expect(data.pluck('a.b.c.d.e.f').all()).toEqual(['deep6']);
+		});
+
+		it('returns undefined for missing nested paths', () => {
+			const users = collect([{ name: 'John', address: { city: 'NYC' } }, { name: 'Jane' }]);
+			const cities = users.pluck('address.city').all();
+			expect(cities[0]).toBe('NYC');
+			expect(cities[1]).toBeUndefined();
+		});
+
+		it('uses nested paths for both value and key parameters', () => {
+			const users = collect([
+				{ id: 1, profile: { username: 'john' }, address: { city: 'NYC' } },
+				{ id: 2, profile: { username: 'jane' }, address: { city: 'LA' } },
+			]);
+			const result = users.pluck('address.city', 'profile.username');
+			expect(result.get('john')).toBe('NYC');
+			expect(result.get('jane')).toBe('LA');
+		});
+
+		it('provides correct type inference for nested paths', () => {
+			type User = { name: string; address: { city: string; zip: number } };
+			const users = collect<User>([{ name: 'John', address: { city: 'NYC', zip: 10001 } }]);
+			// These should compile with correct types
+			const cities: Collection<string> = users.pluck('address.city');
+			const zips: Collection<number> = users.pluck('address.zip');
+			expect(cities.first()).toBe('NYC');
+			expect(zips.first()).toBe(10001);
 		});
 	});
 
@@ -5182,6 +5239,108 @@ describe('Type Inference', () => {
 			// Test that "1" !== 1 (strict comparison)
 			const c = collect([1, 2, 3]);
 			expect(c.containsStrict('1' as unknown as number)).toBe(false);
+		});
+	});
+});
+
+// ============================================================================
+// Arrayable/Collectable Input Types (Coverage for helper functions)
+// ============================================================================
+
+describe('Arrayable inputs (Iterable, CollectionParam)', () => {
+	describe('Iterable inputs via Set', () => {
+		it('diff accepts Set (Iterable)', () => {
+			const c = collect([1, 2, 3, 4, 5]);
+			const s = new Set([2, 4]);
+			expect(c.diff(s as any).all()).toEqual([1, 3, 5]);
+		});
+
+		it('intersect accepts Set (Iterable)', () => {
+			const c = collect([1, 2, 3, 4, 5]);
+			const s = new Set([2, 4, 6]);
+			expect(c.intersect(s as any).all()).toEqual([2, 4]);
+		});
+
+		it('concat accepts Set (Iterable)', () => {
+			const c = collect([1, 2]);
+			const s = new Set([3, 4]);
+			expect(c.concat(s as any).all()).toEqual([1, 2, 3, 4]);
+		});
+	});
+
+	describe('Iterable inputs via generator', () => {
+		it('diff accepts generator (Iterable)', () => {
+			const c = collect([1, 2, 3, 4, 5]);
+			function* gen() {
+				yield 2;
+				yield 4;
+			}
+			expect(c.diff(gen() as any).all()).toEqual([1, 3, 5]);
+		});
+
+		it('combine accepts generator (Iterable)', () => {
+			const c = collect(['a', 'b', 'c']);
+			function* gen() {
+				yield 1;
+				yield 2;
+				yield 3;
+			}
+			expect(c.combine(gen() as any).all()).toEqual({ a: 1, b: 2, c: 3 });
+		});
+	});
+
+	describe('CollectionParam duck-type inputs', () => {
+		it('diff accepts object with toArray method', () => {
+			const c = collect([1, 2, 3, 4, 5]);
+			const param = { toArray: () => [2, 4] };
+			expect(c.diff(param as any).all()).toEqual([1, 3, 5]);
+		});
+
+		it('diffUsing accepts object with toArray method', () => {
+			const c = collect(['a', 'B', 'c']);
+			const param = { toArray: () => ['A', 'b'] };
+			const result = c.diffUsing(param as any, (a, b) => (a.toLowerCase() === b.toLowerCase() ? 0 : 1));
+			expect(result.all()).toEqual(['c']);
+		});
+	});
+});
+
+describe('Collectable inputs (Iterable for assoc methods)', () => {
+	describe('Iterable inputs for associative methods', () => {
+		it('diffAssoc accepts Set (converts to indexed Record)', () => {
+			const c = collect({ 0: 'a', 1: 'b', 2: 'c' });
+			const s = new Set(['a', 'x']);
+			const result = c.diffAssoc(s as any);
+			// Set becomes { 0: 'a', 1: 'x' }, so 'b' at key 1 differs
+			expect(result.get('1')).toBe('b');
+			expect(result.get('2')).toBe('c');
+		});
+
+		it('intersectAssoc accepts generator (Iterable)', () => {
+			const c = collect({ 0: 'a', 1: 'b' });
+			function* gen() {
+				yield 'a';
+				yield 'b';
+			}
+			const result = c.intersectAssoc(gen() as any);
+			expect(result.all()).toEqual({ 0: 'a', 1: 'b' });
+		});
+	});
+
+	describe('CollectionParam duck-type for associative methods', () => {
+		it('diffAssoc accepts object with all method', () => {
+			const c = collect({ a: 1, b: 2, c: 3 });
+			const param = { all: () => ({ a: 1, c: 99 }) };
+			const result = c.diffAssoc(param as any);
+			expect(result.get('b')).toBe(2);
+			expect(result.get('c')).toBe(3);
+		});
+
+		it('intersectAssoc accepts object with all method', () => {
+			const c = collect({ a: 1, b: 2, c: 3 });
+			const param = { all: () => ({ a: 1, b: 99 }) };
+			const result = c.intersectAssoc(param as any);
+			expect(result.all()).toEqual({ a: 1 });
 		});
 	});
 });

@@ -27,12 +27,17 @@ export const LARAVEL_COLLECTION_VERSION = '12.43' as const;
 // Core Collection class
 export { collect, Collection, collectState, toArray, WithCollection } from './Collection.js';
 export type {
+	Arrayable,
+	Collectable,
 	Collapse,
 	CollectedState,
+	CollectionKey,
 	CollectionKind,
 	CollectionMacros,
 	CollectionParam,
 	FlattenDepth,
+	Path,
+	PathValue,
 	ProxiedCollection,
 	ValueRetriever,
 	WhereOperator,
