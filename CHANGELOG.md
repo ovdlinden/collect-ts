@@ -1,19 +1,39 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## [Unreleased]
+## [0.3.0] - 2026-01-05
 
-### Bug Fixes
-- Remove duplicate pnpm version specification ([`c03af73`](https://github.com/ovdlinden/collect-ts/commit/c03af736a862d138fe2a385bae62efc1a81c8bbf))
+### Build
+- Improve release workflow ([`e3b7606`](https://github.com/ovdlinden/collect-ts/commit/e3b7606c1005fd0f95ce6faed4c4146f7cd079d5))
+
+
+### Documentation
+- Add Inertia.js section with React example ([`bb9f287`](https://github.com/ovdlinden/collect-ts/commit/bb9f287fb9c0a097758b8f3023879bf20a323af9))
+- Add Laravel-style tutorials for TypeScript, patterns, and lazy collections ([`4f90c38`](https://github.com/ovdlinden/collect-ts/commit/4f90c3828e11a69ab85d59b428d5553f6f1813cb))
+- Add npm and JSR version badges ([`b4ec224`](https://github.com/ovdlinden/collect-ts/commit/b4ec2240d89d50a589863013d10cc04fa5587443))
+- Reorder sidebar for progressive learning path ([`82fbcca`](https://github.com/ovdlinden/collect-ts/commit/82fbccaa6868259e4bf1007aa26e276d5eb11480))
+- Simplify examples by inlining collect() calls ([`9fc9bbf`](https://github.com/ovdlinden/collect-ts/commit/9fc9bbfb7d088367a509bc317b8880a073d1d320))
+
+
+### Features
+- Add Collection key types, Path<T>, and type-safe pluck() ([`a7d8d4d`](https://github.com/ovdlinden/collect-ts/commit/a7d8d4d5510e1007694c89a7bc200c4b08ea6f6c))
+- Add coverage reporting to GitHub Actions ([`71fbe2a`](https://github.com/ovdlinden/collect-ts/commit/71fbe2af5fb5fb93b75381f2d83cccf795817402))
+- Implement git-native Laravel docs baseline system ([`343d80a`](https://github.com/ovdlinden/collect-ts/commit/343d80aa97ac73a3d02cf930ee157dd3c2eced27))
 
 
 ### Miscellaneous
-- Update CHANGELOG ([`54b032a`](https://github.com/ovdlinden/collect-ts/commit/54b032a0f0efb77692c9ef0076d65a106b52be45))
+- Sync jsr.json version to 0.3.0 ([`50d3313`](https://github.com/ovdlinden/collect-ts/commit/50d3313d2257d379be61a87cbfa0447c8562f933))
+- Update CHANGELOG ([`e190050`](https://github.com/ovdlinden/collect-ts/commit/e19005033d71ee0c77b2f711816b155c9fc38be1))
+
+
+### Styling
+- Use TypeScript blue (#3178c6) for info blocks ([`56445c7`](https://github.com/ovdlinden/collect-ts/commit/56445c7df7cd394e40cc7b653b1e418dffdf6995))
 
 ## [0.2.0] - 2025-12-30
 
 ### Bug Fixes
 - Add explicit return types to trait mixins for JSR compatibility ([`b9f2250`](https://github.com/ovdlinden/collect-ts/commit/b9f2250dfc29e2345d523cc6d6c709d4d1fc104b))
+- Remove duplicate pnpm version specification ([`c03af73`](https://github.com/ovdlinden/collect-ts/commit/c03af736a862d138fe2a385bae62efc1a81c8bbf))
 
 
 ### Documentation
@@ -24,6 +44,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous
 - Bump version to 0.2.0 ([`55c006e`](https://github.com/ovdlinden/collect-ts/commit/55c006e03360437a3d52177d9cface69e3c866fc))
+- Update CHANGELOG ([`54b032a`](https://github.com/ovdlinden/collect-ts/commit/54b032a0f0efb77692c9ef0076d65a106b52be45))
 - Update CHANGELOG ([`d7df243`](https://github.com/ovdlinden/collect-ts/commit/d7df2432bc8bd1112953bac90c01e66344db434c))
 
 ## [0.1.0] - 2025-12-30
