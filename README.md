@@ -9,6 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org/)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/ovdlinden/collect-ts/graph/badge.svg)](https://codecov.io/gh/ovdlinden/collect-ts)
 
 > **Warning**
 > This package is in **alpha** and under active development. APIs may change before the 1.0.0 stable release. Not recommended for production use yet.
