@@ -9,13 +9,13 @@
 
 import {
 	type Collection,
-	type ValueRetriever,
-	type WhereOperator,
 	collect,
 	dataGet,
 	operatorForWhere,
 	useAsCallable,
+	type ValueRetriever,
 	valueRetriever,
+	type WhereOperator,
 } from './Collection.js';
 
 // ═══════════════════════════════════════════════════════════════════════════

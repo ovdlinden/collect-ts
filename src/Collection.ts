@@ -45,7 +45,7 @@ import {
 } from './exceptions';
 
 // Circular import - this works because both files only use imports in function bodies
-import { type ProxiedLazyCollection, lazy as lazyFn } from './LazyCollection.js';
+import { lazy as lazyFn, type ProxiedLazyCollection } from './LazyCollection.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -193,20 +193,22 @@ export type FlattenDepth<T, D extends number> = {
 type NonNullableItem<T> = T extends null | undefined ? never : T;
 
 /** Extract non-function property keys from T, handling nullable types */
-type PropertyKeys<T> = NonNullableItem<T> extends never
-	? never
-	: {
-			// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
-			[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? never : K;
-		}[keyof NonNullableItem<T>];
+type PropertyKeys<T> =
+	NonNullableItem<T> extends never
+		? never
+		: {
+				// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
+				[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? never : K;
+			}[keyof NonNullableItem<T>];
 
 /** Extract function/method keys from T, handling nullable types */
-type MethodKeys<T> = NonNullableItem<T> extends never
-	? never
-	: {
-			// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
-			[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? K : never;
-		}[keyof NonNullableItem<T>];
+type MethodKeys<T> =
+	NonNullableItem<T> extends never
+		? never
+		: {
+				// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
+				[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? K : never;
+			}[keyof NonNullableItem<T>];
 
 /**
  * Higher-order map proxy type.
@@ -1688,7 +1690,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		operator?: unknown,
 		value?: unknown,
 	): boolean {
-		// biome-ignore lint/style/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
 		if (arguments.length === 1) {
 			if (useAsCallable(keyOrCallback)) {
 				for (const [key, val] of Object.entries(this.items)) {
@@ -1709,7 +1711,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Determine if an item exists, using strict comparison.
 	 */
 	containsStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: T): boolean {
-		// biome-ignore lint/style/noArguments: Required to detect if caller passed 2 args (undefined value could be explicit)
+		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed 2 args (undefined value could be explicit)
 		if (arguments.length === 2) {
 			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
 		}
@@ -2589,7 +2591,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		value?: unknown,
 	): [Collection<T, CK>, Collection<T, CK>] | [Collection<T, CK>, Collection<Exclude<T, T>, CK>] {
 		let callback: (value: T, key: string) => boolean;
-		// biome-ignore lint/style/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
 		const hasMultipleArgs = arguments.length > 1;
 		if (hasMultipleArgs) {
 			callback = operatorForWhere(keyOrCallback as string, operator, value);
@@ -2941,7 +2943,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	): T {
 		let filter: ((value: T, key: CollectionKey<CK>) => boolean) | undefined;
 
-		// biome-ignore lint/style/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
 		if (arguments.length > 1) {
 			filter = operatorForWhere(keyOrCallback as string, operator, value) as (
 				value: T,
@@ -2976,7 +2978,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	firstOrFail(keyOrCallback?: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): T {
 		let filter: ((value: T, key: string) => boolean) | undefined;
 
-		// biome-ignore lint/style/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
 		if (arguments.length > 1) {
 			filter = operatorForWhere(keyOrCallback as string, operator, value);
 		} else if (keyOrCallback) {
@@ -3454,7 +3456,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Determine if all items pass the given truth test.
 	 */
 	every(keyOrCallback: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): boolean {
-		// biome-ignore lint/style/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
 		if (arguments.length === 1) {
 			const callback = useAsCallable(keyOrCallback)
 				? (keyOrCallback as (value: T, key: string) => boolean)

@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { Collection, LazyCollection, type ProxiedCollection, collect, lazy } from '../src';
+import { Collection, collect, LazyCollection, lazy, type ProxiedCollection } from '../src';
 
 // Augment CollectionMacros for test macros (must use _T to match base interface)
 declare module '../src' {
