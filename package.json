@@ -54,7 +54,7 @@
 		"url": "https://github.com/ovdlinden/collect-ts/issues"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
+		"@biomejs/biome": "^2.3.11",
 		"@sebbo2002/semantic-release-jsr": "^3.1.0",
 		"@semantic-release/changelog": "^6.0.3",
 		"@semantic-release/exec": "^7.0.3",
