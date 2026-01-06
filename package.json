@@ -50,7 +50,7 @@
 		"@types/node": "^22.15.29",
 		"@vitest/coverage-v8": "^4.0.16",
 		"lefthook": "^2.0.13",
-		"semantic-release": "^24.2.5",
+		"semantic-release": "^25.0.2",
 		"tsup": "^8.5.1",
 		"tsx": "^4.20.3",
 		"typescript": "^5.8.3",
