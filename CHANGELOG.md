@@ -1,3 +1,15 @@
+# [0.4.0](https://github.com/ovdlinden/collect-ts/compare/v0.3.0...v0.4.0) (2026-01-06)
+
+
+### Bug Fixes
+
+* correct VERSION constant and package name references ([e434627](https://github.com/ovdlinden/collect-ts/commit/e434627183e9846613793788b95008e44d5e703b))
+
+
+### Features
+
+* add semantic-release for automated versioning and publishing ([49d6ce6](https://github.com/ovdlinden/collect-ts/commit/49d6ce677fa324c1d2b6f5fe53ba73201845af8a))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
