@@ -24,12 +24,10 @@ export const VERSION = '0.4.0' as const;
 /** Laravel Collection version this package implements */
 export const LARAVEL_COLLECTION_VERSION = '0.4.0' as const;
 
-// Core Collection class
-export { collect, Collection, collectState, toArray, WithCollection } from './Collection.js';
 export type {
 	Arrayable,
-	Collectable,
 	Collapse,
+	Collectable,
 	CollectedState,
 	CollectionKey,
 	CollectionKind,
@@ -42,6 +40,8 @@ export type {
 	ValueRetriever,
 	WhereOperator,
 } from './Collection.js';
+// Core Collection class
+export { Collection, collect, collectState, toArray, WithCollection } from './Collection.js';
 
 // Exceptions
 export {
@@ -50,10 +50,9 @@ export {
 	MultipleItemsFoundException,
 	UnexpectedValueException,
 } from './exceptions/index.js';
-
-// Traits (for extension)
-export { Conditionable, Pipeable, Tappable } from './traits/index.js';
+export type { ProxiedLazyCollection } from './LazyCollection.js';
 
 // Lazy Collections
-export { lazy, LazyCollection } from './LazyCollection.js';
-export type { ProxiedLazyCollection } from './LazyCollection.js';
+export { LazyCollection, lazy } from './LazyCollection.js';
+// Traits (for extension)
+export { Conditionable, Pipeable, Tappable } from './traits/index.js';

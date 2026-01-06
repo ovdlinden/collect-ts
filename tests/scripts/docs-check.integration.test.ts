@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { type CheckDeps, runCheck } from '../../scripts/docs/check';
-import { type FetchError, type FileError, type Result, err, ok } from '../../scripts/docs/core/types';
+import { err, type FetchError, type FileError, ok, type Result } from '../../scripts/docs/core/types';
 
 // Minimal Laravel docs markdown with one method
 const MINIMAL_LARAVEL_DOCS = `

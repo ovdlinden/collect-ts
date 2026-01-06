@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { Collection, MultipleItemsFoundException, type ProxiedCollection, collect } from '../src';
+import { Collection, collect, MultipleItemsFoundException, type ProxiedCollection } from '../src';
 
 // =============================================================================
 // BASIC TESTS
