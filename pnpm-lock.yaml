@@ -12,8 +12,8 @@ importers:
         specifier: ^2.3.11
         version: 2.5.2
       '@sebbo2002/semantic-release-jsr':
-        specifier: ^3.1.0
-        version: 3.2.1
+        specifier: ^4.0.2
+        version: 4.0.2
       '@semantic-release/changelog':
         specifier: ^6.0.3
         version: 6.0.3(semantic-release@25.0.5(typescript@5.9.3))
@@ -893,9 +893,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@sebbo2002/semantic-release-jsr@3.2.1':
-    resolution: {integrity: sha512-5Xlw9TNvOsyWUUzYvvR9h7KsPAXnhjLOpZfMbLGJetItFK+fZlheV2qgJXqwSW97Vaqu0cu82ZIj8noGxyZBXA==}
-    engines: {node: 20 || >=22.0.0}
+  '@sebbo2002/semantic-release-jsr@4.0.2':
+    resolution: {integrity: sha512-8ts3nWCxX8sTs7TOxcVDMMCuQcmjGY9ic9FyhbZ5Uevt1xF8xjcekDJuQ0OkwvLYyvVq22h2H5XrSPm9b1IwsA==}
+    engines: {node: 22 || >=24.0.0}
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
@@ -1988,8 +1988,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@3.3.15:
-    resolution: {integrity: sha512-y7Wygv/7mEOvxTuEQDB8StXdMRBWf1kR/tlhAzBRUFkB2jfcLOAxO/SHmOO2zgz1pVgK29/kyupn059/bCHdjA==}
+  nanoid@3.3.16:
+    resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -3466,7 +3466,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.54.0':
     optional: true
 
-  '@sebbo2002/semantic-release-jsr@3.2.1':
+  '@sebbo2002/semantic-release-jsr@4.0.2':
     dependencies:
       '@semantic-release/error': 4.0.0
       jsr: 0.14.3
@@ -4681,7 +4681,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanoid@3.3.15:
+  nanoid@3.3.16:
     optional: true
 
   neo-async@2.6.2: {}
@@ -4852,7 +4852,7 @@ snapshots:
 
   postcss@8.5.8:
     dependencies:
-      nanoid: 3.3.15
+      nanoid: 3.3.16
       picocolors: 1.1.1
       source-map-js: 1.2.1
     optional: true
