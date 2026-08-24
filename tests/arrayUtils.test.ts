@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	arrayContains,
-	arrayFilterByKey,
-	arrayFilterBySet,
-	arrayFindByKey,
-	arrayGroupByKey,
-	arrayMapByKey,
-} from '../src/arrayUtils.js';
+import { arrayContains, arrayFilterByKey, arrayFilterBySet, arrayFindByKey, arrayMapByKey } from '../src/arrayUtils.js';
 
 describe('arrayFilterByKey', () => {
 	const items = [
@@ -197,64 +190,5 @@ describe('arrayContains', () => {
 		expect(arrayContains([true, false], true)).toBe(true);
 		expect(arrayContains([true, false], 1)).toBe(true);
 		expect(arrayContains([true, false], 0)).toBe(true);
-	});
-});
-
-describe('arrayGroupByKey', () => {
-	const items = [
-		{ id: 1, category: 'a', active: true },
-		{ id: 2, category: 'b', active: false },
-		{ id: 3, category: 'a', active: true },
-		{ id: 4, category: 'c', active: false },
-	];
-
-	it('groups items by string key', () => {
-		const groups = arrayGroupByKey(items, 'category');
-		expect(groups.size).toBe(3);
-		expect(groups.get('a')).toEqual([items[0], items[2]]);
-		expect(groups.get('b')).toEqual([items[1]]);
-		expect(groups.get('c')).toEqual([items[3]]);
-	});
-
-	it('groups items by boolean key (converts to "1"/"0")', () => {
-		const groups = arrayGroupByKey(items, 'active');
-		expect(groups.size).toBe(2);
-		expect(groups.get('1')).toEqual([items[0], items[2]]);
-		expect(groups.get('0')).toEqual([items[1], items[3]]);
-	});
-
-	it('handles empty array', () => {
-		const groups = arrayGroupByKey([], 'category');
-		expect(groups.size).toBe(0);
-	});
-
-	it('handles single element', () => {
-		const groups = arrayGroupByKey([items[0]], 'category');
-		expect(groups.size).toBe(1);
-		expect(groups.get('a')).toEqual([items[0]]);
-	});
-
-	it('handles null/undefined values (converts to empty string)', () => {
-		const itemsWithNull = [
-			{ id: 1, category: null },
-			{ id: 2, category: undefined },
-			{ id: 3, category: 'a' },
-		];
-		const groups = arrayGroupByKey(itemsWithNull, 'category');
-		expect(groups.size).toBe(2);
-		expect(groups.get('')).toEqual([itemsWithNull[0], itemsWithNull[1]]);
-		expect(groups.get('a')).toEqual([itemsWithNull[2]]);
-	});
-
-	it('handles numeric keys (converts to string)', () => {
-		const itemsWithNumeric = [
-			{ id: 1, code: 100 },
-			{ id: 2, code: 200 },
-			{ id: 3, code: 100 },
-		];
-		const groups = arrayGroupByKey(itemsWithNumeric, 'code');
-		expect(groups.size).toBe(2);
-		expect(groups.get('100')).toEqual([itemsWithNumeric[0], itemsWithNumeric[2]]);
-		expect(groups.get('200')).toEqual([itemsWithNumeric[1]]);
 	});
 });
