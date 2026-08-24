@@ -4,114 +4,107 @@ layout: home
 hero:
   name: Laravel Collection
   text: for TypeScript
-  tagline: Always in sync with Laravel. TypeScript-first. Modern.
+  tagline: Fluent, typed, always in sync with Laravel.
   actions:
     - theme: brand
       text: Get Started
-      link: /collections
+      link: /00-quickstart
     - theme: alt
       text: View on GitHub
       link: https://github.com/ovdlinden/collect-ts
 
 features:
-  - icon: 🔄
-    title: Always in Sync
-    details: Synchronized with Laravel 12.x. When Laravel adds methods or fixes bugs, we update. Not a one-time port.
-  - icon: 🚀
-    title: Inertia.js Ready
-    details: Same Collection API from Laravel to React/Vue. No new paradigm to learn—the where() you know just works.
-  - icon: 🎯
-    title: TypeScript-First
+  - title: Always in Sync
+    details: Synchronized with Laravel 13.x. When Laravel adds methods or fixes bugs, we update. Not a one-time port.
+  - title: Laravel-Familiar API
+    details: If you know Laravel Collections, you already know this. Same method names, same behavior, same mental model.
+  - title: TypeScript-First
     details: Built from the ground up in TypeScript with advanced generics, conditional types, and full type inference.
-  - icon: ⚡
-    title: LazyCollection
+  - title: LazyCollection
     details: Generator-based lazy evaluation for memory-efficient processing of large datasets.
 ---
 
-::: warning Alpha Release
-This package is in **alpha** and under active development. APIs may change before the 1.0.0 stable release. Not recommended for production use yet.
-:::
+> **Fast**: Matches or beats native array methods. `sum()` runs 4.4× faster at 10K items. [Benchmarks →](/05-benchmarks)
+
+## Choose Your Path
+
+<div class="vp-card-container">
+
+<div class="vp-card">
+
+### Coming from Laravel?
+
+Same `collect()`, `where()`, `pluck()` you already know — now in your Inertia frontend.
+
+[Laravel Developers →](/for/laravel-developers)
+
+</div>
+
+<div class="vp-card">
+
+### New to Collections?
+
+Why this beats `filter().map().reduce()` chains, and how to think in Collections.
+
+[JavaScript Developers →](/for/javascript-developers)
+
+</div>
+
+<div class="vp-card">
+
+### Migrating from lodash?
+
+Method-by-method migration table. 12kb vs 72kb, better tree-shaking.
+
+[Lodash Migration →](/for/lodash-users)
+
+</div>
+
+</div>
 
 ## Why collect-ts?
 
-**A living synchronization with Laravel Collections.**
+| What you're doing | Native JavaScript | collect-ts |
+|-------------------|-------------------|------------|
+| Group by category | `items.reduce((acc, item) => {...}, {})` | `collect(items).groupBy('category')` |
+| Unique emails | `[...new Set(users.map(u => u.email))]` | `collect(users).pluck('email').unique()` |
+| Sum order totals | `orders.reduce((sum, o) => sum + o.total, 0)` | `collect(orders).sum('total')` |
+| First active admin | `users.find(u => u.active && u.role === 'admin')` | `collect(users).where('active', true).firstWhere('role', 'admin')` |
 
-- 🔄 **Version tracked** — `laravelCollectionVersion: 12.43` in package.json
-- 🔧 **Sync infrastructure** — Scripts to pull updates from Laravel's repository
-- ✅ **Test parity** — Tests ported from Laravel's own test suite
+## What's next
 
-When Laravel adds new methods, we add them. When bugs are fixed upstream, we fix them.
+- **[Quick Start](/00-quickstart)** — Installation and basic usage
+- **[TypeScript Guide](/01-typescript)** — Understand type safety and inference
+- **[Common Patterns](/02-patterns)** — Sorting, grouping, and real-world examples
+- **[Full API Reference](/collections)** — All 130+ methods documented
 
-## Installation
+<style>
+.vp-card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
 
-::: code-group
+.vp-card {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 20px;
+  background: var(--vp-c-bg-soft);
+}
 
-```bash [npm]
-npm install collect-ts
-```
+.vp-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.1em;
+}
 
-```bash [pnpm]
-pnpm add collect-ts
-```
+.vp-card p {
+  margin: 0 0 12px 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.95em;
+}
 
-```bash [yarn]
-yarn add collect-ts
-```
-
-```bash [jsr]
-npx jsr add @ovdlinden/collect-ts
-```
-
-:::
-
-## Quick Start
-
-```typescript
-import { collect } from 'collect-ts'
-
-const result = collect([1, 2, 3, 4, 5])
-  .filter(n => n > 2)
-  .map(n => n * 2)
-  .sum()
-// => 24
-```
-
-## LazyCollection for Large Datasets
-
-Process millions of items without loading everything into memory:
-
-```typescript
-import { lazy } from 'collect-ts'
-
-const result = lazy(hugeDataset)
-  .filter(item => item.active)
-  .map(item => item.id)
-  .take(100)
-  .all()
-// Only processes what's needed
-```
-
-## TypeScript-First
-
-Not JavaScript with types bolted on. Real TypeScript with advanced patterns:
-
-```typescript
-// Type-safe property extraction
-const names = collect(users).pluck('name') // Collection<string>
-
-// Higher-order messaging with full typing
-const emails = collect(users).map.email // Collection<string>
-
-// Conditional types that infer correctly
-const flat = collect([[1, 2], [3, 4]]).collapse() // Collection<number>
-```
-
-## Next Steps
-
-Choose your path:
-
-- **[TypeScript Guide](/guide/typescript)** — Understand type safety and inference
-- **[Common Patterns](/guide/patterns)** — Sorting, grouping, and real-world examples
-- **[LazyCollection](/guide/lazy)** — Process huge files without memory issues
-- **[Inertia.js Guide](/guide/inertia)** — Use collections in React/Vue components
-- **[Full API Reference](/collections)** — All 140+ methods documented
+.vp-card a {
+  font-weight: 500;
+}
+</style>

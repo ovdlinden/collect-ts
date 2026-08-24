@@ -22,12 +22,12 @@ import { parseCollectionsDocs } from './core/parser.js';
 import {
 	BASELINE_PATH,
 	type BaselineStatus,
+	err,
 	type FetchError,
 	type FileError,
 	LARAVEL_VERSION,
-	type Result,
-	err,
 	ok,
+	type Result,
 } from './core/types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -239,8 +239,8 @@ async function computeMethodSync(
 		.unique()
 		.sort();
 
-	const missingFromTs = laravelMethods.diff(tsMethods);
-	const tsOnly = tsMethods.diff(laravelMethods);
+	const missingFromTs = laravelMethods.diff(tsMethods.all());
+	const tsOnly = tsMethods.diff(laravelMethods.all());
 
 	return {
 		laravelCount: laravelMethods.count(),

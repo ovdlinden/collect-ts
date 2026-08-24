@@ -271,3 +271,197 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================================
+   Collection Method Cards
+   Polished, professional method documentation styling
+   ========================================================================= */
+
+/* Method container - subtle card appearance */
+.vp-doc h4.collection-method {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, var(--vp-c-bg-soft) 0%, var(--vp-c-bg-alt) 100%);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  border-left: 4px solid var(--vp-c-brand-1);
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vp-doc h4.collection-method:hover {
+  border-left-color: var(--vp-c-brand-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dark .vp-doc h4.collection-method:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* First method needs less top margin */
+.vp-doc h4.first-collection-method {
+  margin-top: 1.5rem;
+}
+
+/* Method name styling within the card */
+.vp-doc h4.collection-method code {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+  background: transparent;
+  padding: 0;
+}
+
+/* Content following a method card - subtle grouping */
+.vp-doc h4.collection-method + p,
+.vp-doc h4.collection-method + div {
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--vp-c-divider);
+  margin-left: 0.25rem;
+}
+
+/* Reset border for code blocks after methods */
+.vp-doc h4.collection-method ~ div[class*='language-'] {
+  border-left: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+/* =========================================================================
+   "On this page" Sidebar Polish
+   ========================================================================= */
+
+/* Cleaner outline/TOC styling */
+.VPDocAsideOutline {
+  font-size: 0.875rem;
+}
+
+.VPDocAsideOutline .outline-title {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--vp-c-text-3);
+  margin-bottom: 0.75rem;
+}
+
+.VPDocAsideOutline .outline-link {
+  padding: 0.35rem 0;
+  transition: color 0.15s ease, padding-left 0.15s ease;
+}
+
+.VPDocAsideOutline .outline-link:hover {
+  color: var(--vp-c-brand-1);
+  padding-left: 0.25rem;
+}
+
+.VPDocAsideOutline .outline-link.active {
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+}
+
+/* =========================================================================
+   Tip/Info Boxes - More Subtle
+   ========================================================================= */
+
+/* Refined custom blocks */
+.vp-doc .custom-block {
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  border: 1px solid transparent;
+}
+
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.5rem;
+}
+
+/* Softer tip styling */
+.vp-doc .custom-block.tip {
+  background: linear-gradient(135deg, rgba(0, 168, 150, 0.08) 0%, rgba(0, 168, 150, 0.04) 100%);
+  border-color: rgba(0, 168, 150, 0.2);
+}
+
+.dark .vp-doc .custom-block.tip {
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.1) 0%, rgba(45, 212, 191, 0.05) 100%);
+  border-color: rgba(45, 212, 191, 0.2);
+}
+
+/* =========================================================================
+   Section Headers - Visual Hierarchy
+   ========================================================================= */
+
+.vp-doc h2 {
+  margin-top: 3rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--vp-c-divider);
+  position: relative;
+}
+
+.vp-doc h2::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--vp-c-brand-1);
+}
+
+.vp-doc h3 {
+  margin-top: 2rem;
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+}
+
+/* =========================================================================
+   Smooth Scrolling & Page Feel
+   ========================================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Subtle animation on anchor targets */
+.vp-doc :target {
+  animation: highlight-fade 1.5s ease-out;
+}
+
+@keyframes highlight-fade {
+  0% {
+    background-color: var(--vp-c-brand-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* =========================================================================
+   Content Spacing & Polish
+   ========================================================================= */
+
+/* Better paragraph spacing in doc content */
+.vp-doc p {
+  line-height: 1.8;
+  margin: 1rem 0;
+}
+
+/* Smoother transitions on interactive elements */
+.vp-doc a,
+.vp-doc code,
+.vp-doc .custom-block {
+  transition: all 0.15s ease;
+}
+
+/* Code block polish */
+.vp-doc div[class*='language-'] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.dark .vp-doc div[class*='language-'] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}

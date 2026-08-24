@@ -1,0 +1,242 @@
+/* =========================================================================
+   Docs theme
+   Palette source of truth: composables/palette.ts
+   The --doc-c-* custom properties below are the canonical colors; the
+   VitePress --vp-c-* system is remapped onto them so the whole UI (links,
+   nav, custom blocks) follows the project palette.
+
+   Rebranding: edit the hexes in the two palette blocks below and mirror
+   them in composables/palette.ts. Nothing else in the theme hardcodes a
+   color, so those are the only edits a new brand needs.
+   ========================================================================= */
+
+/* Prevent layout shift when scrollbar appears/disappears --------------- */
+html {
+	scrollbar-gutter: stable;
+}
+
+/* Typography niceties -------------------------------------------------- */
+.vp-doc {
+	text-wrap: pretty;
+	overflow-wrap: anywhere;
+	hyphens: manual;
+}
+
+.vp-doc table {
+	text-wrap: auto;
+	hyphens: none;
+}
+
+/* Inline code stays whole. The doc body sets overflow-wrap:anywhere for long
+   prose and URLs; inherited into a code chip it shatters a short token like
+   `refreshMr` mid-string inside a narrow table cell, and each fragment then
+   draws its own padded, rounded background. Tables already scroll on overflow
+   (VitePress default), so keep the chip intact instead of breaking it. */
+.vp-doc :not(pre) > code {
+	white-space: nowrap;
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4 {
+	text-wrap: balance;
+	hyphens: none;
+}
+
+/* Canonical palette — light ------------------------------------------- */
+:root {
+	--doc-c-primary: #ff2d20;
+	--doc-c-primary-soft: rgba(255, 45, 32, 0.14);
+	--doc-c-success: #00a896;
+	--doc-c-success-soft: rgba(0, 168, 150, 0.14);
+	--doc-c-warning: #f4a261;
+	--doc-c-warning-soft: rgba(244, 162, 97, 0.16);
+	--doc-c-accent: #0077b6;
+	--doc-c-accent-soft: rgba(0, 119, 182, 0.14);
+	--doc-c-neutral: #6b7280;
+	--doc-c-neutral-soft: rgba(107, 114, 128, 0.14);
+
+	/* Brand (Laravel red) drives links, nav, active states */
+	--vp-c-brand-1: var(--doc-c-primary);
+	--vp-c-brand-2: #e6261a;
+	--vp-c-brand-3: #cc2216;
+	--vp-c-brand-soft: var(--doc-c-primary-soft);
+
+	/* Accent (blue) for special emphasis */
+	--vp-c-accent-1: var(--doc-c-accent);
+	--vp-c-accent-2: #006399;
+	--vp-c-accent-soft: var(--doc-c-accent-soft);
+
+	/* Custom blocks: tip = success, warning = amber, important = primary */
+	--vp-c-tip-1: var(--doc-c-success);
+	--vp-c-tip-2: var(--doc-c-success);
+	--vp-c-tip-3: var(--doc-c-success);
+	--vp-c-tip-soft: var(--doc-c-success-soft);
+
+	--vp-c-warning-1: var(--doc-c-warning);
+	--vp-c-warning-2: var(--doc-c-warning);
+	--vp-c-warning-3: var(--doc-c-warning);
+	--vp-c-warning-soft: var(--doc-c-warning-soft);
+
+	--vp-c-important-1: var(--doc-c-primary);
+	--vp-c-important-2: var(--doc-c-primary);
+	--vp-c-important-3: var(--doc-c-primary);
+	--vp-c-important-soft: var(--doc-c-primary-soft);
+
+	/* Generic green/success aliases kept in sync with the teal success hue */
+	--vp-c-green-1: var(--doc-c-success);
+	--vp-c-green-soft: var(--doc-c-success-soft);
+}
+
+/* Canonical palette — dark -------------------------------------------- */
+.dark {
+	--doc-c-primary: #ff6b61;
+	--doc-c-primary-soft: rgba(255, 107, 97, 0.16);
+	--doc-c-success: #2dd4bf;
+	--doc-c-success-soft: rgba(45, 212, 191, 0.16);
+	--doc-c-warning: #fbbf24;
+	--doc-c-warning-soft: rgba(251, 191, 36, 0.16);
+	--doc-c-accent: #60a5fa;
+	--doc-c-accent-soft: rgba(96, 165, 250, 0.16);
+	--doc-c-neutral: #9ca3af;
+	--doc-c-neutral-soft: rgba(156, 163, 175, 0.16);
+
+	--vp-c-brand-2: #ff4d42;
+	--vp-c-brand-3: #ff3d32;
+
+	--vp-c-accent-2: #3b82f6;
+}
+
+/* Selection ------------------------------------------------------------ */
+.vp-doc ::selection {
+	background: var(--doc-c-primary-soft);
+}
+
+/* Doc header actions (copy button) -------------------------------------- */
+.doc-header-actions {
+	text-align: right;
+	margin-bottom: 8px;
+}
+
+/* Collection method headings -------------------------------------------- */
+/* Minimal styling: just spacing and a subtle left accent for scannability */
+.vp-doc h4.collection-method {
+	margin-top: 2.5rem;
+	padding-left: 0.75rem;
+	border-left: 3px solid var(--doc-c-primary);
+}
+
+.vp-doc h4.first-collection-method {
+	margin-top: 1.5rem;
+}
+
+.vp-doc h4.collection-method code {
+	color: var(--doc-c-primary);
+	background: var(--doc-c-primary-soft);
+}
+
+/* Benchmark comparison cards -------------------------------------------- */
+.benchmark {
+	margin: 1.5rem 0;
+	border: 1px solid var(--vp-c-divider);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.benchmark-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.75rem 1rem;
+	background: var(--vp-c-bg-soft);
+	border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.benchmark-name {
+	font-weight: 600;
+	font-family: var(--vp-font-family-mono);
+	color: var(--vp-c-text-1);
+}
+
+.benchmark-speedup {
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: var(--doc-c-success);
+	background: var(--doc-c-success-soft);
+	padding: 0.25rem 0.5rem;
+	border-radius: 4px;
+}
+
+.benchmark-body {
+	display: flex;
+	flex-direction: column;
+}
+
+.benchmark-col {
+	padding: 1rem;
+}
+
+.benchmark-col:first-child {
+	border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.benchmark-label {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0.5rem;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--vp-c-text-3);
+}
+
+.benchmark-ops {
+	font-family: var(--vp-font-family-mono);
+	font-size: 0.75rem;
+	color: var(--vp-c-text-3);
+}
+
+/* Code blocks inside benchmark columns */
+.benchmark-col div[class*="language-"] {
+	margin: 0;
+	border-radius: 6px;
+}
+
+.benchmark-col div[class*="language-"] pre {
+	padding: 0.75rem 1rem;
+}
+
+/* Hide language label, copy button, and line numbers in benchmark code blocks */
+.benchmark-col div[class*="language-"] > span.lang,
+.benchmark-col div[class*="language-"] > button.copy {
+	display: none;
+}
+
+/* Fix line number alignment in benchmark code blocks */
+.benchmark-col div[class*="language-"] {
+	background: var(--vp-code-block-bg);
+}
+
+.benchmark-col div[class*="language-"] .line-numbers-wrapper {
+	background: var(--vp-code-block-bg);
+	border-right: 1px solid var(--vp-c-divider);
+	padding-top: 0.75rem;
+}
+
+/* Winner (collect-ts) emphasis */
+.benchmark-col.winner {
+	background: var(--doc-c-success-soft);
+	border-radius: 0 0 7px 7px;
+}
+
+.benchmark-col.winner .benchmark-label {
+	color: var(--doc-c-success);
+	font-weight: 600;
+}
+
+.benchmark-col.winner .benchmark-ops {
+	color: var(--doc-c-success);
+	font-weight: 600;
+}

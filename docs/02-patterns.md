@@ -1,13 +1,10 @@
 # Common Patterns
 
-You've filtered data in your components and enjoyed type safety. Now you need to sort results, deduplicate entries, or prepare data for charts.
-
-These patterns complement what you've learned in the other guides.
+You've filtered data in your components with type safety. Now you need to sort results, deduplicate entries, or prepare data for charts.
 
 ::: info Related Guides
-- **Processing large datasets?** See [LazyCollection](/guide/lazy) for memory-efficient streaming.
-- **Want type safety?** See [TypeScript](/guide/typescript) for compile-time validation.
-- **Building with Inertia.js?** See [Inertia.js](/guide/inertia) for frontend patterns.
+- **Processing large datasets?** See [LazyCollection](/03-lazy) for memory-efficient streaming.
+- **Want type safety?** See [TypeScript](/01-typescript) for compile-time validation.
 :::
 
 ## Sorting
@@ -15,8 +12,8 @@ These patterns complement what you've learned in the other guides.
 When your UI needs ordered results but the server sent them unsorted:
 
 ```typescript
-collect(users).sortBy('name').all()
-collect(users).sortByDesc('createdAt').all()
+collect(users).sortBy('name').all() // [!code highlight]
+collect(users).sortByDesc('createdAt').all() // [!code highlight]
 ```
 
 **Custom sort order** (e.g., priority tickets):
@@ -25,18 +22,20 @@ collect(users).sortByDesc('createdAt').all()
 const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
 
 collect(tickets)
-    .sortBy(t => priorityOrder[t.priority])
+    .sortBy(t => priorityOrder[t.priority]) // [!code highlight]
     .all()
 ```
 
-**Natural sort** for version numbers and filenames:
+::: details Natural sort for version numbers and filenames
 
 ```typescript
 collect(['v2', 'v10', 'v1'])
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
     .all()
-// ['v1', 'v2', 'v10']
 ```
+
+Returns `['v1', 'v2', 'v10']`.
+:::
 
 
 ## Lookup Tables
@@ -44,11 +43,12 @@ collect(['v2', 'v10', 'v1'])
 Need O(1) access instead of searching an array every time?
 
 ```typescript
-const usersById = collect(users).keyBy('id').all()
+const usersById = collect(users).keyBy('id').all() // [!code highlight]
 
-// Fast lookup — no .find() needed
 const user = usersById[userId]
 ```
+
+This transforms O(n) search into O(1) lookup. Instead of scanning the array each time you need a user, you index once and access directly.
 
 
 ## Deduplication
@@ -57,8 +57,9 @@ const user = usersById[userId]
 
 ```typescript
 collect(['a', 'b', 'a', 'c']).unique().all()
-// ['a', 'b', 'c']
 ```
+
+Returns `['a', 'b', 'c']`.
 
 **By property:**
 
@@ -66,7 +67,7 @@ collect(['a', 'b', 'a', 'c']).unique().all()
 collect(users).unique('email').all()
 ```
 
-**By computed key** — one user per email domain:
+**By computed key**, one user per email domain:
 
 ```typescript
 collect(users)
@@ -84,8 +85,10 @@ const added = collect(currentIds).diff(previousIds).all()
 const removed = collect(previousIds).diff(currentIds).all()
 ```
 
+The `diff` method returns items in the first collection that aren't in the second. Useful for sync operations: what was added, what was removed.
 
-## Form Arrays
+
+::: details Form Arrays
 
 Managing dynamic line items (invoice rows, ingredients, etc.):
 
@@ -121,25 +124,30 @@ function useLineItems(initial: LineItem[] = []) {
     return { lines, add, remove, totals }
 }
 ```
+:::
 
 
 ## Chart Data
 
 Reshaping data for charting libraries:
 
-```typescript
-// Pie chart data
-const pieData = collect(stats)
-    .map(s => ({ name: s.category, value: s.total }))
-    .all()
+Pie chart data:
 
-// With percentages
+```typescript
+const pieData = collect(stats)
+    .map(s => ({ name: s.category, value: s.total })) // [!code highlight]
+    .all()
+```
+
+With percentages:
+
+```typescript
 const total = collect(stats).sum('value')
 const withPercentages = collect(stats)
-    .map(s => ({
-        ...s,
-        percentage: total > 0 ? (s.value / total) * 100 : 0,
-    }))
+    .map(s => ({ // [!code highlight]
+        ...s, // [!code highlight]
+        percentage: total > 0 ? (s.value / total) * 100 : 0, // [!code highlight]
+    })) // [!code highlight]
     .all()
 ```
 
@@ -180,8 +188,17 @@ const columns = collect(tasks)
 Handle empty collections gracefully:
 
 ```typescript
-collect([]).first()              // undefined
-collect([]).first() ?? fallback  // fallback
+collect([]).first()
+collect([]).first() ?? fallback
 
-collect(items).firstOrFail()     // Throws if empty
+collect(items).firstOrFail()
 ```
+
+- `first()` returns `undefined` on empty collections
+- Use `?? fallback` to provide a default value
+- `firstOrFail()` throws if empty
+
+## What's next
+
+- [LazyCollection](/03-lazy) — Process huge datasets without memory issues
+- [Performance](/05-benchmarks) — When to use collect-ts vs native methods

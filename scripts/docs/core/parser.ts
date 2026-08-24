@@ -5,8 +5,8 @@
  * Pure functions - no I/O, no console output.
  */
 
-import { type Collection, collect } from '../../../src/index.js';
-import type { CodeExample, MethodDoc, ParsedDocs } from './types.js';
+import { Collection, collect } from '../../../src/index.js';
+import type { CodeExample, ParsedDocs } from './types.js';
 
 type LanguageType = 'php' | 'typescript' | 'blade' | 'shell' | 'json' | 'text' | 'html';
 
@@ -42,8 +42,8 @@ export function parseCollectionsDocs(markdownInput: string): ParsedDocs {
 	const methodPattern = /<a name="method-([^"]+)"><\/a>\s*\n####\s*`([^`]+)\(\)`[^\n]*/g;
 	const methodMatches = [...markdown.matchAll(methodPattern)];
 
-	// Parse each method section using collect-ts
-	const methods: Collection<MethodDoc> = collect(methodMatches).map((match, index) => {
+	// Parse each method section using Collection for return type compatibility
+	const methods = new Collection(methodMatches).map((match, index) => {
 		const anchor = match[1];
 		const name = match[2];
 		const startIndex = match.index ?? 0;
