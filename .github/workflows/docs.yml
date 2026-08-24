@@ -8,6 +8,10 @@ on:
       - 'scripts/docs/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
+  workflow_run:
+    workflows: ['Benchmark']
+    types: [completed]
+    branches: [main]
 
 # Sets permissions for GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -23,6 +27,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Skip if triggered by failed benchmark workflow
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

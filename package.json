@@ -46,6 +46,7 @@
 		"size": "size-limit",
 		"size:check": "size-limit --ci",
 		"bench": "vitest bench",
+		"bench:ci": "tsx scripts/benchmark-ci.ts",
 		"bench:docs": "tsx docs/scripts/generate-benchmark-data.ts"
 	},
 	"keywords": [
