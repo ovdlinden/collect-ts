@@ -1,28 +1,9 @@
 /**
- * Laravel Collection for TypeScript
- *
- * A fully-typed TypeScript port of Laravel's Collection class,
- * auto-synced with the official Laravel framework.
- *
- * @example
- * ```ts
- * import { collect } from 'collect-ts';
- *
- * const result = collect([1, 2, 3, 4, 5])
- *   .filter(n => n > 2)
- *   .map(n => n * 2)
- *   .sum();
- * // => 24
- * ```
- *
  * @see https://laravel.com/docs/collections
  */
 
-/** Package version (semver) */
 export const VERSION = '0.4.0' as const;
-
-/** Laravel Collection version this package implements */
-export const LARAVEL_COLLECTION_VERSION = '0.4.0' as const;
+export const LARAVEL_COLLECTION_VERSION = '12.43' as const;
 
 export type {
 	Arrayable,
@@ -31,28 +12,46 @@ export type {
 	CollectedState,
 	CollectionKey,
 	CollectionKind,
+	CollectionLike,
 	CollectionMacros,
 	CollectionParam,
 	FlattenDepth,
 	Path,
 	PathValue,
+	ProxiedArrayCollection,
 	ProxiedCollection,
 	ValueRetriever,
 	WhereOperator,
 } from './Collection.js';
-// Core Collection class
-export { Collection, collect, collectState, toArray, WithCollection } from './Collection.js';
+export {
+	COLLECTION_BRAND,
+	Collection,
+	collect,
+	collectState,
+	isCollection,
+	toArray,
+	WithCollection,
+	wrapWithProxy,
+} from './Collection.js';
 
-// Exceptions
 export {
 	InvalidArgumentException,
 	ItemNotFoundException,
 	MultipleItemsFoundException,
 	UnexpectedValueException,
 } from './exceptions/index.js';
-export type { ProxiedLazyCollection } from './LazyCollection.js';
 
-// Lazy Collections
-export { LazyCollection, lazy } from './LazyCollection.js';
-// Traits (for extension)
-export { Conditionable, Pipeable, Tappable } from './traits/index.js';
+export type {
+	AsyncCollectionMacros,
+	GeneratorFactory,
+	ProxiedAsyncLazyCollection,
+	ProxiedLazyCollection,
+} from './LazyCollection.js';
+export {
+	AsyncLazyCollection,
+	asyncLazy,
+	isAsyncLazyCollection,
+	isLazyCollection,
+	LazyCollection,
+	lazy,
+} from './LazyCollection.js';

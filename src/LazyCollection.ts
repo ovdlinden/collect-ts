@@ -1,15 +1,9 @@
 /**
- * LazyCollection - Laravel-style lazy collection using generators.
- *
- * Only ~12 methods are implemented as truly lazy. All other methods
- * auto-delegate to Collection via Proxy for zero code duplication.
- *
  * @see https://laravel.com/docs/collections#lazy-collections
  */
 
 import {
-	type Collection,
-	collect,
+	Collection,
 	dataGet,
 	operatorForWhere,
 	useAsCallable,
@@ -18,28 +12,21 @@ import {
 	type WhereOperator,
 } from './Collection.js';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TYPE DEFINITIONS
-// ═══════════════════════════════════════════════════════════════════════════
+export type GeneratorFactory<T> = () => Generator<[number, T]>;
 
-type LazySource<T> = (() => Generator<[number, T]>) | T[];
+type LazySource<T> = GeneratorFactory<T> | T[];
 
-/**
- * ProxiedLazyCollection type - LazyCollection with all Collection methods available via delegation.
- */
 export type ProxiedLazyCollection<T> = LazyCollection<T> & {
-	// All Collection methods are available via Proxy delegation
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	[K in keyof Collection<T>]: Collection<T>[K];
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+export type ProxiedAsyncLazyCollection<T> = AsyncLazyCollection<T> &
+	AsyncCollectionMacros<T> & {
+		[K in keyof Collection<T>]: Collection<T>[K] extends (...args: infer A) => infer R
+			? (...args: A) => Promise<R>
+			: Promise<Collection<T>[K]>;
+	};
 
-/**
- * Check if a value is a Generator (not a generator function).
- */
 function isGenerator(value: unknown): value is Generator {
 	return (
 		value !== null &&
@@ -49,9 +36,14 @@ function isGenerator(value: unknown): value is Generator {
 	);
 }
 
-/**
- * Normalize source to a generator function that yields [key, value] pairs.
- */
+export function isLazyCollection<T = unknown>(value: unknown): value is LazyCollection<T> {
+	return value instanceof LazyCollection;
+}
+
+export function isAsyncLazyCollection<T = unknown>(value: unknown): value is AsyncLazyCollection<T> {
+	return value instanceof AsyncLazyCollection;
+}
+
 function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefined): LazySource<T> {
 	if (source === undefined || source === null) {
 		return [];
@@ -62,7 +54,6 @@ function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefin
 	}
 
 	if (typeof source === 'function') {
-		// Wrap the generator function to yield [key, value] pairs
 		return function* () {
 			let index = 0;
 			for (const value of source()) {
@@ -71,13 +62,9 @@ function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefin
 		};
 	}
 
-	// It's an iterable - convert to array
 	return [...source];
 }
 
-/**
- * Create an iterator from the source.
- */
 function* makeIterator<T>(source: LazySource<T>): Generator<[number, T]> {
 	if (Array.isArray(source)) {
 		for (let i = 0; i < source.length; i++) {
@@ -88,33 +75,18 @@ function* makeIterator<T>(source: LazySource<T>): Generator<[number, T]> {
 	}
 }
 
-/**
- * Wraps a LazyCollection with a Proxy for higher-order messaging.
- * Uses function declaration hoisting - wrapLazyWithProxy is defined below.
- */
 function wrap<U>(lc: LazyCollection<U>): ProxiedLazyCollection<U> {
 	return wrapLazyWithProxy(lc);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LAZY COLLECTION CLASS
-// ═══════════════════════════════════════════════════════════════════════════
+function wrapAsync<U>(alc: AsyncLazyCollection<U>): ProxiedAsyncLazyCollection<U> {
+	return wrapAsyncLazyWithProxy(alc);
+}
 
-/**
- * LazyCollection - Memory-efficient collection using generators.
- *
- * Only implements ~12 truly lazy methods. All other methods
- * auto-delegate to Collection via Proxy.
- */
 export class LazyCollection<T> implements Iterable<T> {
-	/**
-	 * The source of items - either an array or a generator function.
-	 * Like Laravel's source property.
-	 */
 	public source: LazySource<T>;
 
 	constructor(source?: Iterable<T> | (() => Generator<T>)) {
-		// Reject raw generators (like Laravel)
 		if (isGenerator(source)) {
 			throw new Error(
 				'Generators should not be passed directly to LazyCollection. ' +
@@ -124,37 +96,20 @@ export class LazyCollection<T> implements Iterable<T> {
 		this.source = normalizeSource(source);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════
-	// ITERATOR PROTOCOL
-	// ═══════════════════════════════════════════════════════════════════════
-
 	*[Symbol.iterator](): Generator<T> {
 		for (const [, value] of makeIterator(this.source)) {
 			yield value;
 		}
 	}
 
-	/**
-	 * Iterate over entries (key-value pairs).
-	 */
 	*entries(): Generator<[number, T]> {
 		yield* makeIterator(this.source);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════
-	// STATIC FACTORY METHODS
-	// ═══════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Create a new lazy collection from a generator function.
-	 */
 	static make<U>(source: () => Generator<U>): ProxiedLazyCollection<U> {
 		return lazy(new LazyCollection(source));
 	}
 
-	/**
-	 * Create a lazy collection with a range of numbers.
-	 */
 	static range(from: number, to: number): ProxiedLazyCollection<number> {
 		return lazy(
 			new LazyCollection(function* () {
@@ -166,9 +121,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Create a lazy collection by invoking a callback a given number of times.
-	 */
 	static times<U>(n: number, callback?: (index: number) => U): ProxiedLazyCollection<U | number> {
 		return lazy(
 			new LazyCollection(function* () {
@@ -179,21 +131,10 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Create an empty lazy collection.
-	 */
 	static empty<U>(): ProxiedLazyCollection<U> {
 		return lazy(new LazyCollection<U>([]));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════
-	// TRULY LAZY METHODS (~12 methods)
-	// These are the only methods that return LazyCollection and maintain laziness
-	// ═══════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Map each item using a callback.
-	 */
 	map<U>(callback: (value: T, key: number) => U): ProxiedLazyCollection<U> {
 		const source = this.source;
 		return wrap(
@@ -205,9 +146,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Filter items using a callback.
-	 */
 	filter(callback?: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -221,22 +159,13 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Reject items using a callback (inverse of filter).
-	 */
 	reject(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		return this.filter((value, key) => !callback(value, key));
 	}
 
-	/**
-	 * Take the first n items.
-	 */
 	take(limit: number): ProxiedLazyCollection<T> {
 		if (limit < 0) {
-			// For negative limit, we need to collect and take from end
-			// This breaks laziness but matches Laravel behavior
-			const all = [...this];
-			return wrap(new LazyCollection(all.slice(limit)));
+			return wrap(new LazyCollection([...this].slice(limit)));
 		}
 
 		const source = this.source;
@@ -251,9 +180,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Skip the first n items.
-	 */
 	skip(count: number): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -267,9 +193,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Take items while the callback returns true.
-	 */
 	takeWhile(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -282,9 +205,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Take items until the callback returns true.
-	 */
 	takeUntil(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -297,9 +217,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Skip items while the callback returns true.
-	 */
 	skipWhile(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -314,9 +231,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Skip items until the callback returns true.
-	 */
 	skipUntil(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -331,9 +245,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Map and flatten the result.
-	 */
 	flatMap<U>(callback: (value: T, key: number) => Iterable<U>): ProxiedLazyCollection<U> {
 		const source = this.source;
 		return wrap(
@@ -345,9 +256,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Chunk the collection into smaller collections.
-	 */
 	chunk(size: number): ProxiedLazyCollection<T[]> {
 		if (size <= 0) {
 			return wrap(new LazyCollection<T[]>([]));
@@ -371,9 +279,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Execute a callback on each item (consuming the iterator).
-	 */
 	each(callback: (value: T, key: number) => unknown): this {
 		for (const [key, value] of makeIterator(this.source)) {
 			if (callback(value, key) === false) break;
@@ -381,23 +286,11 @@ export class LazyCollection<T> implements Iterable<T> {
 		return this;
 	}
 
-	/**
-	 * Pass the collection to a callback and return this.
-	 */
 	tap(callback: (collection: this) => void): this {
 		callback(this);
 		return this;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════
-	// LAZY COLLECTION-SPECIFIC METHODS
-	// These methods are unique to LazyCollection (not in Collection)
-	// ═══════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Execute a callback on each item lazily (vs eager `each`).
-	 * The callback is executed when the item is yielded, not immediately.
-	 */
 	tapEach(callback: (value: T, key: number) => void): ProxiedLazyCollection<T> {
 		const source = this.source;
 		return wrap(
@@ -410,9 +303,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Take items until the specified timeout is reached.
-	 */
 	takeUntilTimeout(timeout: Date): ProxiedLazyCollection<T> {
 		const timeoutMs = timeout.getTime();
 		const source = this.source;
@@ -426,11 +316,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Cache enumerated values for re-iteration.
-	 * Once an item is yielded, it's stored so subsequent iterations
-	 * don't need to re-compute it.
-	 */
 	remember(): ProxiedLazyCollection<T> {
 		const cache: T[] = [];
 		let iteratorInstance: Generator<[number, T]> | null = null;
@@ -439,22 +324,18 @@ export class LazyCollection<T> implements Iterable<T> {
 
 		return wrap(
 			new LazyCollection(function* () {
-				// Create iterator once on first use, persist across invocations
 				if (iteratorInstance === null) {
 					iteratorInstance = makeIterator(source);
 				}
 
-				// Yield cached items first
 				let index = 0;
 				while (index < cache.length) {
 					yield cache[index];
 					index++;
 				}
 
-				// If iterator is exhausted, we're done
 				if (iteratorExhausted || !iteratorInstance) return;
 
-				// Continue from where iterator left off (no re-computation)
 				while (true) {
 					const result = iteratorInstance.next();
 					if (result.done) {
@@ -469,14 +350,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	/**
-	 * Execute a callback at regular intervals during iteration.
-	 * The callback is invoked when at least `intervalSeconds` have passed
-	 * since the last heartbeat. Useful for long-running iterations to
-	 * report progress or check for cancellation.
-	 *
-	 * @see https://laravel.com/docs/collections#method-withheartbeat
-	 */
+	/** @see https://laravel.com/docs/collections#method-withheartbeat */
 	withHeartbeat(intervalSeconds: number, callback: () => void): ProxiedLazyCollection<T> {
 		const source = this.source;
 		const intervalMs = intervalSeconds * 1000;
@@ -497,34 +371,23 @@ export class LazyCollection<T> implements Iterable<T> {
 		);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════
-	// TERMINAL METHODS (materialize to values)
-	// ═══════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Convert to an eager Collection.
-	 */
-	collect(): Collection<T> {
-		return collect([...this]);
+	/** Async because JS can't block like PHP's sleep(). */
+	throttle(seconds: number): ProxiedAsyncLazyCollection<T> {
+		return wrapAsync(new AsyncLazyCollection(this.source, seconds * 1000));
 	}
 
-	/**
-	 * Get all items as an array.
-	 */
+	collect(): Collection<T> {
+		return new Collection([...this]);
+	}
+
 	all(): T[] {
 		return [...this];
 	}
 
-	/**
-	 * Get all items as an array (alias for all).
-	 */
 	toArray(): T[] {
 		return [...this];
 	}
 
-	/**
-	 * Get the first item.
-	 */
 	first(callback?: (value: T, key: number) => boolean): T | undefined {
 		for (const [key, value] of makeIterator(this.source)) {
 			if (!callback || callback(value, key)) {
@@ -534,10 +397,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		return undefined;
 	}
 
-	/**
-	 * Get the last item.
-	 * Note: This consumes the entire iterator.
-	 */
 	last(callback?: (value: T, key: number) => boolean): T | undefined {
 		let lastValue: T | undefined;
 		for (const [key, value] of makeIterator(this.source)) {
@@ -548,10 +407,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		return lastValue;
 	}
 
-	/**
-	 * Count the items.
-	 * Note: This consumes the entire iterator.
-	 */
 	count(): number {
 		let count = 0;
 		for (const _ of this) {
@@ -560,9 +415,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		return count;
 	}
 
-	/**
-	 * Check if the collection is empty.
-	 */
 	isEmpty(): boolean {
 		for (const _ of this) {
 			return false;
@@ -570,21 +422,10 @@ export class LazyCollection<T> implements Iterable<T> {
 		return true;
 	}
 
-	/**
-	 * Check if the collection is not empty.
-	 */
 	isNotEmpty(): boolean {
 		return !this.isEmpty();
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// NATIVE AGGREGATE METHODS (single-pass, no intermediate array)
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Get the sum of the given values.
-	 * Optimized: single pass through iterator, no array allocation.
-	 */
 	sum(keyOrCallback?: ValueRetriever<T, number>): number {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let total = 0;
@@ -597,10 +438,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		return total;
 	}
 
-	/**
-	 * Get the minimum value of a given key.
-	 * Optimized: single pass through iterator, no array allocation.
-	 */
 	min(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let min: number | null = null;
@@ -613,10 +450,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		return min;
 	}
 
-	/**
-	 * Get the maximum value of a given key.
-	 * Optimized: single pass through iterator, no array allocation.
-	 */
 	max(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let max: number | null = null;
@@ -629,10 +462,6 @@ export class LazyCollection<T> implements Iterable<T> {
 		return max;
 	}
 
-	/**
-	 * Get the average value of a given key.
-	 * Optimized: single pass through iterator, no array allocation.
-	 */
 	avg(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let total = 0;
@@ -647,28 +476,19 @@ export class LazyCollection<T> implements Iterable<T> {
 		return count > 0 ? total / count : null;
 	}
 
-	/**
-	 * Alias for the "avg" method.
-	 */
 	average(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		return this.avg(keyOrCallback);
 	}
 
-	/**
-	 * Determine if an item exists in the collection.
-	 * SHORT-CIRCUITS: stops at first match (Laravel behavior).
-	 */
 	contains(
 		keyOrCallback: T | string | ((value: T, key: number) => boolean),
 		operator?: WhereOperator | unknown,
 		value?: unknown,
 	): boolean {
-		// Single argument: value or callback
 		if (operator === undefined && value === undefined) {
 			if (useAsCallable(keyOrCallback)) {
 				return this.first(keyOrCallback as (v: T, k: number) => boolean) !== undefined;
 			}
-			// Loose equality check
 			for (const [, val] of makeIterator(this.source)) {
 				// biome-ignore lint/suspicious/noDoubleEquals: Laravel uses loose comparison
 				if (val == keyOrCallback) {
@@ -677,24 +497,16 @@ export class LazyCollection<T> implements Iterable<T> {
 			}
 			return false;
 		}
-		// Multiple arguments: key/operator/value form
 		return this.contains(operatorForWhere<T>(keyOrCallback as string, operator, value) as (v: T, k: number) => boolean);
 	}
 
-	/**
-	 * Determine if an item exists in the collection using strict comparison.
-	 * SHORT-CIRCUITS: stops at first match.
-	 */
 	containsStrict(keyOrValue: T | string | ((value: T, key: number) => boolean), value?: unknown): boolean {
-		// Two arguments: key and value
 		if (value !== undefined) {
 			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
 		}
-		// Single argument: callback or value
 		if (useAsCallable(keyOrValue)) {
 			return this.first(keyOrValue as (v: T, k: number) => boolean) !== undefined;
 		}
-		// Strict equality check
 		for (const [, item] of makeIterator(this.source)) {
 			if (item === keyOrValue) {
 				return true;
@@ -704,13 +516,242 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PROXY WRAPPER FOR AUTO-DELEGATION
-// ═══════════════════════════════════════════════════════════════════════════
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Properties to bypass in the proxy.
+ * Extend this interface to add type-safe custom macros to AsyncLazyCollection.
  */
+export interface AsyncCollectionMacros<_T> {
+	readonly [key: string]: ((...args: never[]) => unknown) | undefined;
+}
+
+export class AsyncLazyCollection<T> implements AsyncIterable<T> {
+	// biome-ignore lint/suspicious/noExplicitAny: Macros can have any signature
+	private static macros: Map<string, (...args: any[]) => any> = new Map();
+
+	public source: LazySource<T>;
+	private _asyncSource: AsyncIterable<T> | null;
+	private delayMs: number;
+
+	constructor(source: LazySource<T>, delayMs = 0, asyncSource?: AsyncIterable<T>) {
+		this.source = source;
+		this.delayMs = delayMs;
+		this._asyncSource = asyncSource ?? null;
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: Macros can have any signature
+	static macro(name: string, fn: (...args: any[]) => any): void {
+		AsyncLazyCollection.macros.set(name, fn);
+	}
+
+	static hasMacro(name: string): boolean {
+		return AsyncLazyCollection.macros.has(name);
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: Macros can have any signature
+	static getMacro(name: string): ((...args: any[]) => any) | undefined {
+		return AsyncLazyCollection.macros.get(name);
+	}
+
+	static flushMacros(): void {
+		AsyncLazyCollection.macros.clear();
+	}
+
+	static empty<U>(): ProxiedAsyncLazyCollection<U> {
+		return wrapAsync(new AsyncLazyCollection<U>([], 0));
+	}
+
+	static range(from: number, to: number): ProxiedAsyncLazyCollection<number> {
+		const source: GeneratorFactory<number> = function* () {
+			const step = from <= to ? 1 : -1;
+			let index = 0;
+			for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
+				yield [index++, i];
+			}
+		};
+		return wrapAsync(new AsyncLazyCollection<number>(source, 0));
+	}
+
+	static times<U>(n: number, callback?: (index: number) => U): ProxiedAsyncLazyCollection<U | number> {
+		const source: GeneratorFactory<U | number> = function* () {
+			for (let i = 1; i <= n; i++) {
+				yield [i - 1, callback ? callback(i) : i];
+			}
+		};
+		return wrapAsync(new AsyncLazyCollection<U | number>(source, 0));
+	}
+
+	static fromAsync<U>(asyncIterable: AsyncIterable<U>): ProxiedAsyncLazyCollection<U> {
+		return wrapAsync(new AsyncLazyCollection<U>([], 0, asyncIterable));
+	}
+
+	/**
+	 * Yields item first, then sleeps remaining time (matching Laravel's behavior).
+	 */
+	async *[Symbol.asyncIterator](): AsyncGenerator<T> {
+		if (this._asyncSource) {
+			for await (const value of this._asyncSource) {
+				yield value;
+			}
+			return;
+		}
+		for (const [, value] of makeIterator(this.source)) {
+			const startTime = performance.now();
+			yield value;
+
+			if (this.delayMs > 0) {
+				const remainingSleep = this.delayMs - (performance.now() - startTime);
+				if (remainingSleep > 0) {
+					await delay(remainingSleep);
+				}
+			}
+		}
+	}
+
+	async toArray(): Promise<T[]> {
+		const result: T[] = [];
+		for await (const item of this) {
+			result.push(item);
+		}
+		return result;
+	}
+
+	async all(): Promise<T[]> {
+		return this.toArray();
+	}
+
+	async collect(): Promise<Collection<T>> {
+		return new Collection(await this.toArray());
+	}
+
+	async first(callback?: (value: T, key: number) => boolean): Promise<T | undefined> {
+		let index = 0;
+		for await (const item of this) {
+			if (!callback || callback(item, index)) {
+				return item;
+			}
+			index++;
+		}
+		return undefined;
+	}
+
+	async each(callback: (value: T, key: number) => unknown): Promise<void> {
+		let index = 0;
+		for await (const item of this) {
+			if (callback(item, index++) === false) {
+				break;
+			}
+		}
+	}
+
+	async count(): Promise<number> {
+		let count = 0;
+		for await (const _ of this) {
+			count++;
+		}
+		return count;
+	}
+
+	tap(callback?: (self: this) => void): this {
+		if (callback) callback(this);
+		return this;
+	}
+
+	pipe<R>(fn: (self: this) => R): R {
+		return fn(this);
+	}
+
+	when<V>(
+		value: V | ((self: this) => V),
+		callback?: (self: this, value: V) => this,
+		defaultCallback?: (self: this, value: V) => this,
+	): this {
+		const resolvedValue = typeof value === 'function' ? (value as (self: this) => V)(this) : value;
+		if (resolvedValue) return callback ? callback(this, resolvedValue) : this;
+		return defaultCallback ? defaultCallback(this, resolvedValue) : this;
+	}
+
+	unless<V>(
+		value: V | ((self: this) => V),
+		callback?: (self: this, value: V) => this,
+		defaultCallback?: (self: this, value: V) => this,
+	): this {
+		const resolvedValue = typeof value === 'function' ? (value as (self: this) => V)(this) : value;
+		if (!resolvedValue) return callback ? callback(this, resolvedValue) : this;
+		return defaultCallback ? defaultCallback(this, resolvedValue) : this;
+	}
+
+	map<U>(callback: (value: T, key: number) => U): ProxiedAsyncLazyCollection<U> {
+		const source = this.source;
+		const delayMs = this.delayMs;
+
+		const newSource: GeneratorFactory<U> = function* () {
+			let index = 0;
+			for (const [, value] of makeIterator(source)) {
+				yield [index, callback(value, index)];
+				index++;
+			}
+		};
+
+		return wrapAsync(new AsyncLazyCollection<U>(newSource, delayMs));
+	}
+
+	filter(callback?: (value: T, key: number) => boolean): ProxiedAsyncLazyCollection<T> {
+		const source = this.source;
+		const delayMs = this.delayMs;
+
+		const newSource: GeneratorFactory<T> = function* () {
+			let index = 0;
+			let newIndex = 0;
+			for (const [, value] of makeIterator(source)) {
+				if (callback ? callback(value, index) : Boolean(value)) {
+					yield [newIndex++, value];
+				}
+				index++;
+			}
+		};
+
+		return wrapAsync(new AsyncLazyCollection<T>(newSource, delayMs));
+	}
+
+	take(limit: number): ProxiedAsyncLazyCollection<T> {
+		const source = this.source;
+		const delayMs = this.delayMs;
+
+		const newSource: GeneratorFactory<T> = function* () {
+			if (limit <= 0) return;
+
+			let count = 0;
+			for (const [, value] of makeIterator(source)) {
+				yield [count, value];
+				if (++count >= limit) break;
+			}
+		};
+
+		return wrapAsync(new AsyncLazyCollection<T>(newSource, delayMs));
+	}
+
+	skip(count: number): ProxiedAsyncLazyCollection<T> {
+		const source = this.source;
+		const delayMs = this.delayMs;
+
+		const newSource: GeneratorFactory<T> = function* () {
+			let skipped = 0;
+			let newIndex = 0;
+			for (const [, value] of makeIterator(source)) {
+				if (skipped++ < count) continue;
+				yield [newIndex++, value];
+			}
+		};
+
+		return wrapAsync(new AsyncLazyCollection<T>(newSource, delayMs));
+	}
+
+	throttle(seconds: number): ProxiedAsyncLazyCollection<T> {
+		return wrapAsync(new AsyncLazyCollection(this.source, seconds * 1000));
+	}
+}
+
 const BYPASS_PROPERTIES = new Set<string | symbol>([
 	'then',
 	'catch',
@@ -718,28 +759,22 @@ const BYPASS_PROPERTIES = new Set<string | symbol>([
 	'constructor',
 	'prototype',
 	Symbol.iterator,
+	Symbol.asyncIterator,
 	Symbol.toStringTag,
 ]);
 
-/**
- * Wrap a LazyCollection with a Proxy that auto-delegates unknown methods to Collection.
- */
 function wrapLazyWithProxy<T>(lazyCollection: LazyCollection<T>): ProxiedLazyCollection<T> {
 	return new Proxy(lazyCollection, {
 		get(target, prop: string | symbol, receiver) {
-			// Bypass symbols and special properties
 			if (typeof prop === 'symbol' || BYPASS_PROPERTIES.has(prop)) {
 				return Reflect.get(target, prop, receiver);
 			}
 
-			// Return native LazyCollection methods/properties
 			if (prop in target) {
 				const value = Reflect.get(target, prop, receiver);
 				return typeof value === 'function' ? value.bind(target) : value;
 			}
 
-			// AUTO-DELEGATE: collect().method()
-			// All other methods delegate to Collection
 			return (...args: unknown[]) => {
 				const collected = target.collect();
 				const method = (collected as unknown as Record<string, unknown>)[prop as string];
@@ -752,31 +787,68 @@ function wrapLazyWithProxy<T>(lazyCollection: LazyCollection<T>): ProxiedLazyCol
 	}) as ProxiedLazyCollection<T>;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FACTORY FUNCTION
-// ═══════════════════════════════════════════════════════════════════════════
+function wrapAsyncLazyWithProxy<T>(asyncLazyCollection: AsyncLazyCollection<T>): ProxiedAsyncLazyCollection<T> {
+	return new Proxy(asyncLazyCollection, {
+		get(target, prop: string | symbol, receiver) {
+			if (typeof prop === 'symbol' || BYPASS_PROPERTIES.has(prop)) {
+				return Reflect.get(target, prop, receiver);
+			}
 
-/**
- * Create a new lazy collection.
- *
- * @example
- * ```ts
- * // From array
- * lazy([1, 2, 3]).map(x => x * 2).all();
- *
- * // From generator function
- * lazy(function* () {
- *   yield 1;
- *   yield 2;
- * }).filter(x => x > 1).all();
- *
- * // All Collection methods work via delegation
- * lazy([1, 2, 3]).sum(); // 6
- * ```
- */
+			if (prop in target) {
+				const value = Reflect.get(target, prop, receiver);
+				return typeof value === 'function' ? value.bind(target) : value;
+			}
+
+			const macro = AsyncLazyCollection.getMacro(prop as string);
+			if (macro) {
+				return (...args: unknown[]) => macro.apply(target, args);
+			}
+
+			return async (...args: unknown[]) => {
+				const collected = await target.collect();
+				const method = (collected as unknown as Record<string, unknown>)[prop as string];
+				if (typeof method === 'function') {
+					return method.apply(collected, args);
+				}
+				return method;
+			};
+		},
+	}) as ProxiedAsyncLazyCollection<T>;
+}
+
 export function lazy<T>(source: Iterable<T> | LazyCollection<T> | (() => Generator<T>)): ProxiedLazyCollection<T> {
 	if (source instanceof LazyCollection) {
 		return wrapLazyWithProxy(source);
 	}
 	return wrapLazyWithProxy(new LazyCollection(source));
+}
+
+export function asyncLazy<T>(
+	source: Iterable<T> | AsyncIterable<T> | AsyncLazyCollection<T> | (() => Generator<T>) | (() => AsyncGenerator<T>),
+): ProxiedAsyncLazyCollection<T> {
+	if (source instanceof AsyncLazyCollection) {
+		return wrapAsync(source);
+	}
+
+	if (typeof source === 'function') {
+		const result = source();
+		if (Symbol.asyncIterator in result) {
+			return AsyncLazyCollection.fromAsync(result as AsyncIterable<T>);
+		}
+		// Sync generator — wrap in indexed generator factory
+		const gen = result as Generator<T>;
+		const genSource: GeneratorFactory<T> = function* () {
+			let index = 0;
+			for (const value of gen) {
+				yield [index++, value];
+			}
+		};
+		return wrapAsync(new AsyncLazyCollection<T>(genSource, 0));
+	}
+
+	if (typeof source === 'object' && source !== null && Symbol.asyncIterator in source) {
+		return AsyncLazyCollection.fromAsync(source as AsyncIterable<T>);
+	}
+
+	return wrapAsync(new AsyncLazyCollection<T>([...(source as Iterable<T>)], 0));
 }

@@ -1,11 +1,4 @@
-/**
- * LazyCollection Tests
- *
- * Tests for lazy evaluation, generator-based collection operations,
- * and auto-delegation to Collection via Proxy.
- */
-
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Collection, collect, LazyCollection, lazy, type ProxiedCollection } from '../src';
 
 // Augment CollectionMacros for test macros (must use _T to match base interface)
@@ -18,10 +11,6 @@ declare module '../src' {
 		customMethod: () => ProxiedCollection<_T>;
 	}
 }
-
-// =============================================================================
-// BASIC TESTS
-// =============================================================================
 
 describe('LazyCollection', () => {
 	describe('lazy()', () => {
@@ -100,10 +89,6 @@ describe('LazyCollection', () => {
 			expect(LazyCollection.times(3, (i) => i * 2).all()).toEqual([2, 4, 6]);
 		});
 	});
-
-	// =============================================================================
-	// LAZY METHODS
-	// =============================================================================
 
 	describe('lazy methods', () => {
 		describe('map()', () => {
@@ -277,10 +262,6 @@ describe('LazyCollection', () => {
 		});
 	});
 
-	// =============================================================================
-	// LAZY COLLECTION-SPECIFIC METHODS
-	// =============================================================================
-
 	describe('LazyCollection-specific methods', () => {
 		describe('tapEach()', () => {
 			it('executes callback lazily on each item', () => {
@@ -422,11 +403,155 @@ describe('LazyCollection', () => {
 				expect(() => lc.all()).toThrow('heartbeat error');
 			});
 		});
-	});
 
-	// =============================================================================
-	// TERMINAL METHODS
-	// =============================================================================
+		describe('throttle()', () => {
+			it('returns an AsyncIterable', () => {
+				const throttled = lazy([1, 2, 3]).throttle(0.1);
+				expect(Symbol.asyncIterator in throttled).toBe(true);
+			});
+
+			it('toArray() collects all items', async () => {
+				const results = await lazy([1, 2, 3]).throttle(0).toArray();
+				expect(results).toEqual([1, 2, 3]);
+			});
+
+			it('all() collects all items (alias)', async () => {
+				const results = await lazy([1, 2, 3]).throttle(0).all();
+				expect(results).toEqual([1, 2, 3]);
+			});
+
+			it('delays between items using setTimeout', async () => {
+				vi.useFakeTimers();
+				const results: number[] = [];
+
+				const promise = (async () => {
+					for await (const item of lazy([1, 2, 3]).throttle(0.05)) {
+						results.push(item);
+					}
+				})();
+
+				// First item yields immediately, then setTimeout(50ms) fires
+				await vi.advanceTimersByTimeAsync(50);
+				await vi.advanceTimersByTimeAsync(50);
+				await vi.advanceTimersByTimeAsync(50);
+				await promise;
+
+				expect(results).toEqual([1, 2, 3]);
+				vi.useRealTimers();
+			});
+
+			it('handles zero delay', async () => {
+				const results = await lazy([1, 2, 3]).throttle(0).toArray();
+				expect(results).toEqual([1, 2, 3]);
+			});
+
+			it('handles empty collection', async () => {
+				const results = await lazy([]).throttle(0.1).toArray();
+				expect(results).toEqual([]);
+			});
+
+			it('supports chaining with map()', async () => {
+				const results = await lazy([1, 2, 3])
+					.throttle(0)
+					.map((x) => x * 2)
+					.toArray();
+				expect(results).toEqual([2, 4, 6]);
+			});
+
+			it('supports chaining with filter()', async () => {
+				const results = await lazy([1, 2, 3, 4])
+					.throttle(0)
+					.filter((x) => x % 2 === 0)
+					.toArray();
+				expect(results).toEqual([2, 4]);
+			});
+
+			it('supports chaining with take()', async () => {
+				let count = 0;
+				const results = await lazy(function* () {
+					for (let i = 1; i <= 100; i++) {
+						count++;
+						yield i;
+					}
+				})
+					.throttle(0)
+					.take(3)
+					.toArray();
+
+				expect(results).toEqual([1, 2, 3]);
+				expect(count).toBe(3); // Should short-circuit
+			});
+
+			it('supports chaining with skip()', async () => {
+				const results = await lazy([1, 2, 3, 4, 5]).throttle(0).skip(2).toArray();
+				expect(results).toEqual([3, 4, 5]);
+			});
+
+			it('collect() returns Collection', async () => {
+				const collection = await lazy([1, 2, 3]).throttle(0).collect();
+				expect(collection).toBeInstanceOf(Collection);
+				expect(collection.sum()).toBe(6);
+			});
+
+			it('first() returns first item', async () => {
+				const result = await lazy([1, 2, 3]).throttle(0).first();
+				expect(result).toBe(1);
+			});
+
+			it('first() returns first matching item with callback', async () => {
+				const result = await lazy([1, 2, 3])
+					.throttle(0)
+					.first((x) => x > 1);
+				expect(result).toBe(2);
+			});
+
+			it('first() returns undefined for empty collection', async () => {
+				const result = await lazy([]).throttle(0).first();
+				expect(result).toBeUndefined();
+			});
+
+			it('each() iterates with callback', async () => {
+				const items: number[] = [];
+				await lazy([1, 2, 3])
+					.throttle(0)
+					.each((x) => items.push(x));
+				expect(items).toEqual([1, 2, 3]);
+			});
+
+			it('each() stops when callback returns false', async () => {
+				const items: number[] = [];
+				await lazy([1, 2, 3, 4, 5])
+					.throttle(0)
+					.each((x) => {
+						items.push(x);
+						return x < 3;
+					});
+				expect(items).toEqual([1, 2, 3]);
+			});
+
+			it('count() returns item count', async () => {
+				const count = await lazy([1, 2, 3]).throttle(0).count();
+				expect(count).toBe(3);
+			});
+
+			it('re-throttle changes delay', async () => {
+				const throttled = lazy([1, 2, 3]).throttle(1).throttle(0);
+				const results = await throttled.toArray();
+				expect(results).toEqual([1, 2, 3]);
+			});
+
+			it('works with generator functions', async () => {
+				const results = await lazy(function* () {
+					yield 'a';
+					yield 'b';
+					yield 'c';
+				})
+					.throttle(0)
+					.toArray();
+				expect(results).toEqual(['a', 'b', 'c']);
+			});
+		});
+	});
 
 	describe('terminal methods', () => {
 		describe('collect()', () => {
@@ -483,10 +608,6 @@ describe('LazyCollection', () => {
 			});
 		});
 	});
-
-	// =============================================================================
-	// PROXY DELEGATION
-	// =============================================================================
 
 	describe('proxy delegation', () => {
 		it('delegates sum() to Collection', () => {
@@ -546,10 +667,6 @@ describe('LazyCollection', () => {
 		});
 	});
 
-	// =============================================================================
-	// CHAINING
-	// =============================================================================
-
 	describe('method chaining', () => {
 		it('chains lazy methods', () => {
 			const result = lazy([1, 2, 3, 4, 5])
@@ -571,10 +688,6 @@ describe('LazyCollection', () => {
 		});
 	});
 
-	// =============================================================================
-	// INTEGRATION: Collection.lazy()
-	// =============================================================================
-
 	describe('Collection.lazy()', () => {
 		it('converts Collection to LazyCollection', () => {
 			const lc = collect([1, 2, 3]).lazy();
@@ -591,10 +704,6 @@ describe('LazyCollection', () => {
 			expect(result).toEqual([2, 4, 6]);
 		});
 	});
-
-	// =============================================================================
-	// NATIVE AGGREGATE METHODS (single-pass, short-circuit)
-	// =============================================================================
 
 	describe('native aggregate methods', () => {
 		describe('sum()', () => {
@@ -775,10 +884,6 @@ describe('LazyCollection', () => {
 		});
 	});
 
-	// =============================================================================
-	// ITERATOR PROTOCOL
-	// =============================================================================
-
 	describe('iterator protocol', () => {
 		it('supports for...of', () => {
 			const items: number[] = [];
@@ -807,17 +912,13 @@ describe('LazyCollection', () => {
 	});
 });
 
-// =============================================================================
-// MACRO TESTS
-// =============================================================================
-
 describe('Collection.macro()', () => {
 	it('registers and calls a macro', () => {
 		Collection.macro('toUpper', function (this: Collection<string>) {
 			return this.map((val) => val.toUpperCase());
 		});
 
-		const result = collect(['hello', 'world']).toUpper().all();
+		const result = (collect(['hello', 'world']) as any).toUpper().all();
 		expect(result).toEqual(['HELLO', 'WORLD']);
 
 		Collection.flushMacros();
@@ -828,7 +929,7 @@ describe('Collection.macro()', () => {
 			return this.map((val) => val * factor);
 		});
 
-		const result = collect([1, 2, 3]).multiplyBy(10).all();
+		const result = (collect([1, 2, 3]) as any).multiplyBy(10).all();
 		expect(result).toEqual([10, 20, 30]);
 
 		Collection.flushMacros();
@@ -844,12 +945,12 @@ describe('Collection.macro()', () => {
 
 	it('macro results are wrapped for chaining', () => {
 		Collection.macro('double', function (this: Collection<number>) {
-			return this.map((n) => n * 2);
+			return this.map((n: number) => n * 2);
 		});
 
-		const result = collect([1, 2])
+		const result = (collect([1, 2]) as any)
 			.double()
-			.filter((n) => n > 2)
+			.filter((n: number) => n > 2)
 			.all();
 		expect(result).toEqual([4]);
 
@@ -861,9 +962,282 @@ describe('Collection.macro()', () => {
 			return this.sum();
 		});
 
-		const result = collect([1, 2, 3]).total();
+		const result = (collect([1, 2, 3]) as any).total();
 		expect(result).toBe(6);
 
 		Collection.flushMacros();
+	});
+});
+
+import {
+	AsyncLazyCollection,
+	asyncLazy,
+	isAsyncLazyCollection,
+	isLazyCollection,
+	type ProxiedAsyncLazyCollection,
+} from '../src';
+
+// Augment AsyncCollectionMacros for test macros
+declare module '../src' {
+	interface AsyncCollectionMacros<_T> {
+		double: () => ProxiedAsyncLazyCollection<number>;
+		asyncDouble: () => Promise<number[]>;
+	}
+}
+
+describe('AsyncLazyCollection', () => {
+	describe('type predicates', () => {
+		it('isLazyCollection identifies LazyCollection instances', () => {
+			const lc = lazy([1, 2, 3]);
+			const alc = asyncLazy([1, 2, 3]);
+
+			expect(isLazyCollection(lc)).toBe(true);
+			expect(isLazyCollection(alc)).toBe(false);
+			expect(isLazyCollection([1, 2, 3])).toBe(false);
+			expect(isLazyCollection(null)).toBe(false);
+			expect(isLazyCollection(undefined)).toBe(false);
+		});
+
+		it('isAsyncLazyCollection identifies AsyncLazyCollection instances', () => {
+			const lc = lazy([1, 2, 3]);
+			const alc = lazy([1, 2, 3]).throttle(0);
+
+			expect(isAsyncLazyCollection(alc)).toBe(true);
+			expect(isAsyncLazyCollection(lc)).toBe(false);
+			expect(isAsyncLazyCollection([1, 2, 3])).toBe(false);
+			expect(isAsyncLazyCollection(null)).toBe(false);
+			expect(isAsyncLazyCollection(undefined)).toBe(false);
+		});
+	});
+
+	describe('static factory methods', () => {
+		it('AsyncLazyCollection.empty() creates empty collection', async () => {
+			const alc = AsyncLazyCollection.empty<number>();
+			const result = await alc.all();
+			expect(result).toEqual([]);
+		});
+
+		it('AsyncLazyCollection.range() creates range', async () => {
+			const ascending = await AsyncLazyCollection.range(1, 5).all();
+			expect(ascending).toEqual([1, 2, 3, 4, 5]);
+
+			const descending = await AsyncLazyCollection.range(5, 1).all();
+			expect(descending).toEqual([5, 4, 3, 2, 1]);
+		});
+
+		it('AsyncLazyCollection.times() creates repeated values', async () => {
+			const withCallback = await AsyncLazyCollection.times(3, (i) => i * 2).all();
+			expect(withCallback).toEqual([2, 4, 6]);
+
+			const withoutCallback = await AsyncLazyCollection.times(3).all();
+			expect(withoutCallback).toEqual([1, 2, 3]);
+		});
+
+		it('AsyncLazyCollection.fromAsync() handles async iterables', async () => {
+			async function* asyncGen() {
+				yield 1;
+				yield 2;
+				yield 3;
+			}
+
+			const result = await AsyncLazyCollection.fromAsync(asyncGen()).all();
+			expect(result).toEqual([1, 2, 3]);
+		});
+	});
+
+	describe('asyncLazy() factory', () => {
+		it('creates from array', async () => {
+			const result = await asyncLazy([1, 2, 3]).all();
+			expect(result).toEqual([1, 2, 3]);
+		});
+
+		it('creates from generator function', async () => {
+			const result = await asyncLazy(function* () {
+				yield 1;
+				yield 2;
+				yield 3;
+			}).all();
+			expect(result).toEqual([1, 2, 3]);
+		});
+
+		it('creates from async generator function', async () => {
+			const result = await asyncLazy(async function* () {
+				yield 1;
+				yield 2;
+				yield 3;
+			}).all();
+			expect(result).toEqual([1, 2, 3]);
+		});
+
+		it('creates from existing AsyncLazyCollection', async () => {
+			const original = lazy([1, 2, 3]).throttle(0);
+			const wrapped = asyncLazy(original);
+			expect(await wrapped.all()).toEqual([1, 2, 3]);
+		});
+	});
+
+	describe('proxy auto-delegation', () => {
+		it('delegates Collection methods asynchronously', async () => {
+			// sum() is delegated to Collection
+			const sum = await asyncLazy([1, 2, 3, 4]).sum();
+			expect(sum).toBe(10);
+		});
+
+		it('delegates where() to Collection', async () => {
+			const items = [
+				{ name: 'a', active: true },
+				{ name: 'b', active: false },
+				{ name: 'c', active: true },
+			];
+			// Note: Delegated methods return Promises, so we need to await each step
+			// or use collect() first and chain from there
+			const filtered = await asyncLazy(items).where('active', true);
+			const result = filtered.pluck('name').all();
+			expect(result).toEqual(['a', 'c']);
+		});
+
+		it('delegates groupBy() to Collection', async () => {
+			const items = [
+				{ type: 'a', value: 1 },
+				{ type: 'b', value: 2 },
+				{ type: 'a', value: 3 },
+			];
+			const grouped = await asyncLazy(items).groupBy('type');
+			expect(grouped.get('a')?.all()).toEqual([
+				{ type: 'a', value: 1 },
+				{ type: 'a', value: 3 },
+			]);
+		});
+	});
+
+	describe('trait methods', () => {
+		it('tap() passes collection to callback and returns this', async () => {
+			let tapped: AsyncLazyCollection<number> | null = null;
+			const result = await asyncLazy([1, 2, 3])
+				.tap((alc) => {
+					tapped = alc;
+				})
+				.all();
+
+			expect(result).toEqual([1, 2, 3]);
+			expect(tapped).toBeInstanceOf(AsyncLazyCollection);
+		});
+
+		it('pipe() passes collection to callback and returns result', async () => {
+			const result = asyncLazy([1, 2, 3]).pipe((alc) => alc.count());
+			expect(await result).toBe(3);
+		});
+
+		it('when() applies callback if condition is truthy', async () => {
+			const truthy = await asyncLazy([1, 2, 3])
+				.when(true, (alc) => alc.map((x) => x * 2))
+				.all();
+			expect(truthy).toEqual([2, 4, 6]);
+
+			const falsy = await asyncLazy([1, 2, 3])
+				.when(false, (alc) => alc.map((x) => x * 2))
+				.all();
+			expect(falsy).toEqual([1, 2, 3]);
+		});
+
+		it('unless() applies callback if condition is falsy', async () => {
+			const falsy = await asyncLazy([1, 2, 3])
+				.unless(false, (alc) => alc.map((x) => x * 2))
+				.all();
+			expect(falsy).toEqual([2, 4, 6]);
+
+			const truthy = await asyncLazy([1, 2, 3])
+				.unless(true, (alc) => alc.map((x) => x * 2))
+				.all();
+			expect(truthy).toEqual([1, 2, 3]);
+		});
+
+		it('when() with callback condition', async () => {
+			const result = await asyncLazy([1, 2, 3])
+				.when(
+					() => true,
+					(alc) => alc.map((x) => x * 2),
+				)
+				.all();
+			expect(result).toEqual([2, 4, 6]);
+		});
+	});
+
+	describe('macro system', () => {
+		afterEach(() => {
+			AsyncLazyCollection.flushMacros();
+		});
+
+		it('registers and calls macros', async () => {
+			AsyncLazyCollection.macro('double', function (this: AsyncLazyCollection<number>) {
+				return this.map((x) => x * 2);
+			});
+
+			const result = await asyncLazy([1, 2, 3]).double().all();
+			expect(result).toEqual([2, 4, 6]);
+		});
+
+		it('hasMacro returns correct state', () => {
+			expect(AsyncLazyCollection.hasMacro('test')).toBe(false);
+			AsyncLazyCollection.macro('test', () => {});
+			expect(AsyncLazyCollection.hasMacro('test')).toBe(true);
+		});
+
+		it('getMacro returns the registered function', () => {
+			const fn = () => 'test';
+			AsyncLazyCollection.macro('myMacro', fn);
+			expect(AsyncLazyCollection.getMacro('myMacro')).toBe(fn);
+		});
+
+		it('flushMacros clears all macros', () => {
+			AsyncLazyCollection.macro('test1', () => {});
+			AsyncLazyCollection.macro('test2', () => {});
+			expect(AsyncLazyCollection.hasMacro('test1')).toBe(true);
+			expect(AsyncLazyCollection.hasMacro('test2')).toBe(true);
+
+			AsyncLazyCollection.flushMacros();
+			expect(AsyncLazyCollection.hasMacro('test1')).toBe(false);
+			expect(AsyncLazyCollection.hasMacro('test2')).toBe(false);
+		});
+
+		it('macro takes precedence over Collection delegation', async () => {
+			// Define a macro with same name as a Collection method
+			AsyncLazyCollection.macro('sum', function (this: AsyncLazyCollection<number>) {
+				return Promise.resolve(999);
+			});
+
+			const result = await asyncLazy([1, 2, 3]).sum();
+			expect(result).toBe(999); // Macro should override
+		});
+	});
+
+	describe('method chaining', () => {
+		it('chains map, filter, and take', async () => {
+			const result = await asyncLazy([1, 2, 3, 4, 5])
+				.map((x) => x * 2)
+				.filter((x) => x > 4)
+				.take(2)
+				.all();
+
+			expect(result).toEqual([6, 8]);
+		});
+
+		it('chains filter and skip', async () => {
+			const result = await asyncLazy([1, 2, 3, 4, 5])
+				.filter((x) => x > 2)
+				.skip(1)
+				.all();
+
+			expect(result).toEqual([4, 5]);
+		});
+
+		it('chains with throttle', async () => {
+			const result = await asyncLazy([1, 2, 3])
+				.throttle(0)
+				.map((x) => x * 10)
+				.all();
+
+			expect(result).toEqual([10, 20, 30]);
+		});
 	});
 });

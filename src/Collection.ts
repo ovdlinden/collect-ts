@@ -1,57 +1,48 @@
-/**
- * Collection - Laravel-style collection class
- *
- * A fluent wrapper for arrays and objects with chainable methods.
- * Based on Laravel 12's Illuminate\Support\Collection.
- *
- * This class implements ~105 methods that mirror Laravel's Collection class:
- * - Core: all, get, first, last, keys, values
- * - Transformation: map, filter, collapse, flatten, flip, chunk, chunkWhile, split, splitIn, slice, reverse, shuffle, pad, zip
- * - Comparison: contains, containsStrict, doesntContain, diff, diffKeys, diffAssoc, intersect, intersectByKeys, duplicates, duplicatesStrict
- * - Aggregation: median, mode, count, countBy, sum, avg, min, max
- * - Array building: merge, union, combine, crossJoin, concat
- * - Item modification: put, pull, push, prepend, pop, shift, add, forget
- * - Selection: except, only, has, hasAny
- * - Grouping: groupBy, keyBy
- * - Searching: search, before, after
- * - Sorting: sort, sortDesc, sortBy, sortByDesc, sortKeys, sortKeysDesc, sortKeysUsing
- * - Slicing: skip, skipUntil, skipWhile, take, takeUntil, takeWhile
- * - String: implode, join, toString
- * - Validation: isEmpty, containsOneItem, sole, firstOrFail
- * - Advanced: pluck, mapWithKeys, transform, nth, random, sliding
- *
- * @example
- * ```ts
- * // Count votes for an option
- * collect(state.votes).filter(v => v === 'Pizza').count()
- *
- * // Get all voter IDs for an option
- * collect(state.votes).filter(v => v === 'Pizza').keys().all()
- *
- * // Extract form fields by prefix
- * collect(values)
- *   .filter((v, k) => k.startsWith('option'))
- *   .values()
- *   .filter(v => v.trim() !== '')
- *   .all()
- * ```
- */
+/** @see https://laravel.com/docs/collections */
 
+import { arrayContains, arrayFilterByKey, arrayFilterBySet, arrayFindByKey, arrayMapByKey } from './arrayUtils.js';
 import {
 	InvalidArgumentException,
 	ItemNotFoundException,
 	MultipleItemsFoundException,
 	UnexpectedValueException,
 } from './exceptions';
-
-// Circular import - this works because both files only use imports in function bodies
 import { lazy as lazyFn, type ProxiedLazyCollection } from './LazyCollection.js';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════
-
 type Items<T> = Record<string, T> | T[];
+
+/** Brand symbol for identifying collection-like objects */
+export const COLLECTION_BRAND = Symbol.for('collect-ts.collection');
+
+/** Shared macro registry for Collection */
+export const collectionMacros: Map<string, (...args: unknown[]) => unknown> = new Map();
+
+/** Type guard for collection-like objects */
+export function isCollection(value: unknown): value is CollectionLike<unknown> {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		COLLECTION_BRAND in value &&
+		(value as Record<symbol, unknown>)[COLLECTION_BRAND] === true
+	);
+}
+
+/**
+ * Minimal interface for collection-like objects that support HOM proxy.
+ * Uses structural branding for identification.
+ */
+export interface CollectionLike<T> {
+	readonly [COLLECTION_BRAND]: true;
+	all(): T[] | Record<string, T>;
+	toArray(): T[] | Record<string, T>;
+}
+
+/** Internal type for HOM proxy handlers - uses unknown for duck typing */
+type AnyCollection = {
+	readonly [COLLECTION_BRAND]: true;
+	// biome-ignore lint/suspicious/noExplicitAny: duck typing for HOM proxy
+	[key: string]: any;
+};
 
 /** Collection kind - tracks whether collection is array-based or associative at the type level */
 export type CollectionKind = 'array' | 'assoc';
@@ -69,10 +60,6 @@ export interface CollectionParam<T = unknown> {
 	toArray(): T[];
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// INPUT TYPE ALIASES (Laravel-style)
-// ═══════════════════════════════════════════════════════════════════════════
-
 /**
  * Any array-like input: arrays, iterables, collections, or duck-typed collection objects.
  * Mirrors Laravel's Arrayable contract for flexible input handling.
@@ -84,10 +71,6 @@ export type Arrayable<T> = T[] | readonly T[] | Iterable<T> | CollectionParam<T>
  * Use for methods that accept both arrays and key-value objects.
  */
 export type Collectable<T> = Arrayable<T> | Record<string, T>;
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PATH TYPE SYSTEM (Type-safe property access)
-// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Depth decrement helper for recursive path types.
@@ -133,47 +116,16 @@ export type WhereOperator = '=' | '==' | '!=' | '<>' | '<' | '>' | '<=' | '>=';
 /** Value retriever - can be a key string or callback function */
 export type ValueRetriever<T, R> = string | ((value: T, key: string | number) => R);
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FLATTEN/COLLAPSE TYPE UTILITIES
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Unwrap one level of array or Collection nesting.
- * Returns T unchanged if not nested (safe fallback).
- *
- * @example Collapse<number[]> → number
- * @example Collapse<Collection<string>> → string
- * @example Collapse<number> → number (unchanged, not `never`)
- * @example Collapse<(number | string)[]> → number | string
- */
+/** Unwrap one level of array or Collection nesting. Returns T unchanged if not nested. */
 export type Collapse<T> = T extends readonly (infer U)[]
 	? U
 	: T extends ProxiedCollection<infer U, CollectionKind>
 		? U
 		: T extends Collection<infer U, CollectionKind>
 			? U
-			: T; // Return T unchanged, not `never`
+			: T;
 
-/**
- * Recursively unwraps nested arrays/Collections to specified depth.
- *
- * HOW IT WORKS:
- * - Uses conditional types to check if T is an array/Collection
- * - Recursively applies itself, decrementing D via tuple indexing
- * - The tuple [-1,0,1,2...] maps D → D-1 (TypeScript lacks arithmetic)
- * - Stops when D reaches -1 (the 'done' branch)
- *
- * WHY THIS PATTERN:
- * - This is the EXACT pattern TypeScript uses for Array.prototype.flat()
- * - See: lib.es2019.array.d.ts, FlatArray type
- *
- * LIMITATIONS:
- * - Maximum depth of 20 (tuple length)
- * - Only works with literal number types, not `number` variables
- *
- * @example FlattenDepth<number[][][], 2> → number[]
- * @example FlattenDepth<number[][][], 20> → number (fully flattened)
- */
+/** Recursive flatten to depth D. Same pattern as lib.es2019.array.d.ts FlatArray. */
 export type FlattenDepth<T, D extends number> = {
 	done: T;
 	recur: T extends readonly (infer U)[]
@@ -185,37 +137,24 @@ export type FlattenDepth<T, D extends number> = {
 				: T;
 }[D extends -1 ? 'done' : 'recur'];
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HIGHER-ORDER PROXY TYPES
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Extract the non-nullable part of T for property access */
 type NonNullableItem<T> = T extends null | undefined ? never : T;
 
-/** Extract non-function property keys from T, handling nullable types */
 type PropertyKeys<T> =
 	NonNullableItem<T> extends never
 		? never
 		: {
-				// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
+				// biome-ignore lint/suspicious/noExplicitAny: conditional type matching
 				[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? never : K;
 			}[keyof NonNullableItem<T>];
 
-/** Extract function/method keys from T, handling nullable types */
 type MethodKeys<T> =
 	NonNullableItem<T> extends never
 		? never
 		: {
-				// biome-ignore lint/suspicious/noExplicitAny: Required for TypeScript conditional type matching any function signature
+				// biome-ignore lint/suspicious/noExplicitAny: conditional type matching
 				[K in keyof NonNullableItem<T>]: NonNullableItem<T>[K] extends (...args: any[]) => any ? K : never;
 			}[keyof NonNullableItem<T>];
 
-/**
- * Higher-order map proxy type.
- * Property access returns ProxiedCollection<T[K]>, method calls return (...args) => ProxiedCollection<ReturnType>
- * Preserves the collection kind CK.
- * Uses NonNullableItem<T> to handle nullable union types in collections.
- */
 type HigherOrderMapProxy<T, CK extends CollectionKind> = {
 	readonly [K in PropertyKeys<T>]: ProxiedCollection<NonNullableItem<T>[K], CK>;
 } & {
@@ -224,10 +163,6 @@ type HigherOrderMapProxy<T, CK extends CollectionKind> = {
 		: never;
 };
 
-/**
- * Higher-order filter/reject/sortBy proxy type.
- * Always returns ProxiedCollection<T> (filtered/sorted items), preserving kind CK.
- */
 type HigherOrderFilterProxy<T, CK extends CollectionKind> = {
 	readonly [K in PropertyKeys<T>]: ProxiedCollection<T, CK>;
 } & {
@@ -236,11 +171,6 @@ type HigherOrderFilterProxy<T, CK extends CollectionKind> = {
 		: never;
 };
 
-/**
- * Higher-order aggregate proxy type (sum, avg, min, max).
- * Returns the aggregate result type R.
- * Uses PropertyKeys to only map non-function properties.
- */
 type HigherOrderAggregateProxy<T, R> = {
 	readonly [K in PropertyKeys<T>]: R;
 } & {
@@ -249,10 +179,6 @@ type HigherOrderAggregateProxy<T, R> = {
 		: never;
 };
 
-/**
- * Higher-order each proxy type.
- * Method calls execute on each item, returns ProxiedCollection<T> for chaining, preserving kind CK.
- */
 type HigherOrderEachProxy<T, CK extends CollectionKind> = {
 	readonly [K in PropertyKeys<T>]: ProxiedCollection<T, CK>;
 } & {
@@ -261,15 +187,6 @@ type HigherOrderEachProxy<T, CK extends CollectionKind> = {
 		: never;
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CALLABLE HIGHER-ORDER TYPES (for exact Laravel syntax)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Callable higher-order map type with explicit generic call/apply/bind.
- * Used for: map, groupBy, flatMap
- * Preserves the generic U type parameter through .call(), .apply(), .bind()
- */
 type CallableHigherOrderMap<T, CK extends CollectionKind> = (<U>(
 	callback: (value: T, key: CollectionKey<CK>) => U,
 ) => ProxiedCollection<U, CK>) & {
@@ -278,11 +195,6 @@ type CallableHigherOrderMap<T, CK extends CollectionKind> = (<U>(
 	bind(thisArg: unknown): <U>(callback: (value: T, key: CollectionKey<CK>) => U) => ProxiedCollection<U, CK>;
 } & ([T] extends [never] ? object : HigherOrderMapProxy<T, CK>);
 
-/**
- * Callable higher-order filter type with explicit call/apply/bind.
- * Used for: filter, reject, sortBy, sortByDesc, keyBy, unique
- * Returns ProxiedCollection<T> (filtered items of same type)
- */
 type CallableHigherOrderFilter<T, CK extends CollectionKind> = ((
 	callback?: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T,
 ) => ProxiedCollection<T, CK>) & {
@@ -299,11 +211,6 @@ type CallableHigherOrderFilter<T, CK extends CollectionKind> = ((
 	): (callback?: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T) => ProxiedCollection<T, CK>;
 } & ([T] extends [never] ? object : HigherOrderFilterProxy<T, CK>);
 
-/**
- * Callable higher-order aggregate type with explicit call/apply/bind.
- * Used for: sum, avg, min, max, contains, every, some, doesntContain
- * Returns the aggregate result type R (number, boolean, etc.)
- */
 type CallableHigherOrderAggregate<T, R, CK extends CollectionKind> = ((
 	keyOrCallback?: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T,
 ) => R) & {
@@ -312,11 +219,6 @@ type CallableHigherOrderAggregate<T, R, CK extends CollectionKind> = ((
 	bind(thisArg: unknown): (keyOrCallback?: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T) => R;
 } & ([T] extends [never] ? object : HigherOrderAggregateProxy<T, R>);
 
-/**
- * Callable higher-order each type with explicit call/apply/bind.
- * Used for: each
- * Returns ProxiedCollection<T> for chaining
- */
 type CallableHigherOrderEach<T, CK extends CollectionKind> = ((
 	callback: (value: T, key: CollectionKey<CK>) => undefined | false,
 ) => ProxiedCollection<T, CK>) & {
@@ -327,19 +229,10 @@ type CallableHigherOrderEach<T, CK extends CollectionKind> = ((
 	): (callback: (value: T, key: CollectionKey<CK>) => undefined | false) => ProxiedCollection<T, CK>;
 } & ([T] extends [never] ? object : HigherOrderEachProxy<T, CK>);
 
-/**
- * Higher-order proxy for first/last - returns T | undefined, not a collection.
- * Property access like `users.first.active` returns the first user where active is truthy.
- */
 type HigherOrderFirstProxy<T> = {
 	readonly [K in PropertyKeys<T>]: T | undefined;
 };
 
-/**
- * Callable higher-order first/last type with explicit call/apply/bind.
- * Used for: first, last
- * Returns T | undefined (single item), not a collection
- */
 type CallableHigherOrderFirst<T, CK extends CollectionKind> = ((
 	callback?: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T,
 	defaultValue?: T,
@@ -355,10 +248,6 @@ type CallableHigherOrderFirst<T, CK extends CollectionKind> = ((
 	): (callback?: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T, defaultValue?: T) => T | undefined;
 } & ([T] extends [never] ? object : HigherOrderFirstProxy<T>);
 
-/**
- * Higher-order partition proxy type.
- * Returns tuple of [matching, non-matching] ProxiedCollections, preserving kind CK.
- */
 type HigherOrderPartitionProxy<T, CK extends CollectionKind> = {
 	readonly [K in PropertyKeys<T>]: [ProxiedCollection<T, CK>, ProxiedCollection<T, CK>];
 } & {
@@ -367,11 +256,6 @@ type HigherOrderPartitionProxy<T, CK extends CollectionKind> = {
 		: never;
 };
 
-/**
- * Callable higher-order partition type with explicit call/apply/bind.
- * Used for: partition
- * Returns tuple of [matching, non-matching] ProxiedCollections
- */
 type CallableHigherOrderPartition<T, CK extends CollectionKind> = ((
 	callback: ((value: T, key: CollectionKey<CK>) => unknown) | keyof T,
 ) => [ProxiedCollection<T, CK>, ProxiedCollection<T, CK>]) & {
@@ -408,86 +292,48 @@ export interface CollectionMacros<_T> {
 }
 
 /**
- * Collection type with higher-order messaging support.
- * Methods like `map`, `filter`, etc. work as BOTH callable methods AND property accessors.
- * CK tracks whether collection is array-based or associative for proper `all()` return type.
- *
- * @example
- * ```ts
- * users.map(u => u.name)    // Traditional callback usage
- * users.map.name            // Higher-order messaging
- * users.filter.active       // Higher-order filter
- * users.sum.age             // Higher-order aggregate
- * ```
+ * Collection with higher-order messaging. Methods like map, filter work as
+ * both callable methods (users.map(fn)) and property accessors (users.map.name).
  */
 export type ProxiedCollection<T, CK extends CollectionKind = 'array'> = Collection<T, CK> &
 	CollectionParam<T> &
 	CollectionMacros<T> & {
-		/** Map with higher-order support: users.map(fn) OR users.map.name */
 		map: CallableHigherOrderMap<T, CK>;
-		/** Filter with higher-order support: users.filter(fn) OR users.filter.active */
 		filter: CallableHigherOrderFilter<T, CK>;
-		/** Reject with higher-order support: users.reject(fn) OR users.reject.deleted */
 		reject: CallableHigherOrderFilter<T, CK>;
-		/** Each with higher-order support: users.each(fn) OR users.each.save() */
 		each: CallableHigherOrderEach<T, CK>;
-		/** Sum with higher-order support: users.sum(fn) OR users.sum.age */
 		sum: CallableHigherOrderAggregate<T, number, CK>;
-		/** Avg with higher-order support: users.avg(fn) OR users.avg.score */
 		avg: CallableHigherOrderAggregate<T, number | null, CK>;
-		/** Min with higher-order support: users.min(fn) OR users.min.age */
 		min: CallableHigherOrderAggregate<T, number | null, CK>;
-		/** Max with higher-order support: users.max(fn) OR users.max.age */
 		max: CallableHigherOrderAggregate<T, number | null, CK>;
-		/** SortBy with higher-order support: users.sortBy(fn) OR users.sortBy.name */
 		sortBy: CallableHigherOrderFilter<T, CK>;
-		/** SortByDesc with higher-order support: users.sortByDesc(fn) OR users.sortByDesc.name */
 		sortByDesc: CallableHigherOrderFilter<T, CK>;
-		/** GroupBy with higher-order support: users.groupBy(fn) OR users.groupBy.status */
 		groupBy: CallableHigherOrderMap<T, CK>;
-		/** KeyBy with higher-order support: users.keyBy(fn) OR users.keyBy.id */
 		keyBy: CallableHigherOrderFilter<T, CK>;
-		/** Unique with higher-order support: users.unique(fn) OR users.unique.email */
 		unique: CallableHigherOrderFilter<T, CK>;
-		/** FlatMap with higher-order support: users.flatMap(fn) OR users.flatMap.tags */
 		flatMap: CallableHigherOrderMap<T, CK>;
-		/** Contains with higher-order support: users.contains(fn) OR users.contains.active */
 		contains: CallableHigherOrderAggregate<T, boolean, CK>;
-		/** Every with higher-order support: users.every(fn) OR users.every.valid */
 		every: CallableHigherOrderAggregate<T, boolean, CK>;
-		/** Some with higher-order support (alias for contains) */
 		some: CallableHigherOrderAggregate<T, boolean, CK>;
-		/** DoesntContain with higher-order support */
 		doesntContain: CallableHigherOrderAggregate<T, boolean, CK>;
-		/** Partition with higher-order support - returns [matching, nonMatching] tuple */
 		partition: CallableHigherOrderPartition<T, CK>;
-		/** First with higher-order support - returns T | undefined */
 		first: CallableHigherOrderFirst<T, CK>;
-		/** Last with higher-order support - returns T | undefined */
 		last: CallableHigherOrderFirst<T, CK>;
-		/** TakeWhile with higher-order support */
 		takeWhile: CallableHigherOrderFilter<T, CK>;
-		/** TakeUntil with higher-order support */
 		takeUntil: CallableHigherOrderFilter<T, CK>;
-		/** SkipWhile with higher-order support */
 		skipWhile: CallableHigherOrderFilter<T, CK>;
-		/** SkipUntil with higher-order support */
 		skipUntil: CallableHigherOrderFilter<T, CK>;
-		/** Average with higher-order support (alias for avg) */
 		average: CallableHigherOrderAggregate<T, number | null, CK>;
 	};
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+/** @deprecated Use ProxiedCollection<T, 'array'> instead */
+export type ProxiedArrayCollection<T> = ProxiedCollection<T, 'array'>;
 
-/** Get a value from an object by dot notation key */
 export function dataGet(target: unknown, key: string | null): unknown {
 	if (key === null) return target;
 	if (typeof target !== 'object' || target === null) return undefined;
 	const obj = target as Record<string, unknown>;
 	if (key in obj) return obj[key];
-	// Support dot notation
 	const parts = key.split('.');
 	let value: unknown = target;
 	for (const part of parts) {
@@ -497,12 +343,10 @@ export function dataGet(target: unknown, key: string | null): unknown {
 	return value;
 }
 
-/** Check if a value is callable (function) but not a string */
 export function useAsCallable(value: unknown): value is (...args: unknown[]) => unknown {
 	return typeof value === 'function';
 }
 
-/** Get a value retriever function from a key or callback */
 export function valueRetriever<T, R>(
 	keyOrCallback: ValueRetriever<T, R> | null | undefined,
 ): (value: T, key: string | number) => R {
@@ -515,7 +359,6 @@ export function valueRetriever<T, R>(
 	return (value: T) => dataGet(value, keyOrCallback as string) as R;
 }
 
-/** Create an operator checker for where clauses */
 export function operatorForWhere<T>(
 	key: string | ((value: T, key: string | number) => boolean),
 	operator?: WhereOperator | unknown,
@@ -525,7 +368,6 @@ export function operatorForWhere<T>(
 		return key as (value: T, key: string | number) => boolean;
 	}
 
-	// Normalize arguments: where('key', 'value') -> where('key', '=', 'value')
 	let op: WhereOperator = '=';
 	let compareValue: unknown = operator;
 
@@ -534,17 +376,18 @@ export function operatorForWhere<T>(
 		compareValue = value;
 	}
 
+	// Loose comparison mirrors Laravel's where(). Use whereStrict() for strict comparison.
 	return (item: T) => {
 		const retrieved = dataGet(item, key as string);
 
 		switch (op) {
 			case '=':
 			case '==':
-				// biome-ignore lint/suspicious/noDoubleEquals: Laravel where() uses loose comparison by design. Use whereStrict() for strict comparison.
+				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 				return retrieved == compareValue;
 			case '!=':
 			case '<>':
-				// biome-ignore lint/suspicious/noDoubleEquals: Laravel where() uses loose comparison by design. Use whereStrict() for strict comparison.
+				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 				return retrieved != compareValue;
 			case '<':
 				return (retrieved as number) < (compareValue as number);
@@ -555,22 +398,14 @@ export function operatorForWhere<T>(
 			case '>=':
 				return (retrieved as number) >= (compareValue as number);
 			default:
-				// biome-ignore lint/suspicious/noDoubleEquals: Laravel where() uses loose comparison by design. Use whereStrict() for strict comparison.
+				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 				return retrieved == compareValue;
 		}
 	};
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HIGHER-ORDER COLLECTION PROXY
-// ═══════════════════════════════════════════════════════════════════════════
+type HigherOrderHandler<T> = (collection: AnyCollection, callback: (item: T) => unknown) => unknown;
 
-/** Handler type for higher-order proxy dispatch table */
-type HigherOrderHandler<T> = (collection: Collection<T, CollectionKind>, callback: (item: T) => unknown) => unknown;
-
-/**
- * Methods that support higher-order messaging (Laravel's proxies list)
- */
 type ProxyableMethod =
 	| 'average'
 	| 'avg'
@@ -628,117 +463,60 @@ const PROXYABLE_METHODS = new Set<ProxyableMethod>([
 	'unique',
 ]);
 
-/**
- * Properties to bypass in the proxy (to avoid breaking Promise detection, etc.)
- */
 const BYPASS_PROPERTIES = new Set<string | symbol>([
-	// Promise detection (critical for async/await)
 	'then',
 	'catch',
-	'finally',
-	// Object prototype
+	'finally', // Promise detection
 	'constructor',
 	'prototype',
 	'toJSON',
-	// Node.js inspection
 	'inspect',
 	'nodeType',
-	// Common internal properties
 	'asymmetricMatch',
 	'$$typeof',
 ]);
 
-/**
- * Higher-order collection proxy - Full Laravel compatibility.
- *
- * Supports BOTH patterns:
- * - Property access: users.map.name     → extracts 'name' property from each item
- * - Method calls:    users.each.save()  → calls save() on each item
- *
- * @example
- * ```ts
- * // Property access
- * users.map.name           // Collection<string>
- * users.filter.active      // Collection<User>
- * users.sum.age            // number
- *
- * // Method calls
- * users.each.save()        // Calls save() on each user
- * users.each.notify('Hi')  // Calls notify('Hi') on each user
- * ```
- */
-// biome-ignore lint/complexity/noStaticOnlyClass: This class uses static methods to create typed proxies; converting to standalone functions would lose the clear namespace organization
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for typed proxy creation
 class HigherOrderCollectionProxy {
-	/**
-	 * Method dispatch table - maps method names to their handlers.
-	 * Organized by category for clarity.
-	 */
 	private static createHandlers<T>(): Record<string, HigherOrderHandler<T>> {
 		return {
-			// Transformation methods
 			map: (c, cb) => c.map(cb),
 			flatMap: (c, cb) => c.flatMap(cb as (item: T) => unknown[]),
-
-			// Filter methods
-			filter: (c, cb) => c.filter((item) => Boolean(cb(item))),
-			reject: (c, cb) => c.reject((item) => Boolean(cb(item))),
-
-			// Sorting methods
+			filter: (c, cb) => c.filter((item: T) => Boolean(cb(item))),
+			reject: (c, cb) => c.reject((item: T) => Boolean(cb(item))),
 			sortBy: (c, cb) => c.sortBy(cb as ValueRetriever<T, unknown>),
 			sortByDesc: (c, cb) => c.sortByDesc(cb as ValueRetriever<T, unknown>),
-
-			// Grouping methods
 			groupBy: (c, cb) => c.groupBy(cb as ValueRetriever<T, string | string[]>),
 			keyBy: (c, cb) => c.keyBy(cb as ValueRetriever<T, string>),
 			unique: (c, cb) => c.unique(cb as ValueRetriever<T, unknown>),
-
-			// Aggregation methods
 			sum: (c, cb) => c.sum(cb as ValueRetriever<T, number>),
 			avg: (c, cb) => c.avg(cb as ValueRetriever<T, number>),
 			average: (c, cb) => c.avg(cb as ValueRetriever<T, number>),
 			min: (c, cb) => c.min(cb as ValueRetriever<T, number>),
 			max: (c, cb) => c.max(cb as ValueRetriever<T, number>),
-
-			// Boolean methods
-			contains: (c, cb) => c.contains((item) => Boolean(cb(item))),
-			some: (c, cb) => c.contains((item) => Boolean(cb(item))),
-			every: (c, cb) => c.every((item) => Boolean(cb(item))),
-			doesntContain: (c, cb) => !c.contains((item) => Boolean(cb(item))),
-
-			// Side-effect methods
+			contains: (c, cb) => c.contains((item: T) => Boolean(cb(item))),
+			some: (c, cb) => c.contains((item: T) => Boolean(cb(item))),
+			every: (c, cb) => c.every((item: T) => Boolean(cb(item))),
+			doesntContain: (c, cb) => !c.contains((item: T) => Boolean(cb(item))),
 			each: (c, cb) => {
 				c.each(cb);
 				return c;
 			},
-
-			// Selection methods
-			first: (c, cb) => c.first((item) => Boolean(cb(item))),
-			last: (c, cb) => c.last((item) => Boolean(cb(item))),
-
-			// Partition
-			partition: (c, cb) => c.partition((item) => Boolean(cb(item))),
-
-			// Slicing methods
-			skipUntil: (c, cb) => c.skipUntil((item) => Boolean(cb(item))),
-			skipWhile: (c, cb) => c.skipWhile((item) => Boolean(cb(item))),
-			takeUntil: (c, cb) => c.takeUntil((item) => Boolean(cb(item))),
-			takeWhile: (c, cb) => c.takeWhile((item) => Boolean(cb(item))),
+			first: (c, cb) => c.first((item: T) => Boolean(cb(item))),
+			last: (c, cb) => c.last((item: T) => Boolean(cb(item))),
+			partition: (c, cb) => c.partition((item: T) => Boolean(cb(item))),
+			skipUntil: (c, cb) => c.skipUntil((item: T) => Boolean(cb(item))),
+			skipWhile: (c, cb) => c.skipWhile((item: T) => Boolean(cb(item))),
+			takeUntil: (c, cb) => c.takeUntil((item: T) => Boolean(cb(item))),
+			takeWhile: (c, cb) => c.takeWhile((item: T) => Boolean(cb(item))),
 		};
 	}
 
-	/**
-	 * Create a typed proxy for higher-order messaging.
-	 *
-	 * The returned proxy supports BOTH:
-	 * 1. Property access: users.map.name → Collection<string>
-	 * 2. Method calls: users.each.save() → calls save() on each item
-	 *
-	 * @param wrapResult - Function to wrap Collection results for further chaining
-	 */
+	/** @internal */
 	static create<T, TReturn>(
-		collection: Collection<T, CollectionKind>,
+		collection: AnyCollection,
 		method: ProxyableMethod,
-		wrapResult?: (c: Collection<unknown, CollectionKind>) => unknown,
+		wrapResult?: (c: AnyCollection) => unknown,
 	): TReturn {
 		const handlers = HigherOrderCollectionProxy.createHandlers<T>();
 		const handler = handlers[method];
@@ -748,26 +526,17 @@ class HigherOrderCollectionProxy {
 
 		return new Proxy(proxyTarget, {
 			get: (_, property: string | symbol) => {
-				// Note: Symbol access is filtered by wrapCollectionWithProxy before reaching here
-				// (see line 628), so we only handle string properties
-
-				// Bypass special properties
 				if (typeof property === 'symbol' || BYPASS_PROPERTIES.has(property)) {
 					return undefined;
 				}
 
-				// Create callback for property extraction (handles null/undefined gracefully)
 				const propertyCallback = (item: T) => {
 					if (item == null) return undefined;
 					return (item as Record<string, unknown>)[property];
 				};
 
-				// Execute immediately for property access (Laravel behavior)
 				const propertyResult = handler(collection, propertyCallback);
 
-				// For primitive results (number, boolean, string, null, undefined),
-				// return the value directly - no proxy needed
-				// This matches Laravel's behavior where collection.sum.age returns a number
 				if (
 					propertyResult === null ||
 					propertyResult === undefined ||
@@ -778,11 +547,8 @@ class HigherOrderCollectionProxy {
 					return propertyResult;
 				}
 
-				// For Collection results, wrap for chaining if wrapper provided
-				const wrappedResult =
-					propertyResult instanceof Collection && wrapResult ? wrapResult(propertyResult) : propertyResult;
+				const wrappedResult = isCollection(propertyResult) && wrapResult ? wrapResult(propertyResult) : propertyResult;
 
-				// Create a callable function for method invocation support
 				const methodInvoker = (...args: unknown[]) => {
 					const methodResult = handler(collection, (item: T) => {
 						if (item == null) return undefined;
@@ -792,18 +558,14 @@ class HigherOrderCollectionProxy {
 						}
 						return member;
 					});
-					// Wrap Collection results for chaining
-					if (methodResult instanceof Collection && wrapResult) {
+					if (isCollection(methodResult) && wrapResult) {
 						return wrapResult(methodResult);
 					}
 					return methodResult;
 				};
 
-				// Return a Proxy that acts as BOTH the result AND a callable
 				return new Proxy(methodInvoker, {
-					// Forward property/method access to the wrapped result
 					get: (_, resultProp: string | symbol) => {
-						// Handle special coercion methods
 						if (resultProp === Symbol.toPrimitive) {
 							return () => wrappedResult;
 						}
@@ -813,27 +575,20 @@ class HigherOrderCollectionProxy {
 						if (resultProp === 'toString') {
 							return () => String(wrappedResult);
 						}
-						// Bypass symbols
 						if (typeof resultProp === 'symbol') {
 							return (wrappedResult as Record<symbol, unknown>)?.[resultProp];
 						}
-						// Forward to the wrapped result (e.g., .all(), .count(), .first(), .map.name)
-						// Don't use bind() as it would break Proxy interception for chained higher-order calls
 						return (wrappedResult as Record<string, unknown>)?.[resultProp];
 					},
 
-					// Handle method calls: users.each.save()
 					apply: (target, _, args) => {
 						return target(...args);
 					},
 
-					// Make instanceof checks work with the result type
-					// Note: wrappedResult is guaranteed non-null (primitives return early at lines 501-509)
 					getPrototypeOf: () => {
 						return Object.getPrototypeOf(wrappedResult);
 					},
 
-					// Support 'in' operator
 					has: (_, prop) => {
 						return prop in (wrappedResult as object);
 					},
@@ -843,115 +598,103 @@ class HigherOrderCollectionProxy {
 	}
 }
 
-/**
- * Wraps a Collection in a Proxy to enable exact Laravel syntax for higher-order messaging.
- *
- * This allows accessing proxyable methods (map, filter, etc.) as BOTH:
- * - Callable methods: users.map(callback)
- * - Property accessors: users.map.name
- *
- * @internal
- */
-function wrapCollectionWithProxy<T, CK extends CollectionKind>(
-	collection: Collection<T, CK>,
-): ProxiedCollection<T, CK> {
+type MacroGetter = (name: string) => ((...args: unknown[]) => unknown) | undefined;
+
+/** @internal Generic proxy wrapper for any CollectionLike */
+export function wrapWithProxy<T, C extends CollectionLike<T>>(collection: C, getMacro: MacroGetter): C {
+	const wrapResult = (c: AnyCollection) => wrapWithProxy(c as C, getMacro);
+
 	return new Proxy(collection, {
 		get(target, prop: string | symbol, receiver) {
-			// Bypass symbols and special properties
-			if (typeof prop === 'symbol' || BYPASS_PROPERTIES.has(prop)) {
+			if (typeof prop === 'symbol') {
+				const value = Reflect.get(target, prop, target);
+				if (typeof value === 'function') {
+					return value.bind(target);
+				}
+				return value;
+			}
+			if (BYPASS_PROPERTIES.has(prop)) {
 				return Reflect.get(target, prop, receiver);
 			}
 
-			// Check for registered macros first
-			const macro = Collection.getMacro(prop as string);
+			const macro = getMacro(prop as string);
 			if (macro) {
-				return function (this: Collection<T, CK>, ...args: unknown[]) {
+				return function (this: C, ...args: unknown[]) {
 					const result = macro.apply(target, args);
-					// If the result is a Collection, wrap it for chaining
-					if (result instanceof Collection) {
-						return wrapCollectionWithProxy(result as Collection<unknown, CollectionKind>);
+					if (isCollection(result)) {
+						return wrapResult(result as AnyCollection);
 					}
 					return result;
 				};
 			}
 
-			// Get the actual property/method from the collection
-			const value = Reflect.get(target, prop, receiver);
+			const value = Reflect.get(target, prop, target);
 
-			// If it's not a proxyable method, return the value directly
 			if (!PROXYABLE_METHODS.has(prop as ProxyableMethod)) {
+				if (typeof value === 'function') {
+					return function (this: C, ...args: unknown[]) {
+						const result = value.apply(target, args);
+						if (result === target) {
+							return receiver;
+						}
+						if (isCollection(result)) {
+							return wrapResult(result as AnyCollection);
+						}
+						return result;
+					};
+				}
 				return value;
 			}
 
-			// It's a proxyable method - create a callable that also supports property access
-			// Note: All proxyable methods are functions (guaranteed by PROXYABLE_METHODS being method names)
-
-			// Create the higher-order proxy for property access
-			// Pass the wrapper function so Collection results are wrapped for chaining
 			const higherOrderProxy = HigherOrderCollectionProxy.create<T, Record<string, unknown>>(
-				target,
+				target as AnyCollection,
 				prop as ProxyableMethod,
-				(c) => wrapCollectionWithProxy(c as Collection<unknown, CollectionKind>),
+				wrapResult,
 			);
 
-			// Create a wrapper function that can be called normally
-			// Note: .call() and .apply() bypass the Proxy's apply trap and execute this directly
-			const callableProxy = function (this: Collection<T, CK>, ...args: unknown[]) {
+			const callableProxy = function (this: C, ...args: unknown[]) {
 				const result = (value as (...a: unknown[]) => unknown).apply(target, args);
-				if (result instanceof Collection) {
-					return wrapCollectionWithProxy(result as Collection<unknown, CollectionKind>);
+				if (isCollection(result)) {
+					return wrapResult(result as AnyCollection);
 				}
 				return result;
 			};
 
-			// Make the callable function also act as a property accessor
 			return new Proxy(callableProxy, {
 				get(_, accessProp: string | symbol) {
-					// Bypass symbols
 					if (typeof accessProp === 'symbol') {
 						return undefined;
 					}
 
-					// Handle function-specific properties (only the ones that won't conflict with item properties)
 					if (accessProp === 'length') return (value as (...a: unknown[]) => unknown).length;
-					if (accessProp === 'call') {
-						// Bind .call to callableProxy so it bypasses the proxy's apply trap
-						return Function.prototype.call.bind(callableProxy);
-					}
-					if (accessProp === 'apply') {
-						// Bind .apply to callableProxy so it bypasses the proxy's apply trap
-						return Function.prototype.apply.bind(callableProxy);
-					}
+					if (accessProp === 'call') return Function.prototype.call.bind(callableProxy);
+					if (accessProp === 'apply') return Function.prototype.apply.bind(callableProxy);
 					if (accessProp === 'bind') {
 						return Function.prototype.bind.bind(callableProxy);
 					}
 
-					// Delegate to higher-order proxy for property access (e.g., .name, .age)
-					// The result is a proxy that forwards to the actual Collection result
 					return (higherOrderProxy as Record<string, unknown>)[accessProp];
 				},
 
 				apply(_target, _thisArg, args) {
 					const result = (value as (...a: unknown[]) => unknown).apply(target, args);
-					// If the result is a Collection, wrap it too
-					if (result instanceof Collection) {
-						return wrapCollectionWithProxy(result as Collection<unknown, CollectionKind>);
+					if (isCollection(result)) {
+						return wrapResult(result as AnyCollection);
 					}
 					return result;
 				},
 			});
 		},
-	}) as unknown as ProxiedCollection<T, CK>;
+	}) as C;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ARRAYABLE NORMALIZATION HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
+/** @internal Wraps Collection with HOM proxy */
+function wrapCollectionWithProxy<T, CK extends CollectionKind>(
+	collection: Collection<T, CK>,
+): ProxiedCollection<T, CK> {
+	return wrapWithProxy(collection, Collection.getMacro.bind(Collection)) as ProxiedCollection<T, CK>;
+}
 
-/**
- * Normalize any Arrayable<T> to T[].
- * Handles arrays, readonly arrays, Collections, CollectionParams, and Iterables.
- */
 function arrayableToArray<T>(items: Arrayable<T>): T[] {
 	if (Array.isArray(items)) {
 		return items as T[];
@@ -962,14 +705,9 @@ function arrayableToArray<T>(items: Arrayable<T>): T[] {
 	if ('toArray' in items && typeof (items as CollectionParam<T>).toArray === 'function') {
 		return (items as CollectionParam<T>).toArray() as T[];
 	}
-	// Iterable<T> - use Array.from for proper type handling
 	return Array.from(items as Iterable<T>);
 }
 
-/**
- * Normalize any Collectable<T> to Record<string, T>.
- * Handles arrays, readonly arrays, Records, Collections, CollectionParams, and Iterables.
- */
 function collectableToRecord<T>(items: Collectable<T>): Record<string, T> {
 	if (items instanceof Collection) {
 		return items.all() as Record<string, T>;
@@ -986,85 +724,83 @@ function collectableToRecord<T>(items: Collectable<T>): Record<string, T> {
 	return items as Record<string, T>;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// COLLECTION CLASS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Collection - Laravel-style collection class.
- *
- * A fluent wrapper for arrays and objects with ~105 chainable methods.
- */
 export class Collection<T, CK extends CollectionKind = 'array'> {
-	protected items: Record<string, T>;
+	readonly [COLLECTION_BRAND] = true as const;
+
+	private _items: Record<string, T> | null = null;
+	private _lazyItems = false;
 	protected isAssociative: boolean;
 
-	/**
-	 * Cached next numeric key for O(1) push() operations.
-	 * Null means cache is invalid and needs recalculation.
-	 */
 	private _nextNumericKey: number | null = null;
+	#arrayItems: T[] | null = null;
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// MACROS (Laravel's Macroable trait)
-	// ═══════════════════════════════════════════════════════════════════════════
+	/** Lazy getter: materializes Record from #arrayItems on first access */
+	protected get items(): Record<string, T> {
+		if (this._lazyItems && this.#arrayItems) {
+			this._items = Object.fromEntries(this.#arrayItems.map((v, i) => [String(i), v]));
+			this._lazyItems = false;
+		}
+		return this._items!;
+	}
 
-	/** Storage for registered macros - type safety comes from CollectionMacros augmentation */
-	// biome-ignore lint/suspicious/noExplicitAny: Dynamic dispatch; type safety via CollectionMacros
-	private static macros: Map<string, (...args: any[]) => any> = new Map();
+	protected set items(value: Record<string, T>) {
+		this._items = value;
+		this._lazyItems = false;
+	}
 
-	/**
-	 * Register a custom macro on the Collection class.
-	 *
-	 * @example
-	 * ```ts
-	 * Collection.macro('toUpper', function(this: Collection<string>) {
-	 *   return this.map(val => val.toUpperCase());
-	 * });
-	 *
-	 * collect(['hello', 'world']).toUpper().all();
-	 * // => ['HELLO', 'WORLD']
-	 * ```
-	 */
-	// biome-ignore lint/suspicious/noExplicitAny: Dynamic dispatch; type safety via CollectionMacros
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic macro dispatch
 	static macro(name: string, fn: (...args: any[]) => any): void {
-		Collection.macros.set(name, fn);
+		collectionMacros.set(name, fn);
 	}
 
-	/**
-	 * Check if a macro is registered.
-	 */
 	static hasMacro(name: string): boolean {
-		return Collection.macros.has(name);
+		return collectionMacros.has(name);
 	}
 
-	/**
-	 * Remove all registered macros.
-	 */
 	static flushMacros(): void {
-		Collection.macros.clear();
+		collectionMacros.clear();
 	}
 
-	/**
-	 * Get a registered macro by name.
-	 * @internal
-	 */
-	// biome-ignore lint/suspicious/noExplicitAny: Dynamic dispatch; type safety via CollectionMacros
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic macro dispatch
 	static getMacro(name: string): ((...args: any[]) => any) | undefined {
-		return Collection.macros.get(name);
+		return collectionMacros.get(name);
 	}
 
 	constructor(items: Items<T> | Collection<T, CollectionKind> = [], isAssociative?: boolean) {
-		// Normalize items to record format
 		if (items instanceof Collection) {
-			this.items = { ...items.items };
+			// Try to access private fields directly (fails for Proxied collections)
+			let copied = false;
+			try {
+				// This will throw if items is a Proxy
+				this._items = items._items ? { ...items._items } : null;
+				this.#arrayItems = items.#arrayItems ? [...items.#arrayItems] : null;
+				this._lazyItems = items._lazyItems;
+				copied = true;
+			} catch {
+				// Proxied or subclassed Collection - use public API
+			}
+			if (!copied) {
+				const all = items.all();
+				if (Array.isArray(all)) {
+					this.#arrayItems = [...all];
+					this._lazyItems = true;
+				} else {
+					this._items = { ...all };
+					this.#arrayItems = null;
+				}
+			}
+		} else if (Array.isArray(items) && isAssociative !== true) {
+			// Fast path: store array reference directly (no copy - we never mutate)
+			this.#arrayItems = items;
+			this._lazyItems = true;
 		} else if (Array.isArray(items)) {
-			this.items = Object.fromEntries(items.map((v, i) => [String(i), v]));
+			this._items = Object.fromEntries(items.map((v, i) => [String(i), v]));
+			this.#arrayItems = null;
 		} else {
-			this.items = { ...items };
+			this._items = { ...items };
+			this.#arrayItems = null;
 		}
 
-		// Determine isAssociative: explicit param > inherit from Collection > infer from type
 		if (isAssociative !== undefined) {
 			this.isAssociative = isAssociative;
 		} else if (items instanceof Collection) {
@@ -1076,10 +812,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		}
 	}
 
-	/**
-	 * Get the next numeric key for push operations.
-	 * Calculates and caches the result for O(1) subsequent calls.
-	 */
+	protected isArrayBacked(): boolean {
+		return this.#arrayItems !== null;
+	}
+
+	protected invalidateArrayItems(): void {
+		// Materialize items before invalidating (access triggers lazy getter)
+		void this.items;
+		this.#arrayItems = null;
+	}
+
 	protected getNextNumericKey(): number {
 		if (this._nextNumericKey === null) {
 			const numericKeys = Object.keys(this.items)
@@ -1090,28 +832,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this._nextNumericKey;
 	}
 
-	/**
-	 * Invalidate the cached next numeric key.
-	 * Called when items are removed or keys change.
-	 */
 	protected invalidateNextNumericKey(): void {
 		this._nextNumericKey = null;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// STATIC FACTORY METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Create a new collection instance if the value isn't one already.
-	 */
 	static make<U>(items: Items<U> | CollectionParam<U> = []): Collection<U> {
 		return new Collection(items as Items<U> | Collection<U>);
 	}
 
-	/**
-	 * Wrap the given value in a collection if applicable.
-	 */
 	static wrap<U>(value: Iterable<U> | U): Collection<U> {
 		if (value instanceof Collection) {
 			return new Collection(value);
@@ -1125,9 +853,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection([value as U]);
 	}
 
-	/**
-	 * Get the underlying items from the given collection if applicable.
-	 */
 	static unwrap<U>(value: U[] | CollectionParam<U>): U[] {
 		if (value instanceof Collection) {
 			return value.toArray() as U[];
@@ -1135,20 +860,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		if (Array.isArray(value)) {
 			return value;
 		}
+		if (typeof value === 'object' && value !== null && 'toArray' in value && typeof value.toArray === 'function') {
+			return value.toArray() as U[];
+		}
 		// Handle other cases (like @ts-expect-error tests with strings)
 		return value as unknown as U[];
 	}
 
-	/**
-	 * Create a new instance with no items.
-	 */
 	static empty<U>(): Collection<U> {
 		return new Collection<U>([]);
 	}
 
-	/**
-	 * Create a collection with the given range.
-	 */
 	static range(from: number, to: number): Collection<number> {
 		const items: number[] = [];
 		if (from <= to) {
@@ -1163,9 +885,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(items);
 	}
 
-	/**
-	 * Create a new collection by invoking the callback a given amount of times.
-	 */
 	static times<U>(number: number, callback?: (index: number) => U): Collection<U | number> {
 		if (number < 1) {
 			return new Collection<U | number>([]);
@@ -1178,32 +897,47 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(items);
 	}
 
-	/**
-	 * Create a new collection from a JSON string.
-	 */
 	static fromJson<U>(json: string): Collection<U> {
 		return new Collection(JSON.parse(json));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// CORE RETRIEVAL METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Get all items in the collection.
-	 * Returns an array for array-kind collections or an object for associative collections.
-	 * The return type is determined by the CK type parameter.
+	 * Returns the underlying array or record.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3]).all()  // [1, 2, 3]
+	 * collect({ a: 1, b: 2 }).all()  // { a: 1, b: 2 }
+	 * ```
+	 *
+	 * @see {@link toArray} for always-array output
 	 */
 	all(): CK extends 'array' ? T[] : Record<string, T> {
+		if (this.#arrayItems) {
+			return [...this.#arrayItems] as CK extends 'array' ? T[] : Record<string, T>;
+		}
 		return (this.isAssociative ? { ...this.items } : Object.values(this.items)) as CK extends 'array'
 			? T[]
 			: Record<string, T>;
 	}
 
 	/**
-	 * Get an item from the collection by key.
+	 * Get an item by key, or return a default value.
+	 * @example
+	 * collect({name: 'Taylor', role: 'admin'}).get('name')
+	 * // => 'Taylor'
+	 * @example
+	 * collect({name: 'Taylor'}).get('missing', 'default')
+	 * // => 'default'
 	 */
 	get(key: string | number | null, defaultValue?: T | (() => T)): T | undefined {
+		if (this.#arrayItems) {
+			const k = key === null ? 0 : Number(key);
+			if (k >= 0 && k < this.#arrayItems.length) {
+				return this.#arrayItems[k];
+			}
+			return typeof defaultValue === 'function' ? (defaultValue as () => T)() : defaultValue;
+		}
 		const k = key === null ? '' : String(key);
 		if (k in this.items) {
 			return this.items[k];
@@ -1211,21 +945,25 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return typeof defaultValue === 'function' ? (defaultValue as () => T)() : defaultValue;
 	}
 
-	/**
-	 * Get an item from the collection by key or add it to collection if it does not exist.
-	 */
 	getOrPut(key: string | number | null, value: T | (() => T) | null): T {
 		const k = key === null ? '' : String(key);
 		if (k in this.items) {
 			return this.items[k];
 		}
+		this.invalidateArrayItems();
 		const resolvedValue = (typeof value === 'function' ? (value as () => T)() : value) as T;
 		this.items[k] = resolvedValue;
 		return resolvedValue;
 	}
 
 	/**
-	 * Get the first item from the collection passing the given truth test.
+	 * Get the first item, or the first item matching a callback.
+	 * @example
+	 * collect([1, 2, 3]).first()
+	 * // => 1
+	 * @example
+	 * collect([1, 2, 3, 4]).first(n => n > 2)
+	 * // => 3
 	 */
 	first<S extends T>(callback: (value: T, key: string) => value is S): S | undefined;
 	first<S extends T, D>(callback: (value: T, key: string) => value is S, defaultValue: D | (() => D)): S | D;
@@ -1235,6 +973,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		callback?: ((value: T, key: string) => boolean) | null,
 		defaultValue?: D | (() => D),
 	): T | D | undefined {
+		if (this.#arrayItems) {
+			if (!callback) {
+				if (this.#arrayItems.length > 0) return this.#arrayItems[0];
+				return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+			}
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (callback(this.#arrayItems[i], String(i))) return this.#arrayItems[i];
+			}
+			return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+		}
 		if (!callback) {
 			const keys = Object.keys(this.items);
 			if (keys.length > 0) {
@@ -1249,7 +997,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Get the last item from the collection.
+	 * Get the last item, or the last item matching a callback.
+	 * @example
+	 * collect([1, 2, 3]).last()
+	 * // => 3
+	 * @example
+	 * collect([1, 2, 3, 4]).last(n => n < 3)
+	 * // => 2
 	 */
 	last<S extends T>(callback: (value: T, key: string) => value is S): S | undefined;
 	last<S extends T, D>(callback: (value: T, key: string) => value is S, defaultValue: D | (() => D)): S | D;
@@ -1259,6 +1013,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		callback?: ((value: T, key: string) => boolean) | null,
 		defaultValue?: D | (() => D),
 	): T | D | undefined {
+		if (this.#arrayItems) {
+			if (!callback) {
+				if (this.#arrayItems.length > 0) return this.#arrayItems[this.#arrayItems.length - 1];
+				return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+			}
+			for (let i = this.#arrayItems.length - 1; i >= 0; i--) {
+				if (callback(this.#arrayItems[i], String(i))) return this.#arrayItems[i];
+			}
+			return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+		}
 		const entries = Object.entries(this.items);
 		if (!callback) {
 			if (entries.length > 0) {
@@ -1282,27 +1046,49 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Get the keys of the collection items.
+	 * Returns all keys as a new collection.
+	 *
+	 * @example
+	 * ```ts
+	 * collect({ a: 1, b: 2 }).keys()  // Collection ['a', 'b']
+	 * collect([10, 20]).keys()  // Collection ['0', '1']
+	 * ```
 	 */
 	keys(): Collection<string> {
+		if (this.#arrayItems) {
+			return new Collection(this.#arrayItems.map((_, i) => String(i)));
+		}
 		return new Collection(Object.keys(this.items));
 	}
 
 	/**
-	 * Reset the keys on the underlying array.
+	 * Returns all values as a new collection.
+	 *
+	 * @example
+	 * ```ts
+	 * collect({ a: 1, b: 2 }).values()  // Collection [1, 2]
+	 * ```
 	 */
 	values(): Collection<T> {
+		if (this.#arrayItems) {
+			return new Collection([...this.#arrayItems]);
+		}
 		return new Collection(Object.values(this.items));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// TRANSFORMATION METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Run a map over each of the items.
+	 * Transform each item in the collection.
+	 * @example
+	 * collect([1, 2, 3]).map(n => n * 2)
+	 * // => Collection [2, 4, 6]
+	 * @example
+	 * collect(users).map(u => u.name)
+	 * // => Collection ['Taylor', 'Abigail']
 	 */
 	map<U>(callback: (value: T, key: CollectionKey<CK>) => U): Collection<U, CK> {
+		if (this.#arrayItems) {
+			return new Collection(this.#arrayItems.map((v, k) => callback(v, k as CollectionKey<CK>))) as Collection<U, CK>;
+		}
 		const mapped: Record<string, U> = {};
 		for (const [key, value] of Object.entries(this.items)) {
 			const typedKey = (this.isAssociative ? key : Number(key)) as CollectionKey<CK>;
@@ -1311,38 +1097,44 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(mapped, this.isAssociative) as Collection<U, CK>;
 	}
 
-	/**
-	 * Run an associative map over each of the items.
-	 * The callback should return an associative array with a single key/value pair.
-	 */
 	mapWithKeys<U>(callback: (value: T, key: string) => [string, U]): Collection<U> {
 		const mapped: Record<string, U> = {};
-		for (const [key, value] of Object.entries(this.items)) {
-			const [newKey, newValue] = callback(value, key);
-			mapped[newKey] = newValue;
+		if (this.#arrayItems) {
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				const [newKey, newValue] = callback(this.#arrayItems[i], String(i));
+				mapped[newKey] = newValue;
+			}
+		} else {
+			for (const [key, value] of Object.entries(this.items)) {
+				const [newKey, newValue] = callback(value, key);
+				mapped[newKey] = newValue;
+			}
 		}
 		return new Collection(mapped, true);
 	}
 
-	/**
-	 * Run a dictionary map over the items.
-	 * The callback should return an associative array with a single key/value pair.
-	 */
 	mapToDictionary<U>(callback: (value: T, key: string) => [string, U]): Collection<U[]> {
 		const dictionary: Record<string, U[]> = {};
-		for (const [key, value] of Object.entries(this.items)) {
-			const [dictKey, dictValue] = callback(value, key);
-			if (!dictionary[dictKey]) {
-				dictionary[dictKey] = [];
+		if (this.#arrayItems) {
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				const [dictKey, dictValue] = callback(this.#arrayItems[i], String(i));
+				if (!dictionary[dictKey]) {
+					dictionary[dictKey] = [];
+				}
+				dictionary[dictKey].push(dictValue);
 			}
-			dictionary[dictKey].push(dictValue);
+		} else {
+			for (const [key, value] of Object.entries(this.items)) {
+				const [dictKey, dictValue] = callback(value, key);
+				if (!dictionary[dictKey]) {
+					dictionary[dictKey] = [];
+				}
+				dictionary[dictKey].push(dictValue);
+			}
 		}
 		return new Collection(dictionary);
 	}
 
-	/**
-	 * Run a grouping map over the items.
-	 */
 	mapToGroups<K extends string, V>(callback: (value: T, key: string) => [K, V]): Collection<Collection<V>> {
 		const groups = this.mapToDictionary(callback);
 		const result: Record<string, Collection<V>> = {};
@@ -1352,16 +1144,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Map the values into a new class.
-	 */
 	mapInto<U>(classType: new (value: T, key: CollectionKey<CK>) => U): Collection<U, CK> {
 		return this.map((value, key) => new classType(value, key));
 	}
 
-	/**
-	 * Run a map over each nested chunk of items.
-	 */
 	mapSpread<U>(callback: (...args: unknown[]) => U): Collection<U, CK> {
 		return this.map((value, key) => {
 			const args = Array.isArray(value) ? [...value, key] : [value, key];
@@ -1370,24 +1156,31 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Map a collection and flatten the result by a single level.
-	 *
+	 * Map and flatten by one level.
 	 * @example
-	 * collect([{ tags: ['a', 'b'] }, { tags: ['c'] }]).flatMap(u => u.tags) // Collection<string>
+	 * collect([[1, 2], [3, 4]]).flatMap(arr => arr.map(n => n * 2))
+	 * // => Collection [2, 4, 6, 8]
 	 */
 	flatMap<U>(callback: (value: T, key: CollectionKey<CK>) => U[]): Collection<U, CK> {
-		// map(callback) returns Collection<U[], CK>
-		// collapse() returns Collection<Collapse<U[]>> = Collection<U>
-		// Cast preserves CK (collapse internally returns array-based)
 		return this.map(callback).collapse() as Collection<U, CK>;
 	}
 
 	/**
-	 * Run a filter over each of the items.
+	 * Filter items by a callback, or remove falsy values if no callback given.
+	 * @example
+	 * collect([1, 2, 3, 4]).filter(n => n > 2)
+	 * // => Collection [3, 4]
+	 * @example
+	 * collect([0, 1, '', 'hello', null]).filter()
+	 * // => Collection [1, 'hello']
 	 */
 	filter<S extends T>(callback: (value: T, key: CollectionKey<CK>) => value is S): Collection<S, CK>;
 	filter(callback?: (value: T, key: CollectionKey<CK>) => boolean): Collection<T, CK>;
 	filter(callback?: (value: T, key: CollectionKey<CK>) => boolean): Collection<T, CK> {
+		if (this.#arrayItems) {
+			const cb = callback ? (v: T, k: number) => callback(v, k as CollectionKey<CK>) : Boolean;
+			return new Collection(this.#arrayItems.filter(cb)) as Collection<T, CK>;
+		}
 		const filtered: Record<string, T> = {};
 		for (const [key, value] of Object.entries(this.items)) {
 			const typedKey = (this.isAssociative ? key : Number(key)) as CollectionKey<CK>;
@@ -1399,7 +1192,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Create a collection of all elements that do not pass a given truth test.
+	 * Filters items that fail the callback (inverse of filter).
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3, 4]).reject(n => n > 2)  // Collection [1, 2]
+	 * collect([1, null, 3]).reject(null)  // Collection [1, 3]
+	 * ```
 	 */
 	reject<S extends T>(callback: (value: T, key: CollectionKey<CK>) => value is S): Collection<Exclude<T, S>, CK>;
 	reject(callback: T | ((value: T, key: CollectionKey<CK>) => boolean)): Collection<T, CK>;
@@ -1408,22 +1207,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	): Collection<T, CK> | Collection<Exclude<T, T>, CK> {
 		const useCallback = useAsCallable(callback);
 		return this.filter((value, key) => {
-			// biome-ignore lint/suspicious/noDoubleEquals: Laravel reject() uses loose comparison by design
+			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 			return useCallback ? !(callback as (value: T, key: CollectionKey<CK>) => boolean)(value, key) : value != callback;
 		});
 	}
 
 	/**
-	 * Collapse the collection of items into a single array.
-	 * Automatically infers the inner type when T is an array or Collection.
+	 * Flattens a collection of arrays into a single flat collection.
 	 *
 	 * @example
-	 * collect([[1, 2], [3, 4]]).collapse() // Collection<number>
-	 * collect([collect(['a']), collect(['b'])]).collapse() // Collection<string>
+	 * ```ts
+	 * collect([[1, 2], [3, 4]]).collapse()  // Collection [1, 2, 3, 4]
+	 * ```
 	 */
 	collapse(): Collection<Collapse<T>> {
 		const result: Collapse<T>[] = [];
-		for (const value of Object.values(this.items)) {
+		const items = this.#arrayItems ?? Object.values(this.items);
+		for (const value of items) {
 			const isArray = Array.isArray(value);
 			if (isArray) {
 				result.push(...(value as Collapse<T>[]));
@@ -1437,9 +1237,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result) as Collection<Collapse<T>>;
 	}
 
-	/**
-	 * Collapse the collection of items into a single array while preserving keys.
-	 */
 	collapseWithKeys(): Collection<unknown> {
 		let results: Record<string, unknown> = {};
 		for (const value of Object.values(this.items)) {
@@ -1453,24 +1250,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 			results = { ...results, ...vals };
 		}
-		// collapseWithKeys always returns keyed output
 		return new Collection(results, true);
 	}
 
 	/**
-	 * Get a flattened array of the items in the collection.
-	 * Type inference works for literal depth values (1-5).
-	 *
-	 * @param depth - Maximum depth to flatten (default: infinite)
+	 * Flattens nested arrays/collections to the specified depth.
 	 *
 	 * @example
-	 * collect([[1, 2], [3, 4]]).flatten() // Collection<number> - fully flattened
-	 * collect([[[1]]]).flatten(1) // Collection<number[]> - one level
-	 * collect([[[1]]]).flatten(2) // Collection<number> - two levels
-	 *
-	 * // Variable depth returns Collection<unknown> (TypeScript limitation)
-	 * const d = 2;
-	 * collect([[[1]]]).flatten(d) // Collection<unknown>
+	 * ```ts
+	 * collect([[1, [2]], [3]]).flatten()  // Collection [1, 2, 3]
+	 * collect([[1, [2]], [3]]).flatten(1)  // Collection [1, [2], 3]
+	 * ```
 	 */
 	flatten(): Collection<FlattenDepth<T, 20>>;
 	flatten(depth: 1): Collection<Collapse<T>>;
@@ -1479,7 +1269,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	flatten(depth: 4): Collection<Collapse<Collapse<Collapse<Collapse<T>>>>>;
 	flatten(depth: 5): Collection<Collapse<Collapse<Collapse<Collapse<Collapse<T>>>>>>;
 	flatten(depth: number): Collection<unknown>;
-	// biome-ignore lint/suspicious/noExplicitAny: Implementation signature must be wider than all overloads
+	// biome-ignore lint/suspicious/noExplicitAny: wide implementation signature for overloads
 	flatten(depth = Number.POSITIVE_INFINITY): Collection<any> {
 		const doFlatten = (items: unknown[], currentDepth: number): unknown[] => {
 			const result: unknown[] = [];
@@ -1494,12 +1284,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 			return result;
 		};
-		return new Collection(doFlatten(Object.values(this.items), depth));
+		const items = this.#arrayItems ?? Object.values(this.items);
+		return new Collection(doFlatten(items, depth));
 	}
 
-	/**
-	 * Flip the items in the collection.
-	 */
 	flip(): Collection<string> {
 		const flipped: Record<string, string> = {};
 		for (const [key, value] of Object.entries(this.items)) {
@@ -1509,11 +1297,25 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Chunk the collection into chunks of the given size.
+	 * Splits the collection into chunks of the given size.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3, 4, 5]).chunk(2)
+	 * // Collection [Collection [1, 2], Collection [3, 4], Collection [5]]
+	 * ```
 	 */
 	chunk(size: number, preserveKeys = true): Collection<Collection<T>> {
 		if (size <= 0) {
 			return new Collection<Collection<T>>([]);
+		}
+
+		if (this.#arrayItems && !preserveKeys) {
+			const chunks: Collection<T>[] = [];
+			for (let i = 0; i < this.#arrayItems.length; i += size) {
+				chunks.push(new Collection(this.#arrayItems.slice(i, i + size)));
+			}
+			return new Collection(chunks);
 		}
 
 		const chunks: Collection<T>[] = [];
@@ -1538,9 +1340,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(chunks);
 	}
 
-	/**
-	 * Chunk the collection into chunks with a callback.
-	 */
 	chunkWhile(callback: (value: T, key: string, chunk: Collection<T>) => boolean): Collection<Collection<T>> {
 		const entries = Object.entries(this.items);
 		const isEmpty = entries.length === 0;
@@ -1566,16 +1365,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(chunks);
 	}
 
-	/**
-	 * Split a collection into a certain number of groups.
-	 */
 	split(numberOfGroups: number): Collection<Collection<T>> {
 		if (this.isEmpty()) {
 			return new Collection<Collection<T>>([]);
 		}
 
 		const groups: Collection<T>[] = [];
-		const values = Object.values(this.items);
+		const values = this.#arrayItems ?? Object.values(this.items);
 		const groupSize = Math.floor(values.length / numberOfGroups);
 		const remain = values.length % numberOfGroups;
 		let start = 0;
@@ -1594,35 +1390,39 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(groups);
 	}
 
-	/**
-	 * Split a collection into a certain number of groups, and fill the first groups completely.
-	 */
 	splitIn(numberOfGroups: number): Collection<Collection<T>> {
 		const chunkSize = Math.ceil(this.count() / numberOfGroups);
 		return this.chunk(chunkSize);
 	}
 
-	/**
-	 * Slice the underlying collection array.
-	 */
 	slice(offset: number, length?: number): Collection<T> {
+		if (this.#arrayItems) {
+			const sliced =
+				length !== undefined ? this.#arrayItems.slice(offset, offset + length) : this.#arrayItems.slice(offset);
+			return new Collection(sliced);
+		}
 		const entries = Object.entries(this.items);
 		const sliced = length !== undefined ? entries.slice(offset, offset + length) : entries.slice(offset);
 		return new Collection(Object.fromEntries(sliced), this.isAssociative);
 	}
 
-	/**
-	 * Reverse items order.
-	 */
 	reverse(): Collection<T> {
+		if (this.#arrayItems) {
+			return new Collection([...this.#arrayItems].reverse());
+		}
 		const values = [...Object.values(this.items)].reverse();
 		return new Collection(values);
 	}
 
-	/**
-	 * Shuffle the items in the collection.
-	 */
 	shuffle(): Collection<T> {
+		if (this.#arrayItems) {
+			const values = [...this.#arrayItems];
+			for (let i = values.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[values[i], values[j]] = [values[j], values[i]];
+			}
+			return new Collection(values);
+		}
 		const values = Object.values(this.items);
 		for (let i = values.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
@@ -1631,11 +1431,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(values);
 	}
 
-	/**
-	 * Pad collection to the specified length with a value.
-	 */
 	pad(size: number, value: T): Collection<T> {
-		const values = Object.values(this.items);
+		const values = this.#arrayItems ? [...this.#arrayItems] : Object.values(this.items);
 		const absSize = Math.abs(size);
 
 		if (values.length >= absSize) {
@@ -1650,11 +1447,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection([...values, ...padding]);
 	}
 
-	/**
-	 * Zip the collection together with one or more arrays.
-	 */
 	zip<U>(...arrays: U[][]): Collection<Collection<T | U>> {
-		const values = Object.values(this.items);
+		const values = this.#arrayItems ?? Object.values(this.items);
 		const maxLength = Math.max(values.length, ...arrays.map((a) => a.length));
 		const result: Collection<T | U>[] = [];
 
@@ -1669,30 +1463,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// COMPARISON METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Determine if an item exists in the collection.
-	 *
-	 * Uses "loose" comparison when checking item values, meaning a string
-	 * with an integer value will be considered equal to an integer of the
-	 * same value. Use containsStrict() for strict comparison.
-	 *
-	 * NOTE: JavaScript loose comparison differs from PHP in edge cases:
-	 * - 0 == false (true in JS)
-	 * - null == undefined (true in JS)
-	 * - "" == 0 (true in JS)
-	 */
+	// Loose comparison (matches Laravel). JS differs from PHP: 0==false, null==undefined, ""==0.
 	contains(
 		keyOrCallback: T | string | ((value: T, key: string) => boolean),
 		operator?: unknown,
 		value?: unknown,
 	): boolean {
-		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
 		if (arguments.length === 1) {
 			if (useAsCallable(keyOrCallback)) {
+				if (this.#arrayItems) {
+					for (let i = 0; i < this.#arrayItems.length; i++) {
+						if ((keyOrCallback as (value: T, key: string) => boolean)(this.#arrayItems[i], String(i))) {
+							return true;
+						}
+					}
+					return false;
+				}
 				for (const [key, val] of Object.entries(this.items)) {
 					if ((keyOrCallback as (value: T, key: string) => boolean)(val, key)) {
 						return true;
@@ -1700,18 +1487,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				}
 				return false;
 			}
-			// biome-ignore lint/suspicious/noDoubleEquals: Laravel contains() uses loose comparison by design
-			return Object.values(this.items).some((item) => item == keyOrCallback);
+			const items = this.#arrayItems ?? Object.values(this.items);
+			return arrayContains(items, keyOrCallback);
 		}
 
 		return this.contains(operatorForWhere(keyOrCallback as string, operator, value));
 	}
 
-	/**
-	 * Determine if an item exists, using strict comparison.
-	 */
 	containsStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: T): boolean {
-		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed 2 args (undefined value could be explicit)
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
 		if (arguments.length === 2) {
 			return this.contains((item) => dataGet(item, keyOrValue as string) === value);
 		}
@@ -1720,21 +1504,18 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return this.first(keyOrValue as unknown as (value: T, key: string) => boolean) !== undefined;
 		}
 
-		for (const item of Object.values(this.items)) {
+		const items = this.#arrayItems ?? Object.values(this.items);
+		for (const item of items) {
 			if (item === keyOrValue) return true;
 		}
 		return false;
 	}
 
-	/**
-	 * Determine if an item is not contained in the collection.
-	 */
 	doesntContain(
 		keyOrCallback: T | string | ((value: T, key: string) => boolean),
 		operator?: unknown,
 		value?: unknown,
 	): boolean {
-		// Only pass the arguments that were actually provided
 		if (value !== undefined) {
 			return !this.contains(keyOrCallback, operator, value);
 		}
@@ -1744,11 +1525,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return !this.contains(keyOrCallback);
 	}
 
-	/**
-	 * Determine if an item is not contained in the collection, using strict comparison.
-	 */
 	doesntContainStrict(keyOrValue: T | string | ((value: T, key: string) => boolean), value?: T): boolean {
-		// Only pass arguments that were actually provided (to respect arguments.length in containsStrict)
 		if (value !== undefined) {
 			return !this.containsStrict(keyOrValue, value);
 		}
@@ -1756,24 +1533,28 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Get the items in the collection that are not present in the given items.
+	 * Returns items not present in the given array.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3]).diff([2, 3, 4])  // Collection [1]
+	 * ```
+	 *
+	 * @see {@link intersect} for items present in both
 	 */
 	diff(items: Arrayable<T>): Collection<T, CK> {
 		const otherValues = new Set(arrayableToArray(items));
+		if (this.#arrayItems) {
+			return new Collection(arrayFilterBySet(this.#arrayItems, otherValues, false)) as Collection<T, CK>;
+		}
 		return this.filter((value) => !otherValues.has(value));
 	}
 
-	/**
-	 * Get the items in the collection that are not present in the given items, using the callback.
-	 */
 	diffUsing(items: Arrayable<T>, callback: (a: T, b: T) => number): Collection<T, CK> {
 		const otherValues = arrayableToArray(items);
 		return this.filter((value) => !otherValues.some((other) => callback(value, other) === 0));
 	}
 
-	/**
-	 * Get the items in the collection whose keys are not present in the given items.
-	 */
 	diffKeys(items: Record<string, unknown> | CollectionParam): Collection<T, CK> {
 		const otherKeys = new Set(
 			'all' in items && typeof (items as CollectionParam).all === 'function'
@@ -1789,9 +1570,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Get the items in the collection whose keys are not present in the given items, using the callback.
-	 */
 	diffKeysUsing(
 		items: Record<string, unknown> | CollectionParam,
 		callback: (a: string, b: string) => number,
@@ -1809,9 +1587,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Get the items in the collection whose keys and values are not present in the given items.
-	 */
 	diffAssoc(items: Collectable<T>): Collection<T, CK> {
 		const other = collectableToRecord(items) as Record<string, unknown>;
 		const result: Record<string, T> = {};
@@ -1823,9 +1598,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Get the items in the collection whose keys and values are not present in the given items, using the callback.
-	 */
 	diffAssocUsing(items: Collectable<T>, callback: (a: string, b: string) => number): Collection<T, CK> {
 		const other = collectableToRecord(items) as Record<string, unknown>;
 		const otherKeys = Object.keys(other);
@@ -1840,24 +1612,28 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Intersect the collection with the given items.
+	 * Returns items present in both collections.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3]).intersect([2, 3, 4])  // Collection [2, 3]
+	 * ```
+	 *
+	 * @see {@link diff} for items not present in the other
 	 */
 	intersect(items: Arrayable<T>): Collection<T, CK> {
 		const otherValues = new Set(arrayableToArray(items));
+		if (this.#arrayItems) {
+			return new Collection(arrayFilterBySet(this.#arrayItems, otherValues, true)) as Collection<T, CK>;
+		}
 		return this.filter((value) => otherValues.has(value));
 	}
 
-	/**
-	 * Intersect the collection with the given items, using the callback.
-	 */
 	intersectUsing(items: Arrayable<T>, callback: (a: T, b: T) => number): Collection<T, CK> {
 		const otherValues = arrayableToArray(items);
 		return this.filter((value) => otherValues.some((other) => callback(value, other) === 0));
 	}
 
-	/**
-	 * Intersect the collection with the given items with additional index check.
-	 */
 	intersectAssoc(items: Collectable<T>): Collection<T, CK> {
 		const other = collectableToRecord(items) as Record<string, unknown>;
 		const result: Record<string, T> = {};
@@ -1869,9 +1645,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Intersect the collection with the given items with additional index check, using the callback.
-	 */
 	intersectAssocUsing(items: Collectable<T>, callback: (a: string, b: string) => number): Collection<T, CK> {
 		const other = collectableToRecord(items) as Record<string, unknown>;
 		const otherKeys = Object.keys(other);
@@ -1885,9 +1658,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Intersect the collection with the given items by key.
-	 */
 	intersectByKeys(items: Record<string, unknown> | CollectionParam): Collection<T, CK> {
 		const otherKeys = new Set(
 			'all' in items && typeof (items as CollectionParam).all === 'function'
@@ -1903,16 +1673,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Retrieve duplicate items from the collection.
-	 * Uses loose comparison (==) for detecting duplicates.
-	 */
 	duplicates(callback?: ValueRetriever<T, unknown>, strict = false): Collection<T> {
 		const retriever = valueRetriever(callback);
 		const result: Record<string, T> = {};
 
 		if (strict) {
-			// Strict comparison using Map (uses ===)
 			const seen = new Map<unknown, boolean>();
 			for (const [key, value] of Object.entries(this.items)) {
 				const id = retriever(value, key);
@@ -1923,13 +1688,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				}
 			}
 		} else {
-			// Loose comparison - normalize values for comparison
 			const seenValues: unknown[] = [];
 			const seenKeys: string[] = [];
 
 			const looseFind = (arr: unknown[], val: unknown): number => {
 				for (let i = 0; i < arr.length; i++) {
-					// biome-ignore lint/suspicious/noDoubleEquals: Laravel duplicates() uses loose comparison by design. Use duplicatesStrict() for strict comparison.
+					// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 					if (arr[i] == val) return i;
 				}
 				return -1;
@@ -1950,21 +1714,27 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Retrieve duplicate items from the collection using strict comparison.
-	 */
 	duplicatesStrict(callback?: ValueRetriever<T, unknown>): Collection<T> {
 		return this.duplicates(callback, true);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// AGGREGATION METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Get the median of a given key.
-	 */
 	median(key?: string): number | null {
+		if (this.#arrayItems && !key) {
+			const values = this.#arrayItems
+				.filter((v) => v !== null && v !== undefined)
+				.map((v) => Number(v))
+				.filter((v) => !Number.isNaN(v))
+				.sort((a, b) => a - b);
+
+			const count = values.length;
+			if (count === 0) return null;
+
+			const middle = Math.floor(count / 2);
+			if (count % 2 === 1) {
+				return values[middle];
+			}
+			return (values[middle - 1] + values[middle]) / 2;
+		}
 		const source = (key ? this.pluck(key as Path<T>) : this) as Collection<unknown, CK>;
 		const values = source
 			.filter((v: unknown) => v !== null && v !== undefined)
@@ -1983,13 +1753,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return (values[middle - 1] + values[middle]) / 2;
 	}
 
-	/**
-	 * Get the mode of a given key.
-	 */
 	mode(key?: string): T[] | null {
 		if (this.isEmpty()) return null;
 
-		const values = key ? Object.values(this.pluck(key as Path<T>).items) : Object.values(this.items);
+		const values =
+			this.#arrayItems && !key
+				? this.#arrayItems
+				: key
+					? Object.values(this.pluck(key as Path<T>).items)
+					: Object.values(this.items);
 		const counts = new Map<unknown, number>();
 
 		for (const value of values) {
@@ -2006,26 +1778,30 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			if (count === maxCount) modes.push(value as T);
 		}
 
-		// Return modes in the order they were first encountered (matches Laravel behavior)
 		return modes;
 	}
 
 	/**
 	 * Count the number of items in the collection.
+	 * @example
+	 * collect([1, 2, 3]).count()
+	 * // => 3
 	 */
 	count(): number {
+		if (this.#arrayItems) {
+			return this.#arrayItems.length;
+		}
 		return Object.keys(this.items).length;
 	}
 
-	/**
-	 * Count the number of items in the collection by a field or using a callback.
-	 */
 	countBy(countBy?: ValueRetriever<T, string>): Collection<number> {
 		const retriever = valueRetriever(countBy);
 		const counts: Record<string, number> = {};
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
 
-		for (const [key, value] of Object.entries(this.items)) {
-			const groupKey = String(retriever(value, key));
+		for (let i = 0; i < items.length; i++) {
+			const groupKey = String(retriever(items[i], keys[i]));
 			counts[groupKey] = (counts[groupKey] ?? 0) + 1;
 		}
 
@@ -2033,13 +1809,74 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Get the sum of the given values.
+	 * Sum all items, or a specific key/callback result.
+	 * @example
+	 * collect([1, 2, 3]).sum()
+	 * // => 6
+	 * @example
+	 * collect(orders).sum('total')
+	 * // => 150.00
 	 */
 	sum(keyOrCallback?: ValueRetriever<T, number>): number {
+		if (this.#arrayItems) {
+			const len = this.#arrayItems.length;
+			if (len === 0) return 0;
+
+			if (!keyOrCallback) {
+				// No callback: only sum numbers, skip NaN and non-numbers
+				let total = 0;
+				for (let i = 0; i < len; i++) {
+					const item = this.#arrayItems[i];
+					if (typeof item === 'number' && !Number.isNaN(item)) {
+						total += item;
+					}
+				}
+				return total;
+			}
+
+			// Fast path: simple string key without dots
+			if (typeof keyOrCallback === 'string' && !keyOrCallback.includes('.')) {
+				const key = keyOrCallback as keyof T;
+				// Probe: is first value a number?
+				const first = this.#arrayItems[0][key] as unknown;
+				if (typeof first === 'number') {
+					// Trust: sum assuming all values are numbers (common case)
+					let total = first;
+					for (let i = 1; i < len; i++) {
+						total += this.#arrayItems[i][key] as unknown as number;
+					}
+					// Verify: if valid, done (99.9% of cases)
+					if (!Number.isNaN(total)) return total;
+					// Rare: has NaN values, re-sum defensively
+					total = 0;
+					for (let i = 0; i < len; i++) {
+						const num = this.#arrayItems[i][key] as unknown;
+						if (typeof num === 'number' && !Number.isNaN(num)) {
+							total += num;
+						}
+					}
+					return total;
+				}
+			}
+		}
+
+		// Slow path: use valueRetriever for callbacks, nested keys, or non-array collections
 		const retriever = valueRetriever(keyOrCallback);
 		let total = 0;
-		for (const [key, value] of Object.entries(this.items)) {
-			const num = retriever(value, key);
+		if (this.#arrayItems) {
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				const num = retriever(this.#arrayItems[i], i);
+				if (typeof num === 'number' && !Number.isNaN(num)) {
+					total += num;
+				}
+			}
+			return total;
+		}
+
+		const items = Object.values(this.items);
+		const keys = Object.keys(this.items);
+		for (let i = 0; i < items.length; i++) {
+			const num = retriever(items[i], keys[i]);
 			if (typeof num === 'number' && !Number.isNaN(num)) {
 				total += num;
 			}
@@ -2048,14 +1885,80 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Get the average value of a given key.
+	 * Get the average of all items, or a specific key/callback result.
+	 * @example
+	 * collect([1, 2, 3]).avg()
+	 * // => 2
+	 * @example
+	 * collect(products).avg('price')
+	 * // => 29.99
 	 */
 	avg(keyOrCallback?: ValueRetriever<T, number>): number | null {
+		if (this.#arrayItems) {
+			const len = this.#arrayItems.length;
+			if (len === 0) return null;
+
+			if (!keyOrCallback) {
+				// No callback: only average numbers
+				let total = 0;
+				let count = 0;
+				for (let i = 0; i < len; i++) {
+					const item = this.#arrayItems[i];
+					if (typeof item === 'number' && !Number.isNaN(item)) {
+						total += item;
+						count++;
+					}
+				}
+				return count > 0 ? total / count : null;
+			}
+
+			// Fast path: simple string key without dots
+			if (typeof keyOrCallback === 'string' && !keyOrCallback.includes('.')) {
+				const key = keyOrCallback as keyof T;
+				const first = this.#arrayItems[0][key] as unknown;
+				if (typeof first === 'number') {
+					let total = first;
+					let count = 1;
+					for (let i = 1; i < len; i++) {
+						const num = this.#arrayItems[i][key] as unknown as number;
+						total += num;
+						count++;
+					}
+					if (!Number.isNaN(total)) return total / count;
+					// Fallback for NaN
+					total = 0;
+					count = 0;
+					for (let i = 0; i < len; i++) {
+						const num = this.#arrayItems[i][key] as unknown;
+						if (typeof num === 'number' && !Number.isNaN(num)) {
+							total += num;
+							count++;
+						}
+					}
+					return count > 0 ? total / count : null;
+				}
+			}
+		}
+
+		// Slow path
 		const retriever = valueRetriever(keyOrCallback);
 		let total = 0;
 		let count = 0;
-		for (const [key, value] of Object.entries(this.items)) {
-			const num = retriever(value, key);
+		if (this.#arrayItems) {
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				const num = retriever(this.#arrayItems[i], i);
+				if (typeof num === 'number' && !Number.isNaN(num)) {
+					total += num;
+					count++;
+				}
+			}
+			return count > 0 ? total / count : null;
+		}
+
+		const items = Object.values(this.items);
+		const keys = Object.keys(this.items);
+		for (let i = 0; i < items.length; i++) {
+			const num = retriever(items[i], keys[i]);
 			if (typeof num === 'number' && !Number.isNaN(num)) {
 				total += num;
 				count++;
@@ -2064,21 +1967,26 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return count > 0 ? total / count : null;
 	}
 
-	/**
-	 * Alias for the "avg" method.
-	 */
 	average(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		return this.avg(keyOrCallback);
 	}
 
 	/**
-	 * Get the min value of a given key.
+	 * Returns the minimum value, or null if empty.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([3, 1, 2]).min()  // 1
+	 * collect(products).min('price')  // 9.99
+	 * ```
 	 */
 	min(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever(keyOrCallback);
 		let min: number | null = null;
-		for (const [key, value] of Object.entries(this.items)) {
-			const num = retriever(value, key);
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
+		for (let i = 0; i < items.length; i++) {
+			const num = retriever(items[i], keys[i]);
 			if (typeof num === 'number' && !Number.isNaN(num)) {
 				if (min === null || num < min) min = num;
 			}
@@ -2087,13 +1995,21 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Get the max value of a given key.
+	 * Returns the maximum value, or null if empty.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3]).max()  // 3
+	 * collect(products).max('price')  // 99.99
+	 * ```
 	 */
 	max(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever(keyOrCallback);
 		let max: number | null = null;
-		for (const [key, value] of Object.entries(this.items)) {
-			const num = retriever(value, key);
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
+		for (let i = 0; i < items.length; i++) {
+			const num = retriever(items[i], keys[i]);
 			if (typeof num === 'number' && !Number.isNaN(num)) {
 				if (max === null || num > max) max = num;
 			}
@@ -2101,21 +2017,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return max;
 	}
 
-	/**
-	 * Calculate the percentage of items that pass a given truth test.
-	 */
 	percentage(callback: (value: T, key: CollectionKey<CK>) => boolean, precision = 2): number | null {
 		if (this.isEmpty()) return null;
 		const count = this.filter(callback).count();
 		return Number(((count / this.count()) * 100).toFixed(precision));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// ARRAY BUILDING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Merge the collection with the given items.
+	 * Merges items into the collection. Later values overwrite earlier ones.
+	 *
+	 * @example
+	 * ```ts
+	 * collect({ a: 1 }).merge({ b: 2 })  // Collection { a: 1, b: 2 }
+	 * collect([1, 2]).merge([3, 4])  // Collection [1, 2, 3, 4]
+	 * ```
 	 */
 	merge(items: Collectable<T>): Collection<T, CK> {
 		let other: Record<string, T> | T[];
@@ -2129,9 +2044,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection({ ...this.items, ...other }, this.isAssociative) as Collection<T, CK>;
 	}
 
-	/**
-	 * Recursively merge the collection with the given items.
-	 */
 	mergeRecursive(items: Record<string, unknown> | CollectionParam): Collection<unknown, CK> {
 		let other: Record<string, unknown>;
 		if ('all' in items && typeof (items as CollectionParam).all === 'function') {
@@ -2161,9 +2073,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		) as Collection<unknown, CK>;
 	}
 
-	/**
-	 * Union the collection with the given items.
-	 */
 	union(items: Collectable<T>): Collection<T, CK> {
 		let other: Record<string, T>;
 		if ('all' in items && typeof (items as CollectionParam<T>).all === 'function') {
@@ -2174,11 +2083,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection({ ...other, ...this.items });
 	}
 
-	/**
-	 * Create a collection by using this collection for keys and another for its values.
-	 */
 	combine<U>(values: Arrayable<U>): Collection<U, 'assoc'> {
-		const keys = Object.values(this.items);
+		const keys = this.#arrayItems ?? Object.values(this.items);
 		const vals = arrayableToArray(values);
 		const result: Record<string, U> = {};
 		for (let i = 0; i < keys.length && i < vals.length; i++) {
@@ -2187,12 +2093,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Cross join with the given lists, returning all possible permutations.
-	 */
 	crossJoin<U>(...lists: Arrayable<U>[]): Collection<(T | U)[]> {
 		const arrays = lists.map((list) => arrayableToArray(list));
 		const result: (T | U)[][] = [];
+		const values = this.#arrayItems ?? Object.values(this.items);
 
 		const combine = (current: (T | U)[], remaining: unknown[][]): void => {
 			if (remaining.length === 0) {
@@ -2205,14 +2109,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			}
 		};
 
-		combine([], [Object.values(this.items), ...arrays]);
+		combine([], [values, ...arrays]);
 		return new Collection(result);
 	}
 
-	/**
-	 * Push all of the given items onto the collection.
-	 */
 	concat(source: Arrayable<T>): Collection<T> {
+		if (this.#arrayItems) {
+			const other = arrayableToArray(source);
+			return new Collection([...this.#arrayItems, ...other]);
+		}
 		const result = new Collection(this);
 		const items = arrayableToArray(source);
 		for (const item of items) {
@@ -2221,29 +2126,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return result;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// ITEM MODIFICATION METHODS (MUTATING)
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Put an item in the collection by key.
-	 */
 	put(key: string | number, value: T): this {
+		this.invalidateArrayItems();
 		this.items[String(key)] = value;
 		return this;
 	}
 
-	/**
-	 * Get and remove an item from the collection.
-	 */
 	pull(key: string | number): T | undefined;
 	pull<D>(key: string | number, defaultValue: D | (() => D)): T | D;
 	pull<D = undefined>(key: string | number, defaultValue?: D | (() => D)): T | D | undefined {
 		const k = String(key);
 		if (k in this.items) {
+			this.invalidateArrayItems();
 			const value = this.items[k];
 			delete this.items[k];
-			// Invalidate cache if numeric key was removed
 			if (!Number.isNaN(Number(k))) {
 				this.invalidateNextNumericKey();
 			}
@@ -2252,11 +2148,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
 	}
 
-	/**
-	 * Push one or more items onto the end of the collection.
-	 * Optimized: O(1) amortized via cached next key.
-	 */
 	push(...values: T[]): this {
+		this.invalidateArrayItems();
 		let nextKey = this.getNextNumericKey();
 		for (const value of values) {
 			this.items[String(nextKey++)] = value;
@@ -2265,10 +2158,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
-	/**
-	 * Push an item onto the beginning of the collection.
-	 */
 	prepend(value: T, key?: string | number): this {
+		this.invalidateArrayItems();
 		if (key !== undefined) {
 			this.items = { [String(key)]: value, ...this.items };
 		} else {
@@ -2279,36 +2170,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
-	/**
-	 * Prepend one or more items to the beginning of the collection.
-	 */
 	unshift(...values: T[]): this {
+		this.invalidateArrayItems();
 		const currentValues = Object.values(this.items);
 		this.items = Object.fromEntries([...values, ...currentValues].map((v, i) => [String(i), v]));
 		return this;
 	}
 
-	/**
-	 * Get and remove the last item from the collection.
-	 * @returns The last item, or null if empty.
-	 */
 	pop(): T | null;
-	/**
-	 * Get and remove the last item from the collection.
-	 * @param count Must be 1 to return single item.
-	 * @returns The last item, or null if empty.
-	 */
 	pop(count: 1): T | null;
-	/**
-	 * Get and remove the last N items from the collection.
-	 * @param count Number of items to remove.
-	 * @returns Collection containing removed items.
-	 */
 	pop(count: number): Collection<T>;
-	/**
-	 * Get and remove the last N items from the collection.
-	 * Optimized: O(n) instead of O(n²) for multi-item pop.
-	 */
 	pop(count = 1): T | Collection<T> | null {
 		if (count < 1) {
 			return new Collection<T>([]);
@@ -2319,6 +2190,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return count === 1 ? null : new Collection<T>([]);
 		}
 
+		this.invalidateArrayItems();
 		if (count === 1) {
 			const lastKey = keys[keys.length - 1];
 			const value = this.items[lastKey];
@@ -2327,7 +2199,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return value;
 		}
 
-		// O(n) approach: collect keys to remove first, then batch delete
 		const results: T[] = [];
 		const toRemove = Math.min(count, keys.length);
 		const keysToRemove = keys.slice(-toRemove);
@@ -2339,27 +2210,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(results);
 	}
 
-	/**
-	 * Get and remove the first item from the collection.
-	 * @returns The first item, or null if empty.
-	 */
 	shift(): T | null;
-	/**
-	 * Get and remove the first item from the collection.
-	 * @param count Must be 1 to return single item.
-	 * @returns The first item, or null if empty.
-	 */
 	shift(count: 1): T | null;
-	/**
-	 * Get and remove the first N items from the collection.
-	 * @param count Number of items to remove.
-	 * @returns Collection containing removed items.
-	 */
 	shift(count: number): Collection<T>;
-	/**
-	 * Get and remove the first N items from the collection.
-	 * Optimized: O(n) instead of O(n²) for multi-item shift.
-	 */
 	shift(count = 1): T | Collection<T> | null {
 		if (count < 0) {
 			throw new InvalidArgumentException('Number of shifted items may not be less than zero.');
@@ -2374,6 +2227,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return new Collection<T>([]);
 		}
 
+		this.invalidateArrayItems();
 		if (count === 1) {
 			const firstKey = keys[0];
 			const value = this.items[firstKey];
@@ -2382,7 +2236,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return value;
 		}
 
-		// O(n) approach: collect keys to remove first, then batch delete
 		const results: T[] = [];
 		const toRemove = Math.min(count, keys.length);
 		const keysToRemove = keys.slice(0, toRemove);
@@ -2394,17 +2247,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(results);
 	}
 
-	/**
-	 * Add an item to the collection.
-	 */
 	add(item: T): this {
 		return this.push(item);
 	}
 
-	/**
-	 * Remove an item from the collection by key.
-	 */
 	forget(keys: string | number | (string | number)[]): this {
+		this.invalidateArrayItems();
 		const keysArray = Array.isArray(keys) ? keys : [keys];
 		let hasNumericKey = false;
 		for (const key of keysArray) {
@@ -2420,13 +2268,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// SELECTION METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Get all items except for those with the specified keys.
-	 */
 	except(keys: (string | number)[] | Collection<string | number> | null): Collection<T> {
 		if (keys === null) {
 			return new Collection(this.items, this.isAssociative);
@@ -2442,9 +2283,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative);
 	}
 
-	/**
-	 * Get the items with the specified keys.
-	 */
 	only(keys: (string | number)[] | Collection<string | number> | null): Collection<T> {
 		if (keys === null) {
 			return new Collection(this.items, this.isAssociative);
@@ -2460,9 +2298,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative);
 	}
 
-	/**
-	 * Select specific values from the items within the collection.
-	 */
 	select(keys: (string | number)[] | Collection<string | number, CollectionKind> | null): Collection<Partial<T>, CK> {
 		if (keys === null) {
 			return new Collection(this.items as unknown as Record<string, Partial<T>>, this.isAssociative) as Collection<
@@ -2483,9 +2318,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
-	/**
-	 * Determine if an item exists in the collection by key.
-	 */
 	has(key: string | number | (string | number)[]): boolean {
 		const keys = Array.isArray(key) ? key : [key];
 		for (const k of keys) {
@@ -2494,9 +2326,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return true;
 	}
 
-	/**
-	 * Determine if any of the keys exist in the collection.
-	 */
 	hasAny(key: string | number | (string | number)[]): boolean {
 		if (this.isEmpty()) return false;
 		const keys = Array.isArray(key) ? key : [key];
@@ -2506,25 +2335,68 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return false;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// GROUPING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Group an associative array by a field or using a callback.
+	 * Group items by a key or callback result.
+	 * @example
+	 * collect(users).groupBy('role')
+	 * // => Collection { admin: Collection [...], editor: Collection [...] }
+	 * @example
+	 * collect(orders).groupBy(o => o.total > 100 ? 'large' : 'small')
 	 */
 	groupBy(groupBy: ValueRetriever<T, string | string[]>, preserveKeys = false): Collection<Collection<T>> {
-		const retriever = valueRetriever(groupBy);
-		const results: Record<string, Record<string, T>> = {};
+		// Fast path: simple string key on array-backed collection without preserveKeys
+		if (this.#arrayItems && !preserveKeys && typeof groupBy === 'string' && !groupBy.includes('.')) {
+			const arr = this.#arrayItems;
+			const k = groupBy as keyof T;
+			const len = arr.length;
+			const rawGroups: Record<string, T[]> = Object.create(null);
 
-		for (const [key, value] of Object.entries(this.items)) {
+			// Single pass: group items directly into raw arrays
+			for (let i = 0; i < len; i++) {
+				const item = arr[i];
+				let gk = item[k] as unknown;
+				if (typeof gk === 'boolean') {
+					gk = gk ? '1' : '0';
+				} else if (gk === null || gk === undefined) {
+					gk = '';
+				} else {
+					gk = String(gk);
+				}
+				const key = gk as string;
+				let group = rawGroups[key];
+				if (!group) {
+					group = [];
+					rawGroups[key] = group;
+				}
+				group.push(item);
+			}
+
+			// Wrap each group as Collection
+			const wrapped: Record<string, Collection<T>> = Object.create(null);
+			const keys = Object.keys(rawGroups);
+			for (let i = 0; i < keys.length; i++) {
+				const key = keys[i];
+				wrapped[key] = new Collection(rawGroups[key]);
+			}
+			return new Collection(wrapped, true);
+		}
+
+		const retriever = valueRetriever(groupBy);
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
+
+		// Use Map for O(1) index tracking instead of O(n) Object.keys().length
+		const results = new Map<string, { items: Record<string, T>; nextIndex: number }>();
+
+		for (let i = 0; i < items.length; i++) {
+			const key = keys[i];
+			const value = items[i];
 			let groupKeys = retriever(value, key);
 			if (!Array.isArray(groupKeys)) {
 				groupKeys = [groupKeys] as unknown as string[];
 			}
 
 			for (let groupKey of groupKeys as string[]) {
-				// Normalize group key
 				if (typeof groupKey === 'boolean') {
 					groupKey = groupKey ? '1' : '0';
 				} else if (groupKey === null || groupKey === undefined) {
@@ -2533,28 +2405,32 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 					groupKey = String(groupKey);
 				}
 
-				if (!results[groupKey]) {
-					results[groupKey] = {};
+				let group = results.get(groupKey);
+				if (!group) {
+					group = { items: {}, nextIndex: 0 };
+					results.set(groupKey, group);
 				}
 
 				if (preserveKeys) {
-					results[groupKey][key] = value;
+					group.items[key] = value;
 				} else {
-					const nextIndex = Object.keys(results[groupKey]).length;
-					results[groupKey][String(nextIndex)] = value;
+					group.items[String(group.nextIndex++)] = value;
 				}
 			}
 		}
 
 		const wrapped: Record<string, Collection<T>> = {};
-		for (const [k, v] of Object.entries(results)) {
-			wrapped[k] = new Collection(v, this.isAssociative);
+		for (const [gk, group] of results) {
+			wrapped[gk] = new Collection(group.items, this.isAssociative);
 		}
 		return new Collection(wrapped, true);
 	}
 
 	/**
-	 * Key an associative array by a field or using a callback.
+	 * Key the collection by a field or callback result.
+	 * @example
+	 * collect(users).keyBy('id')
+	 * // => Collection { 1: {id: 1, name: 'Taylor'}, 2: {id: 2, name: 'Abigail'} }
 	 */
 	keyBy(keyBy: ValueRetriever<T, string>): Collection<T> {
 		const retriever = valueRetriever(keyBy);
@@ -2574,9 +2450,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(results, true);
 	}
 
-	/**
-	 * Partition the collection into two arrays using the given callback or key.
-	 */
 	partition<S extends T>(
 		callback: (value: T, key: string) => value is S,
 	): [Collection<S, CK>, Collection<Exclude<T, S>, CK>];
@@ -2591,7 +2464,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		value?: unknown,
 	): [Collection<T, CK>, Collection<T, CK>] | [Collection<T, CK>, Collection<Exclude<T, T>, CK>] {
 		let callback: (value: T, key: string) => boolean;
-		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
 		const hasMultipleArgs = arguments.length > 1;
 		if (hasMultipleArgs) {
 			callback = operatorForWhere(keyOrCallback as string, operator, value);
@@ -2618,17 +2491,26 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return [new Collection(passed, this.isAssociative), new Collection(failed, this.isAssociative)];
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// SEARCHING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Search the collection for a given value and return the corresponding key if successful.
-	 */
 	search(value: T | ((value: T, key: string) => boolean), strict = false): string | false {
+		if (this.#arrayItems) {
+			if (useAsCallable(value)) {
+				const cb = value as (value: T, key: string) => boolean;
+				for (let i = 0; i < this.#arrayItems.length; i++) {
+					if (cb(this.#arrayItems[i], String(i))) return String(i);
+				}
+				return false;
+			}
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
+				if (strict ? this.#arrayItems[i] === value : this.#arrayItems[i] == value) {
+					return String(i);
+				}
+			}
+			return false;
+		}
 		if (!useAsCallable(value)) {
 			for (const [key, item] of Object.entries(this.items)) {
-				// biome-ignore lint/suspicious/noDoubleEquals: Laravel search() uses loose comparison by default (strict param controls this)
+				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 				if (strict ? item === value : item == value) {
 					return key;
 				}
@@ -2644,9 +2526,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return false;
 	}
 
-	/**
-	 * Get the item before the given item.
-	 */
 	before(value: T | ((value: T, key: string) => boolean), strict = false): T | null {
 		const key = this.search(value, strict);
 		if (key === false) return null;
@@ -2658,9 +2537,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this.get(keysArray[position - 1]) ?? null;
 	}
 
-	/**
-	 * Get the item after the given item.
-	 */
 	after(value: T | ((value: T, key: string) => boolean), strict = false): T | null {
 		const key = this.search(value, strict);
 		if (key === false) return null;
@@ -2672,15 +2548,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this.get(keysArray[position + 1]) ?? null;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// SORTING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Sort through each item with a callback.
-	 */
 	sort(callback?: ((a: T, b: T) => number) | number): Collection<T> {
-		const values = [...Object.values(this.items)];
+		const values = this.#arrayItems ? [...this.#arrayItems] : [...Object.values(this.items)];
 
 		if (callback && typeof callback === 'function') {
 			values.sort(callback);
@@ -2695,12 +2564,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(values);
 	}
 
-	/**
-	 * Sort items in descending order.
-	 * @param _options - Sorting options (reserved for Laravel API compatibility, not used in JS)
-	 */
 	sortDesc(_options?: number): Collection<T> {
-		const values = [...Object.values(this.items)];
+		const values = this.#arrayItems ? [...this.#arrayItems] : [...Object.values(this.items)];
 		values.sort((a, b) => {
 			if (a < b) return 1;
 			if (a > b) return -1;
@@ -2710,10 +2575,30 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Sort the collection using the given callback.
+	 * Sorts items by a key or callback result.
+	 *
+	 * @example
+	 * ```ts
+	 * collect(users).sortBy('name')  // sorted A-Z by name
+	 * collect(users).sortBy(u => u.age)  // sorted by age ascending
+	 * ```
+	 *
+	 * @see {@link sortByDesc} for descending order
 	 */
 	sortBy(callback: ValueRetriever<T, unknown>, _options?: number, descending = false): Collection<T> {
 		const retriever = valueRetriever(callback as ValueRetriever<T, unknown>);
+		if (this.#arrayItems) {
+			const indexed = this.#arrayItems.map((v, i) => ({ v, i }));
+			indexed.sort((a, b) => {
+				const valueA = retriever(a.v, a.i) as string | number;
+				const valueB = retriever(b.v, b.i) as string | number;
+				let result = 0;
+				if (valueA < valueB) result = -1;
+				else if (valueA > valueB) result = 1;
+				return descending ? -result : result;
+			});
+			return new Collection(indexed.map((x) => x.v));
+		}
 		const entries = Object.entries(this.items);
 
 		entries.sort(([keyA, a], [keyB, b]) => {
@@ -2725,20 +2610,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return descending ? -result : result;
 		});
 
-		// Return as array to preserve sort order (Object.fromEntries reorders numeric keys)
 		return new Collection(entries.map(([, v]) => v));
 	}
 
-	/**
-	 * Sort the collection in descending order using the given callback.
-	 */
 	sortByDesc(callback: ValueRetriever<T, unknown>, options?: number): Collection<T> {
 		return this.sortBy(callback as ValueRetriever<T, unknown>, options, true);
 	}
 
-	/**
-	 * Sort the collection keys.
-	 */
 	sortKeys(_options?: number, descending = false): Collection<T> {
 		const entries = Object.entries(this.items);
 		entries.sort(([a], [b]) => {
@@ -2748,38 +2626,35 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(Object.fromEntries(entries));
 	}
 
-	/**
-	 * Sort the collection keys in descending order.
-	 */
 	sortKeysDesc(options?: number): Collection<T> {
 		return this.sortKeys(options, true);
 	}
 
-	/**
-	 * Sort the collection keys using a callback.
-	 */
 	sortKeysUsing(callback: (a: string, b: string) => number): Collection<T> {
 		const entries = Object.entries(this.items);
 		entries.sort(([a], [b]) => callback(a, b));
 		return new Collection(Object.fromEntries(entries));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// SLICING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Skip the first {$count} items.
-	 */
 	skip(count: number): Collection<T> {
 		return this.slice(count);
 	}
 
-	/**
-	 * Skip items in the collection until the given condition is met.
-	 */
 	skipUntil(value: T | ((value: T, key: string) => boolean)): Collection<T> {
 		const callback = useAsCallable(value) ? (value as (value: T, key: string) => boolean) : (v: T) => v === value;
+		if (this.#arrayItems) {
+			let startIdx = 0;
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (callback(this.#arrayItems[i], String(i))) {
+					startIdx = i;
+					break;
+				}
+				if (i === this.#arrayItems.length - 1) {
+					startIdx = this.#arrayItems.length;
+				}
+			}
+			return new Collection(this.#arrayItems.slice(startIdx));
+		}
 
 		let skipping = true;
 		const result: Record<string, T> = {};
@@ -2794,11 +2669,18 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Skip items in the collection while the given condition is met.
-	 */
 	skipWhile(value: T | ((value: T, key: string) => boolean)): Collection<T> {
 		const callback = useAsCallable(value) ? (value as (value: T, key: string) => boolean) : (v: T) => v === value;
+		if (this.#arrayItems) {
+			let startIdx = this.#arrayItems.length;
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (!callback(this.#arrayItems[i], String(i))) {
+					startIdx = i;
+					break;
+				}
+			}
+			return new Collection(this.#arrayItems.slice(startIdx));
+		}
 
 		let skipping = true;
 		const result: Record<string, T> = {};
@@ -2813,22 +2695,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Take the first or last {$limit} items.
-	 */
 	take(limit: number): Collection<T> {
 		if (limit < 0) {
-			// Take from the end: slice(limit) gets last |limit| items
 			return this.slice(limit);
 		}
 		return this.slice(0, limit);
 	}
 
-	/**
-	 * Take items in the collection until the given condition is met.
-	 */
 	takeUntil(value: T | ((value: T, key: string) => boolean)): Collection<T> {
 		const callback = useAsCallable(value) ? (value as (value: T, key: string) => boolean) : (v: T) => v === value;
+		if (this.#arrayItems) {
+			const result: T[] = [];
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (callback(this.#arrayItems[i], String(i))) break;
+				result.push(this.#arrayItems[i]);
+			}
+			return new Collection(result);
+		}
 
 		const result: Record<string, T> = {};
 		for (const [key, item] of Object.entries(this.items)) {
@@ -2838,11 +2721,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative);
 	}
 
-	/**
-	 * Take items in the collection while the given condition is met.
-	 */
 	takeWhile(value: T | ((value: T, key: string) => boolean)): Collection<T> {
 		const callback = useAsCallable(value) ? (value as (value: T, key: string) => boolean) : (v: T) => v === value;
+		if (this.#arrayItems) {
+			const result: T[] = [];
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (!callback(this.#arrayItems[i], String(i))) break;
+				result.push(this.#arrayItems[i]);
+			}
+			return new Collection(result);
+		}
 
 		const result: Record<string, T> = {};
 		for (const [key, item] of Object.entries(this.items)) {
@@ -2852,13 +2740,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// STRING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Concatenate values of a given key as a string.
-	 */
 	implode(value: string | ((value: T, key: CollectionKey<CK>) => unknown), glue?: string): string {
 		if (useAsCallable(value)) {
 			const mapped = this.map(value as (value: T, key: CollectionKey<CK>) => unknown);
@@ -2871,12 +2752,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			return Object.values(plucked.items).join(glue ?? '');
 		}
 
-		return Object.values(this.items).join((value as string) ?? '');
+		const items = this.#arrayItems ?? Object.values(this.items);
+		return items.join((value as string) ?? '');
 	}
 
-	/**
-	 * Join all items from the collection using a string. The final items can use a separate glue string.
-	 */
 	join(glue: string, finalGlue = ''): string {
 		if (finalGlue === '') {
 			return this.implode(glue);
@@ -2891,35 +2770,21 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return collection.implode(glue) + finalGlue + String(finalItem);
 	}
 
-	/**
-	 * Convert the collection to its string representation.
-	 * Returns comma-separated values (consistent with EmptyAware trait expectations).
-	 */
 	toString(): string {
 		return this.join(', ');
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// VALIDATION METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Determine if the collection is empty or not.
-	 */
 	isEmpty(): boolean {
+		if (this.#arrayItems) {
+			return this.#arrayItems.length === 0;
+		}
 		return Object.keys(this.items).length === 0;
 	}
 
-	/**
-	 * Determine if the collection is not empty.
-	 */
 	isNotEmpty(): boolean {
 		return !this.isEmpty();
 	}
 
-	/**
-	 * Determine if the collection contains exactly one item.
-	 */
 	containsOneItem(callback?: (value: T, key: CollectionKey<CK>) => boolean): boolean {
 		if (callback) {
 			return this.filter(callback).count() === 1;
@@ -2927,9 +2792,54 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this.count() === 1;
 	}
 
-	/**
-	 * Get the first item in the collection, but only if exactly one item exists. Otherwise, throw an exception.
-	 */
+	hasMany(
+		keyOrCallback?: string | ((value: T, key: CollectionKey<CK>) => boolean),
+		operator?: unknown,
+		value?: unknown,
+	): boolean {
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
+		if (arguments.length > 1) {
+			const filter = operatorForWhere(keyOrCallback as string, operator, value) as (
+				value: T,
+				key: CollectionKey<CK>,
+			) => boolean;
+			return this.filter(filter).count() > 1;
+		}
+
+		if (keyOrCallback) {
+			const filter = useAsCallable(keyOrCallback)
+				? (keyOrCallback as (value: T, key: CollectionKey<CK>) => boolean)
+				: (operatorForWhere(keyOrCallback as string, '=', true) as (value: T, key: CollectionKey<CK>) => boolean);
+			return this.filter(filter).count() > 1;
+		}
+
+		return this.count() > 1;
+	}
+
+	hasSole(
+		keyOrCallback?: string | ((value: T, key: CollectionKey<CK>) => boolean),
+		operator?: unknown,
+		value?: unknown,
+	): boolean {
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
+		if (arguments.length > 1) {
+			const filter = operatorForWhere(keyOrCallback as string, operator, value) as (
+				value: T,
+				key: CollectionKey<CK>,
+			) => boolean;
+			return this.filter(filter).count() === 1;
+		}
+
+		if (keyOrCallback) {
+			const filter = useAsCallable(keyOrCallback)
+				? (keyOrCallback as (value: T, key: CollectionKey<CK>) => boolean)
+				: (operatorForWhere(keyOrCallback as string, '=', true) as (value: T, key: CollectionKey<CK>) => boolean);
+			return this.filter(filter).count() === 1;
+		}
+
+		return this.count() === 1;
+	}
+
 	sole<S extends T>(callback: (value: T, key: CollectionKey<CK>) => value is S): S;
 	sole(
 		keyOrCallback?: string | ((value: T, key: CollectionKey<CK>) => boolean),
@@ -2943,7 +2853,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	): T {
 		let filter: ((value: T, key: CollectionKey<CK>) => boolean) | undefined;
 
-		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
 		if (arguments.length > 1) {
 			filter = operatorForWhere(keyOrCallback as string, operator, value) as (
 				value: T,
@@ -2966,19 +2876,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			throw new MultipleItemsFoundException(count);
 		}
 
-		// biome-ignore lint/style/noNonNullAssertion: Guaranteed to exist - count === 1 at this point
+		// biome-ignore lint/style/noNonNullAssertion: count === 1
 		return items.first()!;
 	}
 
-	/**
-	 * Get the first item in the collection but throw an exception if no matching items exist.
-	 */
 	firstOrFail<S extends T>(callback: (value: T, key: string) => value is S): S;
 	firstOrFail(keyOrCallback?: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): T;
 	firstOrFail(keyOrCallback?: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): T {
 		let filter: ((value: T, key: string) => boolean) | undefined;
 
-		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
 		if (arguments.length > 1) {
 			filter = operatorForWhere(keyOrCallback as string, operator, value);
 		} else if (keyOrCallback) {
@@ -2997,55 +2904,63 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return item as T;
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// ADVANCED METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Get the values of a given key, supporting dot notation for nested paths.
-	 *
+	 * Extract values at a given path from each item.
 	 * @example
-	 * // First-level property
-	 * collect([{ name: 'John' }]).pluck('name') // Collection<string>
-	 *
+	 * collect(users).pluck('name')
+	 * // => Collection ['Taylor', 'Abigail']
 	 * @example
-	 * // Nested property with dot notation
-	 * collect([{ address: { city: 'NYC' } }]).pluck('address.city') // Collection<string>
-	 *
-	 * @example
-	 * // With key parameter for associative result
-	 * collect([{ id: 1, name: 'John' }]).pluck('name', 'id') // { '1': 'John' }
+	 * collect(users).pluck('name', 'id')
+	 * // => Collection { 1: 'Taylor', 2: 'Abigail' }
 	 */
 	pluck<P extends Path<T>>(path: P): Collection<PathValue<T, P>, CK>;
 	pluck<P extends Path<T>, K extends Path<T>>(path: P, key: K): Collection<PathValue<T, P>, 'assoc'>;
 	pluck<P extends Path<T>>(path: P, key?: Path<T>): Collection<PathValue<T, P>, CollectionKind> {
+		// Fast path: simple key without dots on array-backed collection
+		if (this.#arrayItems && typeof path === 'string' && !path.includes('.')) {
+			const p = path as keyof T;
+			if (key === undefined) {
+				return new Collection(arrayMapByKey(this.#arrayItems, p)) as Collection<PathValue<T, P>, CK>;
+			}
+			// With key parameter
+			if (typeof key === 'string' && !key.includes('.')) {
+				const k = key as keyof T;
+				const result: Record<string, PathValue<T, P>> = {};
+				for (const item of this.#arrayItems) {
+					result[String(item[k])] = item[p] as PathValue<T, P>;
+				}
+				return new Collection(result, true) as Collection<PathValue<T, P>, CK>;
+			}
+		}
 		if (key !== undefined) {
 			const result: Record<string, PathValue<T, P>> = {};
-			for (const item of Object.values(this.items)) {
-				const k = String(dataGet(item, key));
-				result[k] = dataGet(item, path) as PathValue<T, P>;
+			const items = this.#arrayItems ?? Object.values(this.items);
+			for (const item of items) {
+				const k = String(dataGet(item, key as string));
+				result[k] = dataGet(item, path as string) as PathValue<T, P>;
 			}
-			// When key is provided, creates an associative collection
 			return new Collection(result, true) as Collection<PathValue<T, P>, CK>;
 		}
-		return this.map((item) => dataGet(item, path) as PathValue<T, P>);
+		return this.map((item) => dataGet(item, path as string) as PathValue<T, P>);
 	}
 
-	/**
-	 * Transform each item in the collection using a callback.
-	 * NOTE: Unlike map(), this mutates the collection in place.
-	 */
+	/** Mutates in place (unlike map). */
 	transform(callback: (value: T, key: string) => T): this {
+		this.invalidateArrayItems();
 		for (const key in this.items) {
 			this.items[key] = callback(this.items[key], key);
 		}
 		return this;
 	}
 
-	/**
-	 * Create a new collection consisting of every n-th element.
-	 */
 	nth(step: number, offset = 0): Collection<T> {
+		if (this.#arrayItems) {
+			const result: T[] = [];
+			for (let i = offset; i < this.#arrayItems.length; i += step) {
+				result.push(this.#arrayItems[i]);
+			}
+			return new Collection(result);
+		}
 		const values = Object.values(this.slice(offset).items);
 		const result: T[] = [];
 		for (let i = 0; i < values.length; i++) {
@@ -3056,11 +2971,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Get one or a specified number of items randomly from the collection.
-	 */
 	random(number?: number | ((collection: Collection<T>) => number), preserveKeys = false): T | Collection<T> {
-		const values = Object.values(this.items);
+		const values = this.#arrayItems ?? Object.values(this.items);
 		if (values.length === 0) {
 			throw new InvalidArgumentException('Cannot get random item from empty collection.');
 		}
@@ -3077,7 +2989,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			);
 		}
 
-		// Fisher-Yates shuffle helper
 		const shuffle = <U>(arr: U[]): U[] => {
 			const result = [...arr];
 			for (let i = result.length - 1; i > 0; i--) {
@@ -3095,9 +3006,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(shuffle(values).slice(0, count));
 	}
 
-	/**
-	 * Create chunks representing a "sliding window" view of the items in the collection.
-	 */
 	sliding(size = 2, step = 1): Collection<Collection<T>> {
 		if (size < 1) {
 			throw new InvalidArgumentException('Size value must be at least 1.');
@@ -3124,20 +3032,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Multiply the items in the collection by the multiplier.
-	 */
 	multiply(multiplier: number): Collection<T> {
-		const result = new Collection<T>([]);
+		const values = this.#arrayItems ?? Object.values(this.items);
+		const result: T[] = [];
 		for (let i = 0; i < multiplier; i++) {
-			result.push(...Object.values(this.items));
+			result.push(...values);
 		}
-		return result;
+		return new Collection(result);
 	}
 
-	/**
-	 * Replace the collection items with the given items.
-	 */
 	replace(items: Collectable<T>): Collection<T, CK> {
 		let other: Record<string, T>;
 		if ('all' in items && typeof (items as CollectionParam<T>).all === 'function') {
@@ -3157,9 +3060,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative) as Collection<T, CK>;
 	}
 
-	/**
-	 * Recursively replace the collection items with the given items.
-	 */
 	replaceRecursive(items: Record<string, unknown> | CollectionParam): Collection<unknown, CK> {
 		let other: Record<string, unknown>;
 		if ('all' in items && typeof (items as CollectionParam).all === 'function') {
@@ -3189,14 +3089,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		) as Collection<unknown, CK>;
 	}
 
-	/**
-	 * Splice a portion of the underlying collection array.
-	 */
 	splice(offset: number, length?: number, replacement: T | T[] = [] as T[]): Collection<T, CK> {
+		this.invalidateArrayItems();
 		// Work with values array for proper reindexing (like PHP array_splice)
 		const values = Object.values(this.items);
 
-		// Normalize replacement to array
 		const replacementArray: T[] = Array.isArray(replacement) ? replacement : [replacement];
 
 		let removed: T[];
@@ -3215,9 +3112,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(removed);
 	}
 
-	/**
-	 * Flatten a multi-dimensional associative array with dots.
-	 */
 	dot(): Collection<unknown> {
 		const result: Record<string, unknown> = {};
 
@@ -3236,9 +3130,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	/**
-	 * Convert a flatten "dot" notation array into an expanded array.
-	 */
 	undot(): Collection<unknown> {
 		const result: Record<string, unknown> = {};
 
@@ -3261,16 +3152,68 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Return only unique items from the collection array.
+	 * Remove duplicate items, optionally by a key or callback.
+	 * @example
+	 * collect([1, 1, 2, 2, 3]).unique()
+	 * // => Collection [1, 2, 3]
+	 * @example
+	 * collect(users).unique('email')
+	 * // => Collection with unique emails
 	 */
 	unique(keyOrCallback?: ValueRetriever<T, unknown>, strict = false): Collection<T> {
+		// Fast path: simple string key on array-backed collection
+		if (this.#arrayItems && !strict && typeof keyOrCallback === 'string' && !keyOrCallback.includes('.')) {
+			const k = keyOrCallback as keyof T;
+			const seen = new Set<unknown>();
+			const result: T[] = [];
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				const id = this.#arrayItems[i][k];
+				if (!seen.has(id)) {
+					seen.add(id);
+					result.push(this.#arrayItems[i]);
+				}
+			}
+			return new Collection(result);
+		}
+
+		// Fast path: no key (unique by value) on array-backed collection
+		if (this.#arrayItems && !strict && keyOrCallback === undefined) {
+			const seen = new Set<unknown>();
+			const result: T[] = [];
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (!seen.has(this.#arrayItems[i])) {
+					seen.add(this.#arrayItems[i]);
+					result.push(this.#arrayItems[i]);
+				}
+			}
+			return new Collection(result);
+		}
+
 		const retriever = valueRetriever(keyOrCallback);
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
+
+		if (this.#arrayItems && !strict) {
+			const seen = new Set<unknown>();
+			const result: T[] = [];
+			for (let i = 0; i < items.length; i++) {
+				const id = retriever(items[i], keys[i]);
+				if (!seen.has(id)) {
+					seen.add(id);
+					result.push(items[i]);
+				}
+			}
+			return new Collection(result);
+		}
+
 		const seen: unknown[] = [];
 		const result: Record<string, T> = {};
 
-		for (const [key, value] of Object.entries(this.items)) {
+		for (let i = 0; i < items.length; i++) {
+			const key = keys[i];
+			const value = items[i];
 			const id = retriever(value, key);
-			// biome-ignore lint/suspicious/noDoubleEquals: Laravel unique() uses loose comparison by default. Use uniqueStrict() for strict comparison.
+			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 			const exists = strict ? seen.some((s) => s === id) : seen.some((s) => s == id);
 			if (!exists) {
 				seen.push(id);
@@ -3281,77 +3224,69 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative);
 	}
 
-	/**
-	 * Return only unique items from the collection array using strict comparison.
-	 */
 	uniqueStrict(keyOrCallback?: ValueRetriever<T, unknown>): Collection<T> {
 		return this.unique(keyOrCallback, true);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// WHERE CLAUSE METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Filter items by the given key value pair.
+	 * Filter items by a key/value pair, with optional operator.
+	 * @example
+	 * collect(users).where('active', true)
+	 * // => Collection of active users
+	 * @example
+	 * collect(orders).where('total', '>', 100)
+	 * // => Collection of orders over 100
 	 */
 	where(key: string, operatorOrValue?: WhereOperator | unknown, value?: unknown): Collection<T, CK> {
+		// Fast path: simple key on array-backed collection
+		if (this.#arrayItems && key && !key.includes('.')) {
+			const k = key as keyof T;
+			// where(key, value) - equality check
+			if (value === undefined && operatorOrValue !== undefined) {
+				return new Collection(arrayFilterByKey(this.#arrayItems, k, operatorOrValue, '==')) as Collection<T, CK>;
+			}
+			// where(key, operator, value)
+			if (value !== undefined) {
+				const op = (operatorOrValue as WhereOperator | '===') || '==';
+				return new Collection(arrayFilterByKey(this.#arrayItems, k, value, op)) as Collection<T, CK>;
+			}
+			// where(key) with no value - fall through
+		}
 		return this.filter(operatorForWhere(key, operatorOrValue, value) as (value: T, key: CollectionKey<CK>) => boolean);
 	}
 
-	/**
-	 * Filter items by the given key value pair using strict comparison.
-	 */
 	whereStrict(key: string, value: unknown): Collection<T, CK> {
 		return this.filter((item) => dataGet(item, key) === value);
 	}
 
-	/**
-	 * Filter items by the given key value pair.
-	 */
 	whereIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
-			// biome-ignore lint/suspicious/noDoubleEquals: Laravel whereIn() uses loose comparison by default. Use whereInStrict() for strict comparison.
+			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 			return strict ? values.some((v) => v === retrieved) : values.some((v) => v == retrieved);
 		});
 	}
 
-	/**
-	 * Filter items by the given key value pair using strict comparison.
-	 */
 	whereInStrict(key: string, values: unknown[]): Collection<T, CK> {
 		return this.whereIn(key, values, true);
 	}
 
-	/**
-	 * Filter items by the given key value pair.
-	 */
 	whereNotIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
-			// biome-ignore lint/suspicious/noDoubleEquals: Laravel whereNotIn() uses loose comparison by default. Use whereNotInStrict() for strict comparison.
+			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 			return strict ? !values.some((v) => v === retrieved) : !values.some((v) => v == retrieved);
 		});
 	}
 
-	/**
-	 * Filter items by the given key value pair using strict comparison.
-	 */
 	whereNotInStrict(key: string, values: unknown[]): Collection<T, CK> {
 		return this.whereNotIn(key, values, true);
 	}
 
-	/**
-	 * Filter items such that the value of the given key is between the given values.
-	 */
 	whereBetween(key: string, values: [number, number]): Collection<T, CK> {
 		return this.where(key, '>=', values[0]).where(key, '<=', values[1]);
 	}
 
-	/**
-	 * Filter items such that the value of the given key is not between the given values.
-	 */
 	whereNotBetween(key: string, values: [number, number]): Collection<T, CK> {
 		return this.filter((item) => {
 			const value = dataGet(item, key) as number;
@@ -3359,9 +3294,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
-	/**
-	 * Filter items where the value for the given key is null.
-	 */
 	whereNull(key?: string): Collection<T, CK> {
 		return this.filter((item) => {
 			const value = key ? dataGet(item, key) : item;
@@ -3369,9 +3301,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
-	/**
-	 * Filter items where the value for the given key is not null.
-	 */
 	whereNotNull(key?: string): Collection<T, CK> {
 		return this.filter((item) => {
 			const value = key ? dataGet(item, key) : item;
@@ -3379,49 +3308,77 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
-	/**
-	 * Filter the items, removing any items that don't match the given type(s).
-	 */
 	whereInstanceOf<U>(type: new (...args: unknown[]) => U): Collection<U> {
 		return this.filter((item) => item instanceof type) as unknown as Collection<U>;
 	}
 
 	/**
-	 * Get the first item by the given key value pair.
+	 * Get the first item matching a key/value pair.
+	 * @example
+	 * collect(users).firstWhere('role', 'admin')
+	 * // => { id: 1, name: 'Taylor', role: 'admin' }
+	 * @example
+	 * collect(orders).firstWhere('total', '>', 100)
+	 * // => first order over 100
 	 */
 	firstWhere(key: string, operatorOrValue?: WhereOperator | unknown, value?: unknown): T | undefined {
+		// Fast path: simple key on array-backed collection
+		if (this.#arrayItems && key && !key.includes('.')) {
+			const k = key as keyof T;
+			// firstWhere(key, value) - equality check
+			if (value === undefined && operatorOrValue !== undefined) {
+				return arrayFindByKey(this.#arrayItems, k, operatorOrValue, '==');
+			}
+			// firstWhere(key, operator, value)
+			if (value !== undefined) {
+				const op = (operatorOrValue as WhereOperator | '===') || '==';
+				return arrayFindByKey(this.#arrayItems, k, value, op);
+			}
+			// firstWhere(key) with no value - fall through
+		}
 		return this.first(operatorForWhere(key, operatorOrValue, value));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// ITERATION & REDUCTION
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Execute a callback over each item.
+	 * Iterates over items, executing a callback for each. Return false to stop.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3]).each(n => console.log(n))  // logs 1, 2, 3
+	 * ```
 	 */
 	each(callback: (value: T, key: string) => unknown): this {
+		if (this.#arrayItems) {
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				if (callback(this.#arrayItems[i], String(i)) === false) break;
+			}
+			return this;
+		}
 		for (const [key, value] of Object.entries(this.items)) {
 			if (callback(value, key) === false) break;
 		}
 		return this;
 	}
 
-	/**
-	 * Execute a callback over each nested chunk of items.
-	 */
 	eachSpread(callback: (...args: unknown[]) => unknown): this {
-		for (const [key, value] of Object.entries(this.items)) {
-			const args = Array.isArray(value) ? [...value, key] : [value, key];
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
+		for (let i = 0; i < items.length; i++) {
+			const value = items[i];
+			const args = Array.isArray(value) ? [...value, keys[i]] : [value, keys[i]];
 			if (callback(...args) === false) break;
 		}
 		return this;
 	}
 
-	/**
-	 * Reduce the collection to a single value.
-	 */
 	reduce<U>(callback: (accumulator: U, value: T, key: string) => U, initial: U): U {
+		if (this.#arrayItems) {
+			let acc = initial;
+			for (let i = 0; i < this.#arrayItems.length; i++) {
+				acc = callback(acc, this.#arrayItems[i], String(i));
+			}
+			return acc;
+		}
 		let acc = initial;
 		for (const [key, value] of Object.entries(this.items)) {
 			acc = callback(acc, value, key);
@@ -3429,9 +3386,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return acc;
 	}
 
-	/**
-	 * Reduce the collection to multiple aggregate values.
-	 */
 	reduceSpread<U extends unknown[]>(callback: (...args: [...U, T, string]) => U, ...initial: U): U {
 		let result = initial;
 		for (const [key, value] of Object.entries(this.items)) {
@@ -3440,27 +3394,30 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return result;
 	}
 
-	/**
-	 * Reduce an associative collection to a single value.
-	 * Alias for reduce() that makes intent clearer when working with keyed collections.
-	 */
 	reduceWithKeys<U>(callback: (carry: U, value: T, key: string) => U, initial: U): U {
 		return this.reduce(callback, initial);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// TESTING METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
+	reduceInto<U>(initial: U, callback: (carry: U, value: T, key: string) => void): U {
+		for (const [key, value] of Object.entries(this.items)) {
+			callback(initial, value, key);
+		}
+		return initial;
+	}
 
-	/**
-	 * Determine if all items pass the given truth test.
-	 */
 	every(keyOrCallback: string | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): boolean {
-		// biome-ignore lint/complexity/noArguments: Required to detect if caller passed 1 vs multiple args (undefined could be explicit)
+		// biome-ignore lint/complexity/noArguments: detect explicit undefined vs omitted
 		if (arguments.length === 1) {
 			const callback = useAsCallable(keyOrCallback)
 				? (keyOrCallback as (value: T, key: string) => boolean)
 				: valueRetriever(keyOrCallback as string);
+
+			if (this.#arrayItems) {
+				for (let i = 0; i < this.#arrayItems.length; i++) {
+					if (!callback(this.#arrayItems[i], String(i))) return false;
+				}
+				return true;
+			}
 
 			for (const [key, val] of Object.entries(this.items)) {
 				if (!callback(val, key)) return false;
@@ -3471,24 +3428,22 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this.every(operatorForWhere(keyOrCallback as string, operator, value));
 	}
 
-	/**
-	 * Alias for the "contains" method.
-	 */
 	some(keyOrCallback: T | ((value: T, key: string) => boolean), operator?: unknown, value?: unknown): boolean {
 		return this.contains(keyOrCallback, operator, value);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// CONVERSION METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
 	/**
-	 * Get the collection of items as a plain array or object (preserving keys).
-	 * Returns an array if keys are sequential (0, 1, 2, ...), otherwise returns an object.
-	 * Recursively converts nested collections.
+	 * Converts the collection to a plain array or record, recursively.
+	 *
+	 * @example
+	 * ```ts
+	 * collect([1, 2, 3]).toArray()  // [1, 2, 3]
+	 * collect({ a: collect([1]) }).toArray()  // { a: [1] }
+	 * ```
 	 */
 	toArray(): T[] | Record<string, T> {
-		const keys = Object.keys(this.items);
+		const items = this.#arrayItems ?? Object.values(this.items);
+		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
 
 		if (keys.length === 0) {
 			return [];
@@ -3498,70 +3453,44 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 		if (isSequentialArray) {
 			const result: unknown[] = [];
-			for (const key in this.items) {
-				const val = this.items[key];
+			for (const val of items) {
 				result.push(val instanceof Collection ? val.toArray() : val);
 			}
 			return result as T[];
 		}
 
 		const result: Record<string, unknown> = {};
-		for (const key in this.items) {
-			const val = this.items[key];
-			result[key] = val instanceof Collection ? val.toArray() : val;
+		for (let i = 0; i < items.length; i++) {
+			const val = items[i];
+			result[keys[i]] = val instanceof Collection ? val.toArray() : val;
 		}
 		return result as Record<string, T>;
 	}
 
-	/**
-	 * Get the collection of items as JSON.
-	 */
 	toJson(_options?: number): string {
 		return JSON.stringify(this.all());
 	}
 
-	/**
-	 * Get the collection of items as pretty JSON.
-	 */
 	toPrettyJson(): string {
 		return JSON.stringify(this.all(), null, 2);
 	}
 
-	/**
-	 * Collect the values into a collection.
-	 */
 	collect(): Collection<T> {
 		return new Collection(this.all());
 	}
 
-	/**
-	 * Get a base Support collection instance from this collection.
-	 */
 	toBase(): Collection<T> {
 		return new Collection(this);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// UTILITY METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Pass the collection to the given callback and return the result.
-	 */
 	pipe<U>(callback: (collection: this) => U): U {
 		return callback(this);
 	}
 
-	/**
-	 * Pass the collection into a new class.
-	 */
 	pipeInto<U>(classType: new (collection: this) => U): U {
 		return new classType(this);
 	}
 
-	/**
-	 * Pass the collection through a series of callable pipes and return the result.
-	 */
 	pipeThrough<R>(callbacks: ((value: unknown) => unknown)[]): R {
 		let result: unknown = this;
 		for (const callback of callbacks) {
@@ -3581,26 +3510,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
-	/**
-	 * Dump the items.
-	 */
 	dump(...args: unknown[]): this {
 		console.log(this.all(), ...args);
 		return this;
 	}
 
-	/**
-	 * Dump the items and end the script.
-	 */
 	dd(...args: unknown[]): never {
 		console.log(this.all(), ...args);
 		throw new Error('dd() called');
 	}
 
-	/**
-	 * Ensure that every item in the collection is of the expected type.
-	 */
-	// biome-ignore lint/suspicious/noExplicitAny: Constructor types require any for generic instantiation support
+	// biome-ignore lint/suspicious/noExplicitAny: generic constructor type
 	ensure(type: string | (new (...args: any[]) => any) | (string | (new (...args: any[]) => any))[]): this {
 		const allowedTypes = Array.isArray(type) ? type : [type];
 
@@ -3625,17 +3545,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
-	/**
-	 * "Paginate" the collection by slicing it into a smaller collection.
-	 */
 	forPage(page: number, perPage: number): Collection<T> {
 		const offset = Math.max(0, (page - 1) * perPage);
 		return this.slice(offset, perPage);
 	}
 
-	/**
-	 * Get a single key's value from the first matching item in the collection.
-	 */
 	value<K extends keyof T>(key: K, defaultValue?: T[K] | (() => T[K])): T[K] | undefined {
 		const item = this.first((target) => dataGet(target, key as string) !== undefined);
 		if (item === undefined) {
@@ -3644,13 +3558,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return dataGet(item, key as string) as T[K];
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// CONDITIONAL METHODS
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Apply the callback when value is truthy.
-	 */
 	when<V, U = this>(
 		value: V | ((self: this) => V),
 		callback?: (self: this, value: V) => U,
@@ -3664,9 +3571,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return defaultCallback ? defaultCallback(this, resolvedValue) : this;
 	}
 
-	/**
-	 * Apply the callback when value is falsy.
-	 */
 	unless<V, U = this>(
 		value: V | ((self: this) => V),
 		callback?: (self: this, value: V) => U,
@@ -3680,55 +3584,30 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return defaultCallback ? defaultCallback(this, resolvedValue) : this;
 	}
 
-	/**
-	 * Apply the callback if the collection is empty.
-	 */
 	whenEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.when(this.isEmpty(), callback, defaultCallback);
 	}
 
-	/**
-	 * Apply the callback if the collection is not empty.
-	 */
 	whenNotEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.when(this.isNotEmpty(), callback, defaultCallback);
 	}
 
-	/**
-	 * Apply the callback unless the collection is empty.
-	 */
 	unlessEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.whenNotEmpty(callback, defaultCallback);
 	}
 
-	/**
-	 * Apply the callback unless the collection is not empty.
-	 */
 	unlessNotEmpty<U = this>(callback: (collection: this) => U, defaultCallback?: (collection: this) => U): this | U {
 		return this.whenEmpty(callback, defaultCallback);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// ARRAY ACCESS (for bracket notation)
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Determine if an item exists at an offset.
-	 */
 	offsetExists(key: string | number): boolean {
 		return String(key) in this.items;
 	}
 
-	/**
-	 * Get an item at a given offset.
-	 */
 	offsetGet(key: string | number): T {
 		return this.items[String(key)];
 	}
 
-	/**
-	 * Set the item at a given offset.
-	 */
 	offsetSet(key: string | number | null, value: T): void {
 		if (key === null) {
 			this.push(value);
@@ -3737,83 +3616,36 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		}
 	}
 
-	/**
-	 * Unset the item at a given offset.
-	 */
 	offsetUnset(key: string | number): void {
 		delete this.items[String(key)];
 	}
-
-	// ═══════════════════════════════════════════════════════════════════════════
-	// ITERATOR
-	// ═══════════════════════════════════════════════════════════════════════════
 
 	[Symbol.iterator](): Iterator<T> {
 		return Object.values(this.items)[Symbol.iterator]();
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// HELPER FOR JOINED ITERATION
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Attach a related collection for joined iteration.
-	 * Use with .map() to receive both item and related entries.
-	 */
 	with<U>(related: ProxiedCollection<U, CollectionKind>): WithCollection<T, U> {
 		return new WithCollection(this as unknown as ProxiedCollection<T>, related);
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
-	// LAZY COLLECTION CONVERSION
-	// ═══════════════════════════════════════════════════════════════════════════
-
-	/**
-	 * Convert this collection to a lazy collection.
-	 *
-	 * @example
-	 * ```ts
-	 * collect([1, 2, 3, 4, 5])
-	 *   .lazy()
-	 *   .map(x => x * 2)
-	 *   .take(3)
-	 *   .all();
-	 * // => [2, 4, 6]
-	 * ```
-	 */
 	lazy(): ProxiedLazyCollection<T> {
 		return lazyFn(Object.values(this.items));
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// WITH COLLECTION HELPER
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Collection with an attached related collection for joined iteration.
- */
 export class WithCollection<T, U, CK extends CollectionKind = 'array'> {
 	constructor(
 		private readonly primary: ProxiedCollection<T, CK>,
 		private readonly related: ProxiedCollection<U, CollectionKind>,
 	) {}
 
-	/**
-	 * Map over items, receiving both item and related entries.
-	 * Related entries are filtered where value equals the current item.
-	 */
 	map<R>(fn: (item: T, related: Collection<U, CollectionKind>) => R): Collection<R, CK> {
 		return this.primary.map((item) => {
-			// Filter related where value equals current item (cast for comparison)
 			const filtered = this.related.filter((value) => (value as unknown) === (item as unknown));
 			return fn(item, filtered);
 		});
 	}
 
-	/**
-	 * Map over items with key, receiving both item, key, and related entries.
-	 */
 	mapWithKey<R>(fn: (item: T, key: CollectionKey<CK>, related: Collection<U, CollectionKind>) => R): Collection<R, CK> {
 		return this.primary.map((item, key) => {
 			const filtered = this.related.filter((value) => (value as unknown) === (item as unknown));
@@ -3821,9 +3653,6 @@ export class WithCollection<T, U, CK extends CollectionKind = 'array'> {
 		});
 	}
 
-	/**
-	 * Each over items, receiving both item and related entries.
-	 */
 	each(fn: (item: T, related: Collection<U, CollectionKind>) => unknown): this {
 		this.primary.each((item) => {
 			const filtered = this.related.filter((value) => (value as unknown) === (item as unknown));
@@ -3832,55 +3661,36 @@ export class WithCollection<T, U, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
-	/**
-	 * Get all mapped results as array.
-	 */
 	all(): CK extends 'array' ? T[] : Record<string, T> {
 		return this.primary.all();
 	}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FACTORY FUNCTION
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Create a new collection from an array or object.
- *
- * Supports Laravel's higher-order messaging:
- * - `collect(users).map.name` - Extract property from each item
- * - `collect(users).filter.active` - Filter by truthy property
- * - `collect(users).sum.age` - Sum a numeric property
- * - `collect(users).each.save()` - Call method on each item
- *
- * @example
- * ```ts
- * collect([1, 2, 3]).filter(n => n > 1).all()  // [2, 3]
- * collect({ a: 1, b: 2 }).keys().all()         // ['a', 'b']
- * collect(votes).countBy().all()               // { Pizza: 3, Tacos: 2 }
- *
- * // Higher-order messaging (Laravel-style)
- * collect(users).map.name                      // Collection<string>
- * collect(users).filter.active                 // Collection<User>
- * collect(users).sum.age                       // number
- * ```
- */
 export function collect<T>(items: T[]): ProxiedCollection<T, 'array'>;
+export function collect<T>(items: readonly T[]): ProxiedCollection<T, 'array'>;
 export function collect<T>(items: Record<string, T>): ProxiedCollection<T, 'assoc'>;
 export function collect<T>(items: Collection<T, CollectionKind>): ProxiedCollection<T, 'array'>;
 export function collect<T>(): ProxiedCollection<T, 'array'>;
-export function collect<T>(items: Items<T> | Collection<T, CollectionKind> = []): ProxiedCollection<T, CollectionKind> {
-	const isAssoc = !Array.isArray(items) && !(items instanceof Collection);
-	return wrapCollectionWithProxy(new Collection(items, isAssoc)) as ProxiedCollection<T, CollectionKind>;
+export function collect<T>(items?: Items<T> | Collection<T, CollectionKind>): ProxiedCollection<T, CollectionKind> {
+	// Empty or undefined → empty Collection
+	if (items === undefined || items === null) {
+		return wrapCollectionWithProxy(new Collection<T>([])) as ProxiedCollection<T, 'array'>;
+	}
+
+	// Collection → return wrapped
+	if (items instanceof Collection) {
+		return wrapCollectionWithProxy(items) as ProxiedCollection<T, CollectionKind>;
+	}
+
+	// Array → Collection (optimized array path)
+	if (Array.isArray(items)) {
+		return wrapCollectionWithProxy(new Collection(items as T[])) as ProxiedCollection<T, 'array'>;
+	}
+
+	// Object → Collection (associative)
+	return wrapCollectionWithProxy(new Collection(items as Record<string, T>, true)) as ProxiedCollection<T, 'assoc'>;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TYPE HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Type for state where arrays/objects are wrapped as Collections.
- */
 export type CollectedState<T> = {
 	[K in keyof T]: T[K] extends (infer U)[]
 		? Collection<U>
@@ -3889,25 +3699,11 @@ export type CollectedState<T> = {
 			: T[K];
 };
 
-/**
- * Wrap state arrays/objects as Collections automatically.
- * Used by modal renderers to provide pre-collected state.
- *
- * @example
- * ```ts
- * const state = { options: ['A', 'B'], votes: { u1: 'A' }, title: 'Poll' };
- * const wrapped = collectState(state);
- * // wrapped.options is Collection<string>
- * // wrapped.votes is Collection<string>
- * // wrapped.title is still 'Poll'
- * ```
- */
 export function collectState<T extends Record<string, unknown>>(state: T): CollectedState<T> {
 	const wrapped: Record<string, unknown> = {};
 
 	for (const [key, value] of Object.entries(state)) {
 		if (key.startsWith('_')) {
-			// Skip internal properties like _view
 			wrapped[key] = value;
 		} else if (Array.isArray(value)) {
 			wrapped[key] = new Collection(value);
@@ -3921,18 +3717,6 @@ export function collectState<T extends Record<string, unknown>>(state: T): Colle
 	return wrapped as CollectedState<T>;
 }
 
-/**
- * Convert Collection to array, or return array as-is.
- * Use this in framework functions that accept both arrays and Collections.
- *
- * @example
- * ```ts
- * export const select = (stateKey: string, options: readonly string[] | CollectionLike<string>) => {
- *   const opts = toArray(options);
- *   // opts is always readonly string[]
- * }
- * ```
- */
 export function toArray<T>(input: Arrayable<T>): readonly T[] {
 	return arrayableToArray(input);
 }
