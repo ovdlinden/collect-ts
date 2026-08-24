@@ -14,11 +14,11 @@ jobs:
         node-version: [20, 22, 24]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
@@ -26,17 +26,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm lint
+      - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm validate
+      - run: pnpm unused
 
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: 'pnpm'
@@ -59,3 +62,9 @@ jobs:
         with:
           json-summary-path: ./coverage/coverage-summary.json
           json-final-path: ./coverage/coverage-final.json
+
+      - run: pnpm build
+
+      - name: Check bundle size
+        if: github.event_name == 'pull_request'
+        run: pnpm size:check

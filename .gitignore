@@ -5,6 +5,10 @@ dist/
 coverage/
 .env
 .env.local
+.idea/
+.plan/
+.vscode/
+.claude/
 
 # VitePress
 docs/.vitepress/cache/
@@ -12,3 +16,5 @@ docs/.vitepress/dist/
 
 # Scripts cache
 scripts/docs/cache/
+benchmark-results.json
+dist-test/
