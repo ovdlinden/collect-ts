@@ -1074,6 +1074,18 @@ describe('AsyncLazyCollection', () => {
 			const wrapped = asyncLazy(original);
 			expect(await wrapped.all()).toEqual([1, 2, 3]);
 		});
+
+		it('creates from AsyncIterable object', async () => {
+			const asyncIterable = {
+				async *[Symbol.asyncIterator]() {
+					yield 1;
+					yield 2;
+					yield 3;
+				},
+			};
+			const result = await asyncLazy(asyncIterable).all();
+			expect(result).toEqual([1, 2, 3]);
+		});
 	});
 
 	describe('proxy auto-delegation', () => {
@@ -1081,6 +1093,15 @@ describe('AsyncLazyCollection', () => {
 			// sum() is delegated to Collection
 			const sum = await asyncLazy([1, 2, 3, 4]).sum();
 			expect(sum).toBe(10);
+		});
+
+		it('returns non-function properties from delegated access', async () => {
+			const alc = asyncLazy([1, 2, 3]);
+			// Access a property that doesn't exist on AsyncLazyCollection
+			// but resolves to a non-function value on the collected result
+			// This tests the "return method" branch for non-function properties
+			const result = await (alc as unknown as { nonExistentProp: () => Promise<unknown> }).nonExistentProp();
+			expect(result).toBeUndefined();
 		});
 
 		it('delegates where() to Collection', async () => {
