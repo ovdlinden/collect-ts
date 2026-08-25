@@ -2060,7 +2060,6 @@ describe('ContainsStrict (Laravel port)', () => {
 	it('handles zero correctly', () => {
 		const c = collect([0]);
 		expect(c.containsStrict(0)).toBe(true);
-		// @ts-expect-error testing containsStrict with string on number collection
 		expect(c.containsStrict('0')).toBe(false);
 		// @ts-expect-error testing containsStrict with incompatible type
 		expect(c.containsStrict(false)).toBe(false);
@@ -3052,6 +3051,7 @@ describe('Value (Laravel port)', () => {
 			{ id: 1, pivot: { value: 'foo' } },
 			{ id: 2, pivot: { value: 'bar' } },
 		]);
+		// @ts-expect-error dot notation is a runtime feature, not reflected in types
 		expect(c.value('pivot.value')).toBe('foo');
 	});
 
