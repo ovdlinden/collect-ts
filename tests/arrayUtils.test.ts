@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { arrayContains, arrayFilterByKey, arrayFilterBySet, arrayFindByKey, arrayMapByKey } from '../src/arrayUtils.js';
+import {
+	arrayContains,
+	arrayFilterByKey,
+	arrayFilterBySet,
+	arrayFindByKey,
+	arrayGroupByKey,
+	arrayMapByKey,
+} from '../src/arrayUtils.js';
 
 describe('arrayFilterByKey', () => {
 	const items = [
@@ -190,5 +197,57 @@ describe('arrayContains', () => {
 		expect(arrayContains([true, false], true)).toBe(true);
 		expect(arrayContains([true, false], 1)).toBe(true);
 		expect(arrayContains([true, false], 0)).toBe(true);
+	});
+});
+
+describe('arrayGroupByKey', () => {
+	const items = [
+		{ id: 1, category: 'a' },
+		{ id: 2, category: 'b' },
+		{ id: 3, category: 'a' },
+	];
+
+	it('groups by string key', () => {
+		const result = arrayGroupByKey(items, 'category');
+		expect(result.get('a')).toEqual([items[0], items[2]]);
+		expect(result.get('b')).toEqual([items[1]]);
+	});
+
+	it('handles boolean keys (converts to "1"/"0")', () => {
+		const boolItems = [
+			{ id: 1, active: true },
+			{ id: 2, active: false },
+			{ id: 3, active: true },
+		];
+		const result = arrayGroupByKey(boolItems, 'active');
+		expect(result.get('1')?.length).toBe(2);
+		expect(result.get('0')?.length).toBe(1);
+	});
+
+	it('handles null/undefined keys (converts to "")', () => {
+		const nullItems = [
+			{ id: 1, category: null as string | null },
+			{ id: 2, category: undefined as string | undefined },
+			{ id: 3, category: 'a' },
+		];
+		const result = arrayGroupByKey(nullItems, 'category');
+		expect(result.get('')?.length).toBe(2);
+		expect(result.get('a')?.length).toBe(1);
+	});
+
+	it('handles numeric keys (converts to string)', () => {
+		const numItems = [
+			{ id: 1, score: 10 },
+			{ id: 2, score: 20 },
+			{ id: 3, score: 10 },
+		];
+		const result = arrayGroupByKey(numItems, 'score');
+		expect(result.get('10')?.length).toBe(2);
+		expect(result.get('20')?.length).toBe(1);
+	});
+
+	it('returns empty map for empty array', () => {
+		const result = arrayGroupByKey([], 'id' as never);
+		expect(result.size).toBe(0);
 	});
 });
