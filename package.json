@@ -44,7 +44,7 @@
 		"validate": "publint && attw --pack --profile esm-only",
 		"unused": "knip",
 		"size": "size-limit",
-		"size:check": "size-limit --ci",
+		"size:check": "size-limit",
 		"bench": "vitest bench",
 		"bench:ci": "tsx scripts/benchmark-ci.ts",
 		"bench:docs": "tsx docs/scripts/generate-benchmark-data.ts"
