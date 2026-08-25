@@ -15,7 +15,7 @@ type Items<T> = Record<string, T> | T[];
 export const COLLECTION_BRAND = Symbol.for('collect-ts.collection');
 
 /** Shared macro registry for Collection */
-export const collectionMacros: Map<string, (...args: unknown[]) => unknown> = new Map();
+const collectionMacros: Map<string, (...args: unknown[]) => unknown> = new Map();
 
 /** Type guard for collection-like objects */
 export function isCollection(value: unknown): value is CollectionLike<unknown> {
