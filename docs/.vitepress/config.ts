@@ -50,10 +50,10 @@ const nav = [
 export default defineConfig({
 	title: site.title,
 	description: site.description,
-	base: '/collect-ts/',
+	base: '/',
 
 	head: [
-		['link', { rel: 'icon', type: 'image/svg+xml', href: '/collect-ts/logo.svg' }],
+		['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
 		['meta', { name: 'theme-color', content: '#FF2D20' }],
 	],
 
