@@ -140,7 +140,10 @@ collect(products).where('price', '>', 50).all()
 // → [{ name: 'Laptop', ... }, { name: 'Keyboard', ... }]
 
 // Multiple conditions
-collect(products).where('price', '<', 100).where('stock', '>', 0).all()
+collect(products)
+    .where('price', '<', 100)
+    .where('stock', '>', 0)
+    .all()
 // → [{ name: 'Mouse', ... }]
 
 // Where in array
@@ -204,7 +207,10 @@ const tasks = [
 ]
 
 // Sort by priority (asc), then by created date (desc)
-collect(tasks).sortBy('priority').sortByDesc('created').all()
+collect(tasks)
+    .sortBy('priority')
+    .sortByDesc('created')
+    .all()
 // → [{ title: 'Deploy', ... }, { title: 'Review', ... }, { title: 'Test', ... }]
 ```
 

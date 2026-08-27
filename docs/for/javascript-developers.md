@@ -150,7 +150,10 @@ const countByStatus = collect(orders).countBy('status')
 const cities = [...new Set(orders.map(o => o.customer.address.city))]
 
 // collect-ts
-const cities = collect(orders).pluck('customer.address.city').unique().all()
+const cities = collect(orders)
+    .pluck('customer.address.city')
+    .unique()
+    .all()
 ```
 
 ### First matching item with fallback
