@@ -7,9 +7,24 @@ import {
 	MultipleItemsFoundException,
 	UnexpectedValueException,
 } from './exceptions';
-import { lazy as lazyFn, type ProxiedLazyCollection } from './LazyCollection.js';
+import {
+	asyncLazy as asyncLazyFn,
+	asyncStatics,
+	lazy as lazyFn,
+	lazyStatics,
+	type ProxiedAsyncLazyCollection,
+	type ProxiedLazyCollection,
+} from './LazyCollection.js';
 
 type Items<T> = Record<string, T> | T[];
+
+type CollectInput<T> = T[] | Record<string, T> | Iterable<T> | (() => Generator<T>);
+
+function isPlainObject<T>(value: unknown): value is Record<string, T> {
+	if (value === null || typeof value !== 'object') return false;
+	const proto = Object.getPrototypeOf(value);
+	return proto === null || proto === Object.prototype;
+}
 
 /** Brand symbol for identifying collection-like objects */
 export const COLLECTION_BRAND = Symbol.for('collect-ts.collection');
@@ -733,6 +748,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	private _nextNumericKey: number | null = null;
 	#arrayItems: T[] | null = null;
+	#source: Iterable<T> | (() => Generator<T>) | null = null;
+	#sourceTransferred = false;
 
 	/** Lazy getter: materializes Record from #arrayItems on first access */
 	protected get items(): Record<string, T> {
@@ -740,12 +757,36 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			this._items = Object.fromEntries(this.#arrayItems.map((v, i) => [String(i), v]));
 			this._lazyItems = false;
 		}
-		return this._items!;
+		if (this._items !== null) {
+			return this._items;
+		}
+		if (this.#sourceTransferred) {
+			throw new Error('Collection source was transferred to lazy(). Use the LazyCollection instead.');
+		}
+		if (this.#source !== null) {
+			const source = this.#source;
+			this.#source = null;
+			this.#arrayItems = [...this.iterateSource(source)];
+			this._items = Object.fromEntries(this.#arrayItems.map((v, i) => [String(i), v]));
+			this._lazyItems = false;
+			return this._items;
+		}
+		// Fallback for empty collections
+		this._items = {};
+		return this._items;
 	}
 
 	protected set items(value: Record<string, T>) {
 		this._items = value;
 		this._lazyItems = false;
+	}
+
+	private *iterateSource(source: Iterable<T> | (() => Generator<T>)): Generator<T> {
+		if (typeof source === 'function') {
+			yield* source();
+		} else {
+			yield* source;
+		}
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: dynamic macro dispatch
@@ -766,7 +807,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return collectionMacros.get(name);
 	}
 
-	constructor(items: Items<T> | Collection<T, CollectionKind> = [], isAssociative?: boolean) {
+	constructor(items: CollectInput<T> | Collection<T, CollectionKind> = [], isAssociative?: boolean) {
 		if (items instanceof Collection) {
 			// Try to access private fields directly (fails for Proxied collections)
 			let copied = false;
@@ -775,6 +816,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				this._items = items._items ? { ...items._items } : null;
 				this.#arrayItems = items.#arrayItems ? [...items.#arrayItems] : null;
 				this._lazyItems = items._lazyItems;
+				this.#source = items.#source;
+				this.#sourceTransferred = items.#sourceTransferred;
 				copied = true;
 			} catch {
 				// Proxied or subclassed Collection - use public API
@@ -796,8 +839,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		} else if (Array.isArray(items)) {
 			this._items = Object.fromEntries(items.map((v, i) => [String(i), v]));
 			this.#arrayItems = null;
-		} else {
+		} else if (typeof items === 'function') {
+			// Generator factory function: store for deferred consumption
+			this.#source = items as () => Generator<T>;
+		} else if (typeof items === 'object' && items !== null && Symbol.iterator in items) {
+			// Iterable (not a plain object): store for deferred consumption
+			this.#source = items as Iterable<T>;
+		} else if (isPlainObject<T>(items)) {
 			this._items = { ...items };
+			this.#arrayItems = null;
+		} else {
+			this._items = {};
 			this.#arrayItems = null;
 		}
 
@@ -806,6 +858,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		} else if (items instanceof Collection) {
 			this.isAssociative = items.isAssociative;
 		} else if (Array.isArray(items)) {
+			this.isAssociative = false;
+		} else if (this.#source !== null) {
 			this.isAssociative = false;
 		} else {
 			this.isAssociative = true;
@@ -913,8 +967,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @see {@link toArray} for always-array output
 	 */
 	all(): CK extends 'array' ? T[] : Record<string, T> {
-		if (this.#arrayItems) {
-			return [...this.#arrayItems] as CK extends 'array' ? T[] : Record<string, T>;
+		const arr = this.ensureConsumed();
+		if (arr) {
+			return [...arr] as CK extends 'array' ? T[] : Record<string, T>;
 		}
 		return (this.isAssociative ? { ...this.items } : Object.values(this.items)) as CK extends 'array'
 			? T[]
@@ -958,12 +1013,29 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Get the first item, or the first item matching a callback.
+	 *
+	 * @param callback - Optional function to test each item
+	 * @param defaultValue - Value to return if no item found (can be a factory function)
+	 * @returns The first matching item, or undefined/default if not found
+	 *
 	 * @example
 	 * collect([1, 2, 3]).first()
 	 * // => 1
-	 * @example
+	 *
+	 * @example With callback
 	 * collect([1, 2, 3, 4]).first(n => n > 2)
 	 * // => 3
+	 *
+	 * @example With default
+	 * collect([]).first(null, 'default')
+	 * // => 'default'
+	 *
+	 * @see {@link last} - Get the last item instead
+	 * @see {@link firstOrFail} - Throws if no item found
+	 * @see {@link sole} - Get the only item, throws if not exactly one
+	 * @see {@link firstWhere} - Find by key/value pair
+	 *
+	 * @category Getting
 	 */
 	first<S extends T>(callback: (value: T, key: string) => value is S): S | undefined;
 	first<S extends T, D>(callback: (value: T, key: string) => value is S, defaultValue: D | (() => D)): S | D;
@@ -998,12 +1070,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Get the last item, or the last item matching a callback.
+	 *
+	 * @param callback - Optional function to test each item
+	 * @param defaultValue - Value to return if no item found (can be a factory function)
+	 * @returns The last matching item, or undefined/default if not found
+	 *
 	 * @example
 	 * collect([1, 2, 3]).last()
 	 * // => 3
-	 * @example
+	 *
+	 * @example With callback
 	 * collect([1, 2, 3, 4]).last(n => n < 3)
 	 * // => 2
+	 *
+	 * @see {@link first} - Get the first item instead
+	 * @see {@link pop} - Remove and return the last item
+	 *
+	 * @category Getting
 	 */
 	last<S extends T>(callback: (value: T, key: string) => value is S): S | undefined;
 	last<S extends T, D>(callback: (value: T, key: string) => value is S, defaultValue: D | (() => D)): S | D;
@@ -1078,12 +1161,24 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Transform each item in the collection.
+	 *
+	 * @param callback - Function to transform each item. Receives value and key.
+	 * @returns New collection with transformed items
+	 *
 	 * @example
 	 * collect([1, 2, 3]).map(n => n * 2)
 	 * // => Collection [2, 4, 6]
-	 * @example
+	 *
+	 * @example Extract property
 	 * collect(users).map(u => u.name)
 	 * // => Collection ['Taylor', 'Abigail']
+	 *
+	 * @see {@link pluck} - Extract a single property by key
+	 * @see {@link mapWithKeys} - Transform and change keys
+	 * @see {@link flatMap} - Map and flatten results
+	 * @see {@link transform} - Mutate the collection in place
+	 *
+	 * @category Mapping
 	 */
 	map<U>(callback: (value: T, key: CollectionKey<CK>) => U): Collection<U, CK> {
 		if (this.#arrayItems) {
@@ -1156,30 +1251,65 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Map and flatten by one level.
+	 * Map each item then flatten the results by one level.
+	 *
+	 * @param callback - Function returning an array for each item
+	 * @returns New collection with mapped and flattened results
+	 *
 	 * @example
 	 * collect([[1, 2], [3, 4]]).flatMap(arr => arr.map(n => n * 2))
 	 * // => Collection [2, 4, 6, 8]
+	 *
+	 * @see {@link map} - Transform without flattening
+	 * @see {@link flatten} - Flatten without mapping
+	 * @see {@link collapse} - Flatten arrays of arrays
+	 *
+	 * @category Mapping
 	 */
 	flatMap<U>(callback: (value: T, key: CollectionKey<CK>) => U[]): Collection<U, CK> {
 		return this.map(callback).collapse() as Collection<U, CK>;
 	}
 
 	/**
+	 * Ensure any deferred source is consumed and return the array items if available.
+	 * Use this before operations that have array vs record paths.
+	 */
+	private ensureConsumed(): T[] | null {
+		if (this.#arrayItems) return this.#arrayItems;
+		if (this.#source !== null) {
+			void this.items;
+			return this.#arrayItems;
+		}
+		return null;
+	}
+
+	/**
 	 * Filter items by a callback, or remove falsy values if no callback given.
+	 *
+	 * @param callback - Function to test each item. Receives value and key. If omitted, removes falsy values.
+	 * @returns New collection containing only items that passed the test
+	 *
 	 * @example
 	 * collect([1, 2, 3, 4]).filter(n => n > 2)
 	 * // => Collection [3, 4]
-	 * @example
+	 *
+	 * @example Remove falsy values
 	 * collect([0, 1, '', 'hello', null]).filter()
 	 * // => Collection [1, 'hello']
+	 *
+	 * @see {@link reject} - Inverse: keeps items that fail the test
+	 * @see {@link where} - Filter by key/value instead of callback
+	 * @see {@link whereIn} - Filter where key matches array of values
+	 *
+	 * @category Filtering
 	 */
 	filter<S extends T>(callback: (value: T, key: CollectionKey<CK>) => value is S): Collection<S, CK>;
 	filter(callback?: (value: T, key: CollectionKey<CK>) => boolean): Collection<T, CK>;
 	filter(callback?: (value: T, key: CollectionKey<CK>) => boolean): Collection<T, CK> {
-		if (this.#arrayItems) {
+		const arr = this.ensureConsumed();
+		if (arr) {
 			const cb = callback ? (v: T, k: number) => callback(v, k as CollectionKey<CK>) : Boolean;
-			return new Collection(this.#arrayItems.filter(cb)) as Collection<T, CK>;
+			return new Collection(arr.filter(cb)) as Collection<T, CK>;
 		}
 		const filtered: Record<string, T> = {};
 		for (const [key, value] of Object.entries(this.items)) {
@@ -1192,13 +1322,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Filters items that fail the callback (inverse of filter).
+	 * Filter out items that match the callback (inverse of filter).
+	 *
+	 * @param callback - Function to test each item, or a value to reject by loose equality
+	 * @returns New collection with matching items removed
 	 *
 	 * @example
-	 * ```ts
-	 * collect([1, 2, 3, 4]).reject(n => n > 2)  // Collection [1, 2]
-	 * collect([1, null, 3]).reject(null)  // Collection [1, 3]
-	 * ```
+	 * collect([1, 2, 3, 4]).reject(n => n > 2)
+	 * // => Collection [1, 2]
+	 *
+	 * @example Reject by value
+	 * collect([1, null, 3]).reject(null)
+	 * // => Collection [1, 3]
+	 *
+	 * @see {@link filter} - Inverse: keeps items that pass the test
+	 * @see {@link whereNotIn} - Exclude items matching array of values
+	 *
+	 * @category Filtering
 	 */
 	reject<S extends T>(callback: (value: T, key: CollectionKey<CK>) => value is S): Collection<Exclude<T, S>, CK>;
 	reject(callback: T | ((value: T, key: CollectionKey<CK>) => boolean)): Collection<T, CK>;
@@ -1463,7 +1603,35 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result);
 	}
 
-	// Loose comparison (matches Laravel). JS differs from PHP: 0==false, null==undefined, ""==0.
+	/**
+	 * Check if the collection contains a value, or if any item matches a callback.
+	 *
+	 * Uses loose equality (==) to match Laravel behavior. JS differs from PHP:
+	 * 0==false, null==undefined, ""==0.
+	 *
+	 * @param keyOrCallback - Value to find, property key, or callback function
+	 * @param operator - Comparison operator when using key/value syntax
+	 * @param value - Value to compare against when using key/operator/value syntax
+	 * @returns True if item exists, false otherwise
+	 *
+	 * @example Check value exists
+	 * collect([1, 2, 3]).contains(2)
+	 * // => true
+	 *
+	 * @example With callback
+	 * collect(users).contains(u => u.active)
+	 * // => true if any user is active
+	 *
+	 * @example Key/value syntax
+	 * collect(users).contains('role', 'admin')
+	 * // => true if any user has role 'admin'
+	 *
+	 * @see {@link containsStrict} - Uses strict equality (===)
+	 * @see {@link doesntContain} - Inverse: returns true if NOT found
+	 * @see {@link some} - Alias for contains
+	 *
+	 * @category Filtering
+	 */
 	contains(
 		keyOrCallback: T | string | ((value: T, key: string) => boolean),
 		operator?: unknown,
@@ -1783,9 +1951,18 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Count the number of items in the collection.
+	 *
+	 * @returns Number of items
+	 *
 	 * @example
 	 * collect([1, 2, 3]).count()
 	 * // => 3
+	 *
+	 * @see {@link countBy} - Count items grouped by key/callback
+	 * @see {@link isEmpty} - Check if collection has no items
+	 * @see {@link isNotEmpty} - Check if collection has items
+	 *
+	 * @category Reducing
 	 */
 	count(): number {
 		if (this.#arrayItems) {
@@ -1810,12 +1987,24 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Sum all items, or a specific key/callback result.
-	 * @example
+	 *
+	 * @param keyOrCallback - Property key or callback returning number to sum
+	 * @returns Sum of values, or 0 if collection is empty
+	 *
+	 * @example Sum numbers
 	 * collect([1, 2, 3]).sum()
 	 * // => 6
-	 * @example
+	 *
+	 * @example Sum property
 	 * collect(orders).sum('total')
 	 * // => 150.00
+	 *
+	 * @see {@link avg} - Calculate average instead
+	 * @see {@link min} - Get minimum value
+	 * @see {@link max} - Get maximum value
+	 * @see {@link count} - Count items instead
+	 *
+	 * @category Reducing
 	 */
 	sum(keyOrCallback?: ValueRetriever<T, number>): number {
 		if (this.#arrayItems) {
@@ -2337,11 +2526,25 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Group items by a key or callback result.
-	 * @example
+	 *
+	 * @param groupBy - Property key or callback returning group key(s)
+	 * @param preserveKeys - Keep original keys within groups
+	 * @returns Collection of Collections, keyed by group
+	 *
+	 * @example By property
 	 * collect(users).groupBy('role')
 	 * // => Collection { admin: Collection [...], editor: Collection [...] }
-	 * @example
+	 *
+	 * @example By callback
 	 * collect(orders).groupBy(o => o.total > 100 ? 'large' : 'small')
+	 * // => Collection { large: Collection [...], small: Collection [...] }
+	 *
+	 * @see {@link keyBy} - Similar but keeps only the last item per key
+	 * @see {@link partition} - Split into two groups by condition
+	 * @see {@link chunk} - Split into groups of fixed size
+	 * @see {@link countBy} - Count items per group instead of collecting
+	 *
+	 * @category Grouping
 	 */
 	groupBy(groupBy: ValueRetriever<T, string | string[]>, preserveKeys = false): Collection<Collection<T>> {
 		// Fast path: simple string key on array-backed collection without preserveKeys
@@ -2428,9 +2631,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Key the collection by a field or callback result.
+	 *
+	 * If multiple items have the same key, only the last one is kept.
+	 *
+	 * @param keyBy - Property key or callback returning the new key
+	 * @returns New collection keyed by the specified field
+	 *
 	 * @example
 	 * collect(users).keyBy('id')
 	 * // => Collection { 1: {id: 1, name: 'Taylor'}, 2: {id: 2, name: 'Abigail'} }
+	 *
+	 * @see {@link groupBy} - Similar but keeps all items per key
+	 * @see {@link mapWithKeys} - Transform and key in one step
+	 *
+	 * @category Grouping
 	 */
 	keyBy(keyBy: ValueRetriever<T, string>): Collection<T> {
 		const retriever = valueRetriever(keyBy);
@@ -2575,15 +2789,27 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Sorts items by a key or callback result.
+	 * Sort items by a key or callback result in ascending order.
 	 *
-	 * @example
-	 * ```ts
-	 * collect(users).sortBy('name')  // sorted A-Z by name
-	 * collect(users).sortBy(u => u.age)  // sorted by age ascending
-	 * ```
+	 * @param callback - Property key or callback returning value to sort by
+	 * @param _options - Unused, kept for Laravel API compatibility
+	 * @param descending - Sort in descending order instead
+	 * @returns New sorted collection
 	 *
-	 * @see {@link sortByDesc} for descending order
+	 * @example By property
+	 * collect(users).sortBy('name')
+	 * // => sorted A-Z by name
+	 *
+	 * @example By callback
+	 * collect(users).sortBy(u => u.age)
+	 * // => sorted by age ascending
+	 *
+	 * @see {@link sortByDesc} - Sort in descending order
+	 * @see {@link sort} - Sort with custom comparator
+	 * @see {@link sortKeys} - Sort by keys instead of values
+	 * @see {@link reverse} - Reverse the order
+	 *
+	 * @category Sorting
 	 */
 	sortBy(callback: ValueRetriever<T, unknown>, _options?: number, descending = false): Collection<T> {
 		const retriever = valueRetriever(callback as ValueRetriever<T, unknown>);
@@ -2906,12 +3132,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Extract values at a given path from each item.
-	 * @example
+	 *
+	 * @param path - Property path to extract (supports dot notation)
+	 * @param key - Optional key path to use as keys in result
+	 * @returns Collection of extracted values
+	 *
+	 * @example Extract values
 	 * collect(users).pluck('name')
 	 * // => Collection ['Taylor', 'Abigail']
-	 * @example
+	 *
+	 * @example With custom keys
 	 * collect(users).pluck('name', 'id')
 	 * // => Collection { 1: 'Taylor', 2: 'Abigail' }
+	 *
+	 * @see {@link map} - Transform items with full callback control
+	 * @see {@link value} - Get first item's value at path
+	 *
+	 * @category Mapping
 	 */
 	pluck<P extends Path<T>>(path: P): Collection<PathValue<T, P>, CK>;
 	pluck<P extends Path<T>, K extends Path<T>>(path: P, key: K): Collection<PathValue<T, P>, 'assoc'>;
@@ -3153,12 +3390,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Remove duplicate items, optionally by a key or callback.
+	 *
+	 * @param keyOrCallback - Property key or callback to determine uniqueness
+	 * @param strict - Use strict equality (===) instead of loose equality
+	 * @returns New collection with duplicates removed
+	 *
 	 * @example
 	 * collect([1, 1, 2, 2, 3]).unique()
 	 * // => Collection [1, 2, 3]
-	 * @example
+	 *
+	 * @example By property
 	 * collect(users).unique('email')
 	 * // => Collection with unique emails
+	 *
+	 * @see {@link uniqueStrict} - Always uses strict equality
+	 * @see {@link duplicates} - Get the duplicate items instead
+	 *
+	 * @category Filtering
 	 */
 	unique(keyOrCallback?: ValueRetriever<T, unknown>, strict = false): Collection<T> {
 		// Fast path: simple string key on array-backed collection
@@ -3229,13 +3477,29 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Filter items by a key/value pair, with optional operator.
-	 * @example
+	 * Filter items by a key/value pair, with optional comparison operator.
+	 *
+	 * @param key - Property key to check (supports dot notation)
+	 * @param operatorOrValue - Comparison operator or value if no operator
+	 * @param value - Value to compare against when operator is provided
+	 * @returns New collection with matching items
+	 *
+	 * @example Equality check
 	 * collect(users).where('active', true)
 	 * // => Collection of active users
-	 * @example
+	 *
+	 * @example With operator
 	 * collect(orders).where('total', '>', 100)
 	 * // => Collection of orders over 100
+	 *
+	 * @see {@link whereStrict} - Uses strict equality (===)
+	 * @see {@link whereIn} - Match against array of values
+	 * @see {@link whereNotIn} - Exclude items matching array of values
+	 * @see {@link whereBetween} - Match values in a range
+	 * @see {@link whereNull} - Match null values
+	 * @see {@link filter} - Filter with custom callback
+	 *
+	 * @category Filtering
 	 */
 	where(key: string, operatorOrValue?: WhereOperator | unknown, value?: unknown): Collection<T, CK> {
 		// Fast path: simple key on array-backed collection
@@ -3340,12 +3604,29 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Iterates over items, executing a callback for each. Return false to stop.
+	 * Iterate over items, executing a callback for each.
+	 *
+	 * Return false from the callback to stop iteration early.
+	 *
+	 * @param callback - Function to execute for each item
+	 * @returns The collection (for chaining)
 	 *
 	 * @example
-	 * ```ts
-	 * collect([1, 2, 3]).each(n => console.log(n))  // logs 1, 2, 3
-	 * ```
+	 * collect([1, 2, 3]).each(n => console.log(n))
+	 * // logs: 1, 2, 3
+	 *
+	 * @example Stop early
+	 * collect([1, 2, 3]).each(n => {
+	 *   if (n === 2) return false
+	 *   console.log(n)
+	 * })
+	 * // logs: 1
+	 *
+	 * @see {@link tap} - Execute callback on entire collection
+	 * @see {@link map} - Transform items instead of side effects
+	 * @see {@link eachSpread} - Spread array items as arguments
+	 *
+	 * @category Iteration
 	 */
 	each(callback: (value: T, key: string) => unknown): this {
 		if (this.#arrayItems) {
@@ -3500,8 +3781,24 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Pass the collection to the given callback and then return it.
-	 * If no callback provided, just returns self (useful for chaining).
+	 * Pass the collection to the given callback and return it unchanged.
+	 *
+	 * Useful for debugging or side effects mid-chain.
+	 *
+	 * @param callback - Function receiving the collection
+	 * @returns The collection (unchanged)
+	 *
+	 * @example Debug mid-chain
+	 * collect([1, 2, 3])
+	 *   .map(n => n * 2)
+	 *   .tap(c => console.log(c.all()))
+	 *   .filter(n => n > 2)
+	 *
+	 * @see {@link each} - Execute callback for each item
+	 * @see {@link pipe} - Transform and return callback result
+	 * @see {@link dump} - Log collection contents
+	 *
+	 * @category Iteration
 	 */
 	tap(callback?: (collection: this) => void): this {
 		if (callback) {
@@ -3629,7 +3926,25 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	lazy(): ProxiedLazyCollection<T> {
-		return lazyFn(Object.values(this.items));
+		// Already have array items? Wrap them.
+		if (this.#arrayItems !== null) {
+			return lazyFn(this.#arrayItems);
+		}
+		// Already have items? Wrap the values.
+		if (this._items !== null) {
+			return lazyFn(Object.values(this._items));
+		}
+		// Have unconsumed source? Transfer it.
+		if (this.#source !== null) {
+			const source = this.#source;
+			this.#source = null;
+			this.#sourceTransferred = true;
+			return lazyFn(source);
+		}
+		if (this.#sourceTransferred) {
+			throw new Error('Collection source was already consumed or transferred.');
+		}
+		return lazyFn([] as T[]);
 	}
 }
 
@@ -3666,12 +3981,56 @@ export class WithCollection<T, U, CK extends CollectionKind = 'array'> {
 	}
 }
 
-export function collect<T>(items: T[]): ProxiedCollection<T, 'array'>;
-export function collect<T>(items: readonly T[]): ProxiedCollection<T, 'array'>;
-export function collect<T>(items: Record<string, T>): ProxiedCollection<T, 'assoc'>;
-export function collect<T>(items: Collection<T, CollectionKind>): ProxiedCollection<T, 'array'>;
-export function collect<T>(): ProxiedCollection<T, 'array'>;
-export function collect<T>(items?: Items<T> | Collection<T, CollectionKind>): ProxiedCollection<T, CollectionKind> {
+/**
+ * Interface for collect.lazy() with static factory methods.
+ */
+export interface LazyCollectFunction {
+	<T>(source: Iterable<T> | (() => Generator<T>)): ProxiedLazyCollection<T>;
+	range(from: number, to: number): ProxiedLazyCollection<number>;
+	times<T>(n: number, callback?: (index: number) => T): ProxiedLazyCollection<T | number>;
+	empty<T>(): ProxiedLazyCollection<T>;
+}
+
+/**
+ * Interface for collect.async() with static factory methods.
+ */
+export interface AsyncCollectFunction {
+	<T>(source: T[]): ProxiedAsyncLazyCollection<T>;
+	<T>(source: Iterable<T>): ProxiedAsyncLazyCollection<T>;
+	<T>(source: AsyncIterable<T>): ProxiedAsyncLazyCollection<T>;
+	<T>(source: () => Generator<T>): ProxiedAsyncLazyCollection<T>;
+	<T>(source: () => AsyncGenerator<T>): ProxiedAsyncLazyCollection<T>;
+	range(from: number, to: number): ProxiedAsyncLazyCollection<number>;
+	times<T>(n: number, callback?: (index: number) => T): ProxiedAsyncLazyCollection<T | number>;
+	empty<T>(): ProxiedAsyncLazyCollection<T>;
+}
+
+/**
+ * Interface for the collect function with lazy and async entry points.
+ */
+export interface CollectFunction {
+	<T>(items: T[]): ProxiedCollection<T, 'array'>;
+	<T>(items: readonly T[]): ProxiedCollection<T, 'array'>;
+	<T>(items: Record<string, T>): ProxiedCollection<T, 'assoc'>;
+	<T>(items: Collection<T, CollectionKind>): ProxiedCollection<T, 'array'>;
+	<T>(items: Iterable<T>): ProxiedCollection<T, 'array'>;
+	<T>(items: () => Generator<T>): ProxiedCollection<T, 'array'>;
+	<T>(): ProxiedCollection<T, 'array'>;
+
+	/**
+	 * Create a lazy collection for deferred evaluation.
+	 * @see https://laravel.com/docs/collections#lazy-collections
+	 */
+	lazy: LazyCollectFunction;
+
+	/**
+	 * Create an async lazy collection for async iteration.
+	 * @see https://laravel.com/docs/collections#lazy-collections
+	 */
+	async: AsyncCollectFunction;
+}
+
+function collectImpl<T>(items?: CollectInput<T> | Collection<T, CollectionKind>): ProxiedCollection<T, CollectionKind> {
 	// Empty or undefined → empty Collection
 	if (items === undefined || items === null) {
 		return wrapCollectionWithProxy(new Collection<T>([])) as ProxiedCollection<T, 'array'>;
@@ -3687,9 +4046,22 @@ export function collect<T>(items?: Items<T> | Collection<T, CollectionKind>): Pr
 		return wrapCollectionWithProxy(new Collection(items as T[])) as ProxiedCollection<T, 'array'>;
 	}
 
-	// Object → Collection (associative)
-	return wrapCollectionWithProxy(new Collection(items as Record<string, T>, true)) as ProxiedCollection<T, 'assoc'>;
+	// Plain object → Collection (associative)
+	if (isPlainObject<T>(items)) {
+		return wrapCollectionWithProxy(new Collection(items, true)) as ProxiedCollection<T, 'assoc'>;
+	}
+
+	// Generator function or iterable → Collection (deferred consumption)
+	return wrapCollectionWithProxy(new Collection(items)) as ProxiedCollection<T, 'array'>;
 }
+
+const lazyWithStatics = Object.assign(lazyFn, lazyStatics);
+const asyncWithStatics = Object.assign(asyncLazyFn, asyncStatics);
+
+collectImpl.lazy = lazyWithStatics;
+collectImpl.async = asyncWithStatics;
+
+export const collect: CollectFunction = collectImpl as CollectFunction;
 
 export type CollectedState<T> = {
 	[K in keyof T]: T[K] extends (infer U)[]
