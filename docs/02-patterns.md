@@ -32,9 +32,8 @@ collect(tickets)
 collect(['v2', 'v10', 'v1'])
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
     .all()
+// → ['v1', 'v2', 'v10']
 ```
-
-Returns `['v1', 'v2', 'v10']`.
 :::
 
 
@@ -57,9 +56,8 @@ This transforms O(n) search into O(1) lookup. Instead of scanning the array each
 
 ```typescript
 collect(['a', 'b', 'a', 'c']).unique().all()
+// → ['a', 'b', 'c']
 ```
-
-Returns `['a', 'b', 'c']`.
 
 **By property:**
 

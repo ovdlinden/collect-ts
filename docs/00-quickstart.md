@@ -31,10 +31,11 @@ npx jsr add @ovdlinden/collect-ts
 ```typescript
 import { collect } from 'collect-ts'
 
-const result = collect([1, 2, 3, 4, 5])
+collect([1, 2, 3, 4, 5])
   .filter(n => n > 2)
   .map(n => n * 2)
   .sum()
+// → 24
 ```
 
 ## LazyCollection for Large Datasets
@@ -44,11 +45,12 @@ Process millions of items without loading everything into memory:
 ```typescript
 import { lazy } from 'collect-ts'
 
-const result = lazy(hugeDataset)
+lazy(hugeDataset)
   .filter(item => item.active)
   .map(item => item.id)
   .take(100)
   .all()
+// → [first 100 active item IDs]
 ```
 
 ## What's next
