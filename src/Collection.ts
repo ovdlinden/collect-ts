@@ -1437,13 +1437,21 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Splits the collection into chunks of the given size.
+	 * Split the collection into chunks of the given size.
+	 *
+	 * @param size - Maximum number of items per chunk
+	 * @param preserveKeys - Keep original keys in chunks
+	 * @returns Collection of Collections
 	 *
 	 * @example
-	 * ```ts
 	 * collect([1, 2, 3, 4, 5]).chunk(2)
-	 * // Collection [Collection [1, 2], Collection [3, 4], Collection [5]]
-	 * ```
+	 * // => Collection [Collection [1, 2], Collection [3, 4], Collection [5]]
+	 *
+	 * @see {@link split} - Split into N groups
+	 * @see {@link sliding} - Create overlapping windows
+	 * @see {@link groupBy} - Group by key/callback
+	 *
+	 * @category Grouping
 	 */
 	chunk(size: number, preserveKeys = true): Collection<Collection<T>> {
 		if (size <= 0) {
@@ -2075,12 +2083,24 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * Get the average of all items, or a specific key/callback result.
+	 *
+	 * @param keyOrCallback - Property key or callback returning number
+	 * @returns Average value, or null if collection is empty
+	 *
 	 * @example
 	 * collect([1, 2, 3]).avg()
 	 * // => 2
-	 * @example
+	 *
+	 * @example By property
 	 * collect(products).avg('price')
 	 * // => 29.99
+	 *
+	 * @see {@link sum} - Get total instead of average
+	 * @see {@link min} - Get minimum value
+	 * @see {@link max} - Get maximum value
+	 * @see {@link median} - Get median value
+	 *
+	 * @category Reducing
 	 */
 	avg(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		if (this.#arrayItems) {
@@ -2161,13 +2181,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Returns the minimum value, or null if empty.
+	 * Get the minimum value, or null if empty.
+	 *
+	 * @param keyOrCallback - Property key or callback returning number
+	 * @returns Minimum value, or null if collection is empty
 	 *
 	 * @example
-	 * ```ts
-	 * collect([3, 1, 2]).min()  // 1
-	 * collect(products).min('price')  // 9.99
-	 * ```
+	 * collect([3, 1, 2]).min()
+	 * // => 1
+	 *
+	 * @example By property
+	 * collect(products).min('price')
+	 * // => 9.99
+	 *
+	 * @see {@link max} - Get maximum value
+	 * @see {@link avg} - Get average value
+	 *
+	 * @category Reducing
 	 */
 	min(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever(keyOrCallback);
@@ -2184,13 +2214,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * Returns the maximum value, or null if empty.
+	 * Get the maximum value, or null if empty.
+	 *
+	 * @param keyOrCallback - Property key or callback returning number
+	 * @returns Maximum value, or null if collection is empty
 	 *
 	 * @example
-	 * ```ts
-	 * collect([1, 2, 3]).max()  // 3
-	 * collect(products).max('price')  // 99.99
-	 * ```
+	 * collect([1, 2, 3]).max()
+	 * // => 3
+	 *
+	 * @example By property
+	 * collect(products).max('price')
+	 * // => 99.99
+	 *
+	 * @see {@link min} - Get minimum value
+	 * @see {@link avg} - Get average value
+	 *
+	 * @category Reducing
 	 */
 	max(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever(keyOrCallback);
@@ -2457,6 +2497,21 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this;
 	}
 
+	/**
+	 * Get all items except those with the specified keys.
+	 *
+	 * @param keys - Keys to exclude from the result
+	 * @returns New collection without the specified keys
+	 *
+	 * @example
+	 * collect({ a: 1, b: 2, c: 3 }).except(['a', 'c'])
+	 * // => Collection { b: 2 }
+	 *
+	 * @see {@link only} - Include only specified keys
+	 * @see {@link filter} - Filter by custom callback
+	 *
+	 * @category Filtering
+	 */
 	except(keys: (string | number)[] | Collection<string | number> | null): Collection<T> {
 		if (keys === null) {
 			return new Collection(this.items, this.isAssociative);
@@ -2472,6 +2527,21 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(result, this.isAssociative);
 	}
 
+	/**
+	 * Get only the items with the specified keys.
+	 *
+	 * @param keys - Keys to include in the result
+	 * @returns New collection with only the specified keys
+	 *
+	 * @example
+	 * collect({ a: 1, b: 2, c: 3 }).only(['a', 'c'])
+	 * // => Collection { a: 1, c: 3 }
+	 *
+	 * @see {@link except} - Exclude specified keys
+	 * @see {@link select} - Pick specific properties from each item
+	 *
+	 * @category Filtering
+	 */
 	only(keys: (string | number)[] | Collection<string | number> | null): Collection<T> {
 		if (keys === null) {
 			return new Collection(this.items, this.isAssociative);
@@ -2664,6 +2734,27 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return new Collection(results, true);
 	}
 
+	/**
+	 * Split the collection into two groups: items passing the test and items failing.
+	 *
+	 * @param keyOrCallback - Callback function or key/operator/value syntax
+	 * @param operator - Comparison operator when using key/value syntax
+	 * @param value - Value to compare against
+	 * @returns Tuple of [passing, failing] collections
+	 *
+	 * @example
+	 * const [active, inactive] = collect(users).partition(u => u.active)
+	 * // active: Collection of active users
+	 * // inactive: Collection of inactive users
+	 *
+	 * @example With key/value syntax
+	 * const [admins, others] = collect(users).partition('role', 'admin')
+	 *
+	 * @see {@link groupBy} - Split into multiple groups
+	 * @see {@link filter} - Keep only passing items
+	 *
+	 * @category Grouping
+	 */
 	partition<S extends T>(
 		callback: (value: T, key: string) => value is S,
 	): [Collection<S, CK>, Collection<Exclude<T, S>, CK>];
@@ -3519,10 +3610,38 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		return this.filter(operatorForWhere(key, operatorOrValue, value) as (value: T, key: CollectionKey<CK>) => boolean);
 	}
 
+	/**
+	 * Filter items by key/value using strict equality (===).
+	 *
+	 * @param key - Property key to check
+	 * @param value - Value to match
+	 * @returns New collection with matching items
+	 *
+	 * @see {@link where} - Uses loose equality
+	 *
+	 * @category Filtering
+	 */
 	whereStrict(key: string, value: unknown): Collection<T, CK> {
 		return this.filter((item) => dataGet(item, key) === value);
 	}
 
+	/**
+	 * Filter items where key value is in the given array.
+	 *
+	 * @param key - Property key to check
+	 * @param values - Array of values to match against
+	 * @param strict - Use strict equality (===)
+	 * @returns New collection with matching items
+	 *
+	 * @example
+	 * collect(users).whereIn('role', ['admin', 'editor'])
+	 * // => Collection of admins and editors
+	 *
+	 * @see {@link whereNotIn} - Exclude items matching array of values
+	 * @see {@link where} - Match single value
+	 *
+	 * @category Filtering
+	 */
 	whereIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
@@ -3531,10 +3650,33 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
+	/**
+	 * Filter items where key value is in the given array, using strict equality.
+	 *
+	 * @see {@link whereIn}
+	 * @category Filtering
+	 */
 	whereInStrict(key: string, values: unknown[]): Collection<T, CK> {
 		return this.whereIn(key, values, true);
 	}
 
+	/**
+	 * Filter items where key value is NOT in the given array.
+	 *
+	 * @param key - Property key to check
+	 * @param values - Array of values to exclude
+	 * @param strict - Use strict equality (===)
+	 * @returns New collection with non-matching items
+	 *
+	 * @example
+	 * collect(users).whereNotIn('status', ['banned', 'suspended'])
+	 * // => Collection excluding banned and suspended users
+	 *
+	 * @see {@link whereIn} - Include items matching array
+	 * @see {@link reject} - Exclude by callback
+	 *
+	 * @category Filtering
+	 */
 	whereNotIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
@@ -3543,14 +3685,47 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
+	/**
+	 * Filter items where key value is NOT in the given array, using strict equality.
+	 *
+	 * @see {@link whereNotIn}
+	 * @category Filtering
+	 */
 	whereNotInStrict(key: string, values: unknown[]): Collection<T, CK> {
 		return this.whereNotIn(key, values, true);
 	}
 
+	/**
+	 * Filter items where key value is between two values (inclusive).
+	 *
+	 * @param key - Property key to check
+	 * @param values - Tuple of [min, max] values
+	 * @returns New collection with items in range
+	 *
+	 * @example
+	 * collect(products).whereBetween('price', [10, 50])
+	 * // => Products priced $10-$50
+	 *
+	 * @see {@link whereNotBetween} - Exclude items in range
+	 * @see {@link where} - Filter with operators
+	 *
+	 * @category Filtering
+	 */
 	whereBetween(key: string, values: [number, number]): Collection<T, CK> {
 		return this.where(key, '>=', values[0]).where(key, '<=', values[1]);
 	}
 
+	/**
+	 * Filter items where key value is NOT between two values.
+	 *
+	 * @param key - Property key to check
+	 * @param values - Tuple of [min, max] values to exclude
+	 * @returns New collection with items outside range
+	 *
+	 * @see {@link whereBetween} - Include items in range
+	 *
+	 * @category Filtering
+	 */
 	whereNotBetween(key: string, values: [number, number]): Collection<T, CK> {
 		return this.filter((item) => {
 			const value = dataGet(item, key) as number;
@@ -3558,6 +3733,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
+	/**
+	 * Filter items where key value is null or undefined.
+	 *
+	 * @param key - Property key to check (if omitted, checks item itself)
+	 * @returns New collection with null/undefined values
+	 *
+	 * @example
+	 * collect(users).whereNull('email')
+	 * // => Users without email
+	 *
+	 * @see {@link whereNotNull} - Exclude null/undefined values
+	 *
+	 * @category Filtering
+	 */
 	whereNull(key?: string): Collection<T, CK> {
 		return this.filter((item) => {
 			const value = key ? dataGet(item, key) : item;
@@ -3565,6 +3754,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		});
 	}
 
+	/**
+	 * Filter items where key value is NOT null or undefined.
+	 *
+	 * @param key - Property key to check (if omitted, checks item itself)
+	 * @returns New collection with non-null values
+	 *
+	 * @example
+	 * collect(users).whereNotNull('verifiedAt')
+	 * // => Verified users
+	 *
+	 * @see {@link whereNull} - Include null/undefined values
+	 *
+	 * @category Filtering
+	 */
 	whereNotNull(key?: string): Collection<T, CK> {
 		return this.filter((item) => {
 			const value = key ? dataGet(item, key) : item;
