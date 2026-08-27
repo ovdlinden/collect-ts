@@ -46,6 +46,8 @@
 		"size": "size-limit",
 		"size:check": "size-limit",
 		"bench": "vitest bench",
+		"bench:lazy": "vitest bench benchmarks/lazy.bench.ts",
+		"bench:async": "vitest bench benchmarks/async-lazy.bench.ts",
 		"bench:ci": "tsx scripts/benchmark-ci.ts",
 		"bench:docs": "tsx docs/scripts/generate-benchmark-data.ts"
 	},
@@ -78,7 +80,6 @@
 		"url": "https://github.com/ovdlinden/collect-ts/issues"
 	},
 	"devDependencies": {
-		"terrastruct-d2-bin": "^0.7.1",
 		"@arethetypeswrong/cli": "^0.18.5",
 		"@babel/parser": "^8.0.4",
 		"@babel/traverse": "^8.0.4",
@@ -94,13 +95,15 @@
 		"@vitest/coverage-v8": "^4.0.18",
 		"knip": "^6.32.2",
 		"lefthook": "^2.1.10",
+		"markdown-it-container": "^4.0.0",
 		"medium-zoom": "^1.1.0",
 		"publint": "^0.3.24",
 		"semantic-release": "^25.0.9",
 		"size-limit": "^13.0.3",
+		"terrastruct-d2-bin": "^0.7.1",
 		"tsup": "^8.5.1",
 		"tsx": "^4.23.12",
-		"typescript": "^7.0.2",
+		"typescript": "^6.0.3",
 		"vitepress": "2.0.0-alpha.19",
 		"vitepress-plugin-group-icons": "^1.7.6",
 		"vitepress-plugin-llms": "^1.13.5",
