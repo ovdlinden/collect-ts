@@ -388,7 +388,10 @@ collect(items).groupBy('category')
 // → Collection of Collections
 
 // To get plain arrays, use .all() on the outer result
-collect(items).groupBy('category').map(g => g.all()).all()
+collect(items)
+    .groupBy('category')
+    .map(g => g.all())
+    .all()
 // → { a: [...], b: [...] }
 ```
 
