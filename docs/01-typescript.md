@@ -118,7 +118,9 @@ function processItems<T>(items: T[]): Collection<T> {
 }
 
 function getEmails<T extends { email: string }>(items: T[]): string[] {
-    return collect(items).pluck('email').all()
+    return collect(items)
+        .pluck('email')
+        .all()
 }
 ```
 

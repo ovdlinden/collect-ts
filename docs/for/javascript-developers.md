@@ -77,7 +77,9 @@ const numbers = collect([1, 2, 3, 4, 5])
 
 // collect-ts: returns Collection
 collect([1, 2, 3]).map(n => n * 2)  // Collection<number>
-collect([1, 2, 3]).map(n => n * 2).all()  // [2, 4, 6]
+collect([1, 2, 3])
+    .map(n => n * 2)
+    .all()  // [2, 4, 6]
 ```
 
 This is intentional — it lets you keep chaining.

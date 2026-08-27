@@ -64,12 +64,25 @@ Method-by-method migration table. 12kb vs 72kb, better tree-shaking.
 
 ## Why collect-ts?
 
-| What you're doing | Native JavaScript | collect-ts |
-|-------------------|-------------------|------------|
-| Group by category | `items.reduce((acc, item) => {...}, {})` | `collect(items).groupBy('category')` |
-| Unique emails | `[...new Set(users.map(u => u.email))]` | `collect(users).pluck('email').unique()` |
-| Sum order totals | `orders.reduce((sum, o) => sum + o.total, 0)` | `collect(orders).sum('total')` |
-| First active admin | `users.find(u => u.active && u.role === 'admin')` | `collect(users).where('active', true).firstWhere('role', 'admin')` |
+| Operation | Native JavaScript | collect-ts |
+|-----------|-------------------|------------|
+| Group by | 6-line reduce | `.groupBy('category')` |
+| Unique | `[...new Set(...)]` | `.unique()` |
+| Sum | `reduce((sum, o) => ...)` | `.sum('total')` |
+| First match | `.find(u => ...)` | `.firstWhere()` |
+
+**Chain it together:**
+
+```typescript
+collect(users)
+    .where('active', true)
+    .pluck('email')
+    .unique()
+    .all()
+// → ['taylor@example.com', 'abigail@example.com']
+```
+
+One line per operation, readable at a glance.
 
 ## What's next
 

@@ -55,14 +55,18 @@ This transforms O(n) search into O(1) lookup. Instead of scanning the array each
 **By value:**
 
 ```typescript
-collect(['a', 'b', 'a', 'c']).unique().all()
+collect(['a', 'b', 'a', 'c'])
+    .unique()
+    .all()
 // → ['a', 'b', 'c']
 ```
 
 **By property:**
 
 ```typescript
-collect(users).unique('email').all()
+collect(users)
+    .unique('email')
+    .all()
 ```
 
 **By computed key**, one user per email domain:
@@ -79,8 +83,13 @@ collect(users)
 Find what's been added or removed between two arrays:
 
 ```typescript
-const added = collect(currentIds).diff(previousIds).all()
-const removed = collect(previousIds).diff(currentIds).all()
+const added = collect(currentIds)
+    .diff(previousIds)
+    .all()
+
+const removed = collect(previousIds)
+    .diff(currentIds)
+    .all()
 ```
 
 The `diff` method returns items in the first collection that aren't in the second. Useful for sync operations: what was added, what was removed.

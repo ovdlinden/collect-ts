@@ -483,7 +483,9 @@ Returns `{ name: 'George', age: 29 }`.
 The `concat` method appends the given array or collection's values onto the end of another collection:
 
 ```typescript
-const concatenated = collect(['John Doe']).concat(['Jane Doe']).concat({ name: 'Johnny Doe' });
+const concatenated = collect(['John Doe'])
+    .concat(['Jane Doe'])
+    .concat({ name: 'Johnny Doe' });
 
 concatenated.all();
 ```
@@ -886,7 +888,9 @@ filtered.all();
 Returns `[3, 4]`. If no callback is supplied, all entries of the collection that are equivalent to `false` will be removed:
 
 ```typescript
-collect([1, 2, 3, null, false, '', 0, []]).filter().all();
+collect([1, 2, 3, null, false, '', 0, []])
+    .filter()
+    .all();
 ```
 
 Returns `[1, 2, 3]`. For the inverse of `filter`, see the [reject](#reject) method.
@@ -1411,7 +1415,9 @@ Returns an array of `Currency` instances.
 The `mapSpread` method iterates over the collection's items, passing each nested item value into the given closure. The closure is free to modify the item and return it, thus forming a new collection of modified items:
 
 ```typescript
-const sequence = collect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).chunk(2).mapSpread((even, odd) => even + odd);
+const sequence = collect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    .chunk(2)
+    .mapSpread((even, odd) => even + odd);
 
 sequence.all();
 ```
@@ -1629,9 +1635,13 @@ The `pad` method will fill the array with the given value until the array reache
 To pad to the left, you should specify a negative size. No padding will take place if the absolute value of the given size is less than or equal to the length of the array:
 
 ```typescript
-collect(['A', 'B', 'C']).pad(5, 0).all();
+collect(['A', 'B', 'C'])
+    .pad(5, 0)
+    .all();
 
-collect(['A', 'B', 'C']).pad(-5, 0).all();
+collect(['A', 'B', 'C'])
+    .pad(-5, 0)
+    .all();
 ```
 
 Returns `['A', 'B', 'C', 0, 0]` and `[0, 0, 'A', 'B', 'C']` respectively.
@@ -1913,7 +1923,9 @@ In this case, returns all 5 items since `Math.min(10, 5)` is 5.
 The `range` method returns a collection containing integers between the specified range:
 
 ```typescript
-collect().range(3, 6).all();
+collect()
+    .range(3, 6)
+    .all();
 ```
 
 Returns `[3, 4, 5, 6]`.
