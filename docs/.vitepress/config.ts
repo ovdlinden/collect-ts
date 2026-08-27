@@ -1,16 +1,20 @@
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';
+import typedocSidebar from '../api/typedoc-sidebar.json';
 import { d2FencePlugin } from './plugins/markdown-d2.ts';
+import { outputContainerPlugin } from './plugins/markdown-output.ts';
+import { outputPreprocessPlugin } from './plugins/markdown-output-preprocess.ts';
+import { transformerOutputLines } from './plugins/shiki-output.ts';
 
 const site = {
 	title: 'Laravel Collection for TypeScript',
 	siteTitle: 'collect-ts',
 	description: 'A TypeScript port of Laravel Collection with full type safety. Always in sync with Laravel.',
-	boosted: ['/00-quickstart', '/collections'],
+	boosted: ['/00-quickstart', '/api/'],
 };
 
-const sidebar = [
+const guideSidebar = [
 	{
 		text: 'Getting Started',
 		items: [
@@ -37,13 +41,18 @@ const sidebar = [
 	},
 	{
 		text: 'API Reference',
-		items: [{ text: 'Collections', link: '/collections' }],
+		link: '/api/',
 	},
 ] satisfies DefaultTheme.SidebarItem[];
 
+const sidebar: DefaultTheme.Sidebar = {
+	'/api/': typedocSidebar,
+	'/': guideSidebar,
+};
+
 const nav = [
 	{ text: 'Quick Start', link: '/00-quickstart' },
-	{ text: 'Collections', link: '/collections' },
+	{ text: 'API', link: '/api/' },
 	{ text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
 ] satisfies DefaultTheme.NavItem[];
 
@@ -66,12 +75,15 @@ export default defineConfig({
 		config: (md) => {
 			md.use(groupIconMdPlugin);
 			md.use(d2FencePlugin);
+			md.use(outputContainerPlugin);
+			md.use(outputPreprocessPlugin);
 		},
+		codeTransformers: [transformerOutputLines()],
 		theme: {
 			light: 'github-light',
 			dark: 'github-dark',
 		},
-		lineNumbers: true,
+		lineNumbers: false,
 	},
 
 	themeConfig: {

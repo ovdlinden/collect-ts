@@ -59,7 +59,17 @@ const rules = {
  * it. Nothing publishes from there, because VitePress's page glob skips
  * dot-directories, so linting it costs nothing at build time.
  */
-const IGNORE_DIRS = new Set(['node_modules', '.vitepress', '.git', 'public', 'scripts', 'history', 'design', 'probes']);
+const IGNORE_DIRS = new Set([
+	'node_modules',
+	'.vitepress',
+	'.git',
+	'public',
+	'scripts',
+	'history',
+	'design',
+	'probes',
+	'api',
+]);
 /**
  * Root files that are repo documentation, not site pages. `architecture.md` is
  * the design document the tool is built from; it predates this house style and
@@ -155,8 +165,10 @@ function lintMarkdown(file: string, text: string): void {
 			if (PASSTHROUGH_LANGS.has(fence.lang) || !rules.fenceComments) return;
 			// Narrating comments in code fences. URLs are stripped first so a
 			// https:// link in an example is not read as a // comment.
+			// Allowed: // [!code ...] (VitePress transformers), // → (output markers),
+			// //  ^? and // ^| (TwoSlash type queries)
 			const code = line.replace(/\b[a-z][\w+.-]*:\/\/\S+/gi, '');
-			if (/\/\/(?!\s*\[!code)/.test(code)) add(file, n, 'in-fence // comment (move to a legend)');
+			if (/\/\/(?!\s*(\[!code|→|\^[?|]))/.test(code)) add(file, n, 'in-fence // comment (move to a legend)');
 			else if (/(^|\s)#(?![![])/.test(code) && !/^\s*#!/.test(code))
 				add(file, n, 'in-fence # comment (move to a legend)');
 			return;

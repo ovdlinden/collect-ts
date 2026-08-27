@@ -18,3 +18,4 @@ docs/.vitepress/dist/
 scripts/docs/cache/
 benchmark-results.json
 dist-test/
+docs/api
