@@ -105,9 +105,9 @@ You're migrating from lodash. Here's everything mapped.
 
 ### Utility functions vs. fluent chains
 
-lodash uses utility functions — you pass data as the first argument:
+::: code-group
 
-```typescript
+```typescript [lodash]
 import _ from 'lodash'
 
 const result = _.chain(items)
@@ -117,9 +117,7 @@ const result = _.chain(items)
     .value()
 ```
 
-collect-ts uses fluent chaining — you call methods on the collection:
-
-```typescript
+```typescript [collect-ts]
 import { collect } from 'collect-ts'
 
 const result = collect(items)
@@ -129,9 +127,9 @@ const result = collect(items)
     .all()
 ```
 
-### No `_.chain()` needed
+:::
 
-In lodash, you need `_.chain()` to enable method chaining. In collect-ts, chaining is the default.
+lodash requires `_.chain()` to enable method chaining. collect-ts chains by default.
 
 ### Property shorthand everywhere
 
