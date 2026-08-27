@@ -75,15 +75,32 @@ _.maxBy(items, 'price')
 ```
 
 ```typescript [collect-ts]
-collect(items).groupBy('category').all()
-collect(items).keyBy('id').all()
-collect(items).countBy('status').all()
-collect(items).partition(fn)
+collect(items)
+    .groupBy('category')
+    .all()
 
-collect(items).sum('value')
-collect(items).avg('score')        // meanBy → avg
-collect(items).min('price')
-collect(items).max('price')
+collect(items)
+    .keyBy('id')
+    .all()
+
+collect(items)
+    .countBy('status')
+    .all()
+
+collect(items)
+    .partition(fn)
+
+collect(items)
+    .sum('value')
+
+collect(items)
+    .avg('score')  // meanBy → avg
+
+collect(items)
+    .min('price')
+
+collect(items)
+    .max('price')
 ```
 
 :::
@@ -97,10 +114,13 @@ const sales = [
     { product: 'Widget', region: 'EU', amount: 150 }
 ]
 
-collect(sales).groupBy('product').all()
+collect(sales)
+    .groupBy('product')
+    .all()
 // → { Widget: [{...}, {...}], Gadget: [{...}] }
 
-collect(sales).sum('amount')
+collect(sales)
+    .sum('amount')
 // → 450
 ```
 
@@ -117,11 +137,23 @@ _.findLast(items, fn)
 ```
 
 ```typescript [collect-ts]
-collect(items).where('active', true).all()
-collect(items).filter(fn).all()
-collect(items).reject(fn).all()
-collect(items).first(fn)
-collect(items).last(fn)
+collect(items)
+    .where('active', true)
+    .all()
+
+collect(items)
+    .filter(fn)
+    .all()
+
+collect(items)
+    .reject(fn)
+    .all()
+
+collect(items)
+    .first(fn)
+
+collect(items)
+    .last(fn)
 ```
 
 :::
@@ -136,7 +168,9 @@ const products = [
 ]
 
 // Comparison operators
-collect(products).where('price', '>', 50).all()
+collect(products)
+    .where('price', '>', 50)
+    .all()
 // → [{ name: 'Laptop', ... }, { name: 'Keyboard', ... }]
 
 // Multiple conditions
@@ -147,11 +181,15 @@ collect(products)
 // → [{ name: 'Mouse', ... }]
 
 // Where in array
-collect(products).whereIn('name', ['Laptop', 'Mouse']).all()
+collect(products)
+    .whereIn('name', ['Laptop', 'Mouse'])
+    .all()
 // → [{ name: 'Laptop', ... }, { name: 'Mouse', ... }]
 
 // Where between
-collect(products).whereBetween('price', [50, 500]).all()
+collect(products)
+    .whereBetween('price', [50, 500])
+    .all()
 // → [{ name: 'Keyboard', ... }]
 ```
 
@@ -168,11 +206,25 @@ _.union(a, b)
 ```
 
 ```typescript [collect-ts]
-collect(items).unique().all()
-collect(items).unique('email').all()
-collect(a).diff(b).all()
-collect(a).intersect(b).all()
-collect(a).union(b).all()
+collect(items)
+    .unique()
+    .all()
+
+collect(items)
+    .unique('email')
+    .all()
+
+collect(a)
+    .diff(b)
+    .all()
+
+collect(a)
+    .intersect(b)
+    .all()
+
+collect(a)
+    .union(b)
+    .all()
 ```
 
 :::
@@ -189,10 +241,22 @@ _.shuffle(items)
 ```
 
 ```typescript [collect-ts]
-collect(items).sortBy('name').all()
-collect(items).sortBy('a').sortByDesc('b').all()
-collect(items).reverse().all()
-collect(items).shuffle().all()
+collect(items)
+    .sortBy('name')
+    .all()
+
+collect(items)
+    .sortBy('a')
+    .sortByDesc('b')
+    .all()
+
+collect(items)
+    .reverse()
+    .all()
+
+collect(items)
+    .shuffle()
+    .all()
 ```
 
 :::
@@ -228,12 +292,29 @@ _.zip(a, b)
 ```
 
 ```typescript [collect-ts]
-collect(items).pluck('name').all()     // map + property → pluck
-collect(items).flatMap(fn).all()
-collect(items).flatten().all()
-collect(items).flatten(Infinity).all()
-collect(items).chunk(3).all()
-collect(a).zip(b).all()
+collect(items)
+    .pluck('name')
+    .all()  // map + property → pluck
+
+collect(items)
+    .flatMap(fn)
+    .all()
+
+collect(items)
+    .flatten()
+    .all()
+
+collect(items)
+    .flatten(Infinity)
+    .all()
+
+collect(items)
+    .chunk(3)
+    .all()
+
+collect(a)
+    .zip(b)
+    .all()
 ```
 
 :::
@@ -246,10 +327,14 @@ const orders = [
     { id: 2, customer: { name: 'Bob', address: { city: 'LA' } } }
 ]
 
-collect(orders).pluck('customer.name').all()
+collect(orders)
+    .pluck('customer.name')
+    .all()
 // → ['Alice', 'Bob']
 
-collect(orders).pluck('customer.address.city').all()
+collect(orders)
+    .pluck('customer.address.city')
+    .all()
 // → ['NYC', 'LA']
 ```
 
@@ -267,12 +352,26 @@ _.slice(items, 1, 3)
 ```
 
 ```typescript [collect-ts]
-collect(items).first()
-collect(items).last()
-collect(items).get(2)
-collect(items).take(5).all()
-collect(items).skip(5).all()       // drop → skip
-collect(items).slice(1, 2).all()   // note: length, not end index
+collect(items)
+    .first()
+
+collect(items)
+    .last()
+
+collect(items)
+    .get(2)
+
+collect(items)
+    .take(5)
+    .all()
+
+collect(items)
+    .skip(5)
+    .all()  // drop → skip
+
+collect(items)
+    .slice(1, 2)
+    .all()  // note: length, not end index
 ```
 
 :::
@@ -289,10 +388,17 @@ _.isEmpty(items)
 ```
 
 ```typescript [collect-ts]
-collect(items).some(fn)
-collect(items).every(fn)
-collect(items).contains(value)     // includes → contains
-collect(items).isEmpty()
+collect(items)
+    .some(fn)
+
+collect(items)
+    .every(fn)
+
+collect(items)
+    .contains(value)  // includes → contains
+
+collect(items)
+    .isEmpty()
 ```
 
 :::
@@ -310,11 +416,25 @@ _.merge(a, b)
 ```
 
 ```typescript [collect-ts]
-collect(obj).only(['a', 'b']).all()    // pick → only
-collect(obj).except(['c', 'd']).all()  // omit → except
-collect(obj).keys().all()
-collect(obj).values().all()
-collect(a).merge(b).all()
+collect(obj)
+    .only(['a', 'b'])
+    .all()  // pick → only
+
+collect(obj)
+    .except(['c', 'd'])
+    .all()  // omit → except
+
+collect(obj)
+    .keys()
+    .all()
+
+collect(obj)
+    .values()
+    .all()
+
+collect(a)
+    .merge(b)
+    .all()
 ```
 
 :::
@@ -337,11 +457,16 @@ collect(items)
     .all()
 
 // Safe access with defaults
-collect(items).firstOr(defaultItem)
-collect(items).sole()  // throws if not exactly one match
+collect(items)
+    .firstOr(defaultItem)
+
+collect(items)
+    .sole()  // throws if not exactly one match
 
 // Pagination
-collect(items).forPage(2, 10).all()  // page 2, 10 per page
+collect(items)
+    .forPage(2, 10)
+    .all()  // page 2, 10 per page
 ```
 
 ## Migration Gotchas
@@ -352,11 +477,14 @@ lodash's `_.chain()` requires `.value()`. collect-ts requires nothing for single
 
 ```typescript
 // Returns a number directly
-collect([1, 2, 3]).sum()
+collect([1, 2, 3])
+    .sum()
 // → 6
 
 // Returns the array
-collect([1, 2, 3]).map(n => n * 2).all()
+collect([1, 2, 3])
+    .map(n => n * 2)
+    .all()
 // → [2, 4, 6]
 ```
 
@@ -368,7 +496,9 @@ _.slice([1, 2, 3, 4, 5], 1, 3)
 // → [2, 3]
 
 // collect-ts: start index, length
-collect([1, 2, 3, 4, 5]).slice(1, 2).all()
+collect([1, 2, 3, 4, 5])
+    .slice(1, 2)
+    .all()
 // → [2, 3]
 ```
 
@@ -390,7 +520,8 @@ _.groupBy(items, 'category')
 // → { a: [...], b: [...] }
 
 // collect-ts: values are Collections
-collect(items).groupBy('category')
+collect(items)
+    .groupBy('category')
 // → Collection of Collections
 
 // To get plain arrays, use .all() on the outer result
@@ -415,7 +546,8 @@ interface User {
 _.map(users, 'profile.emial')
 
 // collect-ts: compile-time error
-collect(users).pluck('profile.emial') // [!code error]
+collect(users)
+    .pluck('profile.emial') // [!code error]
 // Error: 'profile.emial' is not a valid path on User
 ```
 
