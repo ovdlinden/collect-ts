@@ -63,7 +63,14 @@ function extractMarkdownSections(content: string, filePath: string): SearchEntry
 		} else {
 			// Strip code blocks and accumulate text
 			if (!line.startsWith('```') && !line.startsWith(':::')) {
-				currentText += ' ' + line.replace(/[*_`\[\]()]/g, '');
+				const cleanLine = line
+					.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](link) -> text
+					.replace(/\/collections\/\w+#\w+/g, '') // Remove bare internal links
+					.replace(/[*_`\[\]()#]/g, '') // Remove markdown chars
+					.replace(/→|←|↑|↓/g, '') // Remove arrows
+					.replace(/---/g, '') // Remove separators
+					.trim();
+				if (cleanLine) currentText += ' ' + cleanLine;
 			}
 		}
 	}

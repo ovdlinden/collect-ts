@@ -76,7 +76,7 @@ const results = computed<ProcessedResult[]>(() => {
 			if (searchMode.value === 'name') {
 				return item.title.toLowerCase().includes(q);
 			}
-			// Description mode: search title + text
+			// Full-text mode: search title + text
 			return `${item.title} ${item.text}`.toLowerCase().includes(q);
 		})
 		.take(12)
@@ -84,20 +84,39 @@ const results = computed<ProcessedResult[]>(() => {
 			...item,
 			highlightedTitle: highlightTerms(item.title, [q]),
 			breadcrumb: item.titles.slice(0, -1).join(' › '),
+			snippet: searchMode.value === 'description' ? getSnippet(item.text, q) : '',
 		}))
 		.all();
 });
 
-function searchDescriptions() {
-	searchMode.value = 'description';
-	selectedIndex.value = 0;
+function getSnippet(text: string, query: string): string {
+	// Clean up markdown artifacts from text
+	const cleanText = text
+		.replace(/\/collections\/\w+#\w+/g, '') // Remove internal links
+		.replace(/\s+/g, ' ') // Normalize whitespace
+		.replace(/[→←↑↓]/g, '') // Remove arrows
+		.replace(/---/g, '') // Remove separators
+		.trim();
+
+	const lowerText = cleanText.toLowerCase();
+	const idx = lowerText.indexOf(query);
+	if (idx === -1) return '';
+
+	// Extract ~60 chars around the match
+	const start = Math.max(0, idx - 30);
+	const end = Math.min(cleanText.length, idx + query.length + 50);
+	let snippet = cleanText.slice(start, end).trim();
+
+	if (start > 0) snippet = '...' + snippet;
+	if (end < cleanText.length) snippet = snippet + '...';
+
+	return highlightTerms(snippet, [query]);
 }
 
-// Reset to name search when query changes
-watch(query, () => {
-	searchMode.value = 'name';
+function toggleSearchMode() {
+	searchMode.value = searchMode.value === 'name' ? 'description' : 'name';
 	selectedIndex.value = 0;
-});
+}
 
 // Announce result count for screen readers
 watch(
@@ -224,7 +243,7 @@ function getResultId(index: number): string {
 							ref="inputRef"
 							v-model="query"
 							type="search"
-							placeholder="Search docs..."
+							:placeholder="searchMode === 'name' ? 'Search methods...' : 'Search descriptions...'"
 							class="fast-search-input"
 							autocomplete="off"
 							aria-label="Search documentation"
@@ -232,6 +251,15 @@ function getResultId(index: number): string {
 							aria-expanded="true"
 							:aria-activedescendant="results.length > 0 ? getResultId(selectedIndex) : undefined"
 						/>
+						<button
+							class="fast-search-mode-toggle"
+							:class="{ active: searchMode === 'description' }"
+							:aria-pressed="searchMode === 'description'"
+							@click="toggleSearchMode"
+							type="button"
+						>
+							{{ searchMode === 'name' ? 'Abc' : 'Full' }}
+						</button>
 						<kbd class="fast-search-kbd" aria-hidden="true">ESC</kbd>
 					</div>
 
@@ -263,6 +291,7 @@ function getResultId(index: number): string {
 								{{ result.breadcrumb }}
 							</span>
 							<span class="fast-search-result-title" v-html="result.highlightedTitle" />
+							<span v-if="result.snippet" class="fast-search-result-snippet" v-html="result.snippet" />
 							<span class="visually-hidden">
 								{{ result.breadcrumb ? `in ${result.breadcrumb}` : '' }}
 							</span>
@@ -272,9 +301,7 @@ function getResultId(index: number): string {
 					<div v-else-if="query.length >= 2" class="fast-search-empty" role="status">
 						<template v-if="searchMode === 'name'">
 							No methods matching "{{ query }}"
-							<button class="fast-search-fallback" @click="searchDescriptions">
-								Search in descriptions
-							</button>
+							<div class="fast-search-hint-toggle">Try toggling to full-text search</div>
 						</template>
 						<template v-else>
 							No results for "{{ query }}"
@@ -391,6 +418,30 @@ function getResultId(index: number): string {
 	font-family: inherit;
 }
 
+.fast-search-mode-toggle {
+	font-size: 11px;
+	padding: 4px 8px;
+	border-radius: 4px;
+	background: var(--vp-c-bg-soft);
+	color: var(--vp-c-text-2);
+	border: 1px solid var(--vp-c-divider);
+	cursor: pointer;
+	font-family: inherit;
+	font-weight: 500;
+	transition: all 150ms;
+}
+
+.fast-search-mode-toggle:hover {
+	border-color: var(--vp-c-brand-1);
+	color: var(--vp-c-brand-1);
+}
+
+.fast-search-mode-toggle.active {
+	background: var(--vp-c-brand-soft);
+	border-color: var(--vp-c-brand-1);
+	color: var(--vp-c-brand-1);
+}
+
 .fast-search-results {
 	overflow-y: auto;
 	max-height: 400px;
@@ -437,11 +488,23 @@ function getResultId(index: number): string {
 	color: var(--vp-c-text-1);
 }
 
-.fast-search-result-title :deep(mark) {
+.fast-search-result-title :deep(mark),
+.fast-search-result-snippet :deep(mark) {
 	background: var(--vp-c-brand-soft);
 	color: var(--vp-c-brand-1);
 	border-radius: 2px;
 	padding: 0 2px;
+}
+
+.fast-search-result-snippet {
+	font-size: 13px;
+	color: var(--vp-c-text-2);
+	margin-top: 6px;
+	line-height: 1.5;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .fast-search-loading,
@@ -452,22 +515,10 @@ function getResultId(index: number): string {
 	color: var(--vp-c-text-3);
 }
 
-.fast-search-fallback {
-	display: block;
-	margin: 12px auto 0;
-	padding: 8px 16px;
-	background: var(--vp-c-brand-soft);
-	color: var(--vp-c-brand-1);
-	border: none;
-	border-radius: 6px;
-	font-size: 14px;
-	cursor: pointer;
-	transition: background 150ms;
-}
-
-.fast-search-fallback:hover {
-	background: var(--vp-c-brand-2);
-	color: var(--vp-c-white);
+.fast-search-hint-toggle {
+	font-size: 12px;
+	margin-top: 8px;
+	color: var(--vp-c-text-3);
 }
 
 .fast-search-footer {
