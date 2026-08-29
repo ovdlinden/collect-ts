@@ -12,8 +12,13 @@ You've filtered data in your components with type safety. Now you need to sort r
 When your UI needs ordered results but the server sent them unsorted:
 
 ```typescript
-collect(users).sortBy('name').all() // [!code highlight]
-collect(users).sortByDesc('createdAt').all() // [!code highlight]
+collect([
+  { name: 'Taylor', createdAt: '2024-01-15' },
+  { name: 'Abigail', createdAt: '2024-02-20' },
+])
+  .sortBy('name')
+  .all()
+// → [{ name: 'Abigail', ... }, { name: 'Taylor', ... }]
 ```
 
 **Custom sort order** (e.g., priority tickets):
@@ -21,9 +26,14 @@ collect(users).sortByDesc('createdAt').all() // [!code highlight]
 ```typescript
 const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
 
-collect(tickets)
-    .sortBy(t => priorityOrder[t.priority]) // [!code highlight]
-    .all()
+collect([
+  { title: 'Bug fix', priority: 'low' },
+  { title: 'Security patch', priority: 'critical' },
+  { title: 'Feature request', priority: 'medium' },
+])
+  .sortBy(t => priorityOrder[t.priority])
+  .all()
+// → [{ title: 'Security patch', ... }, { title: 'Feature request', ... }, { title: 'Bug fix', ... }]
 ```
 
 ::: details Natural sort for version numbers and filenames
@@ -42,9 +52,16 @@ collect(['v2', 'v10', 'v1'])
 Need O(1) access instead of searching an array every time?
 
 ```typescript
-const usersById = collect(users).keyBy('id').all() // [!code highlight]
+const users = [
+  { id: 1, name: 'Taylor' },
+  { id: 2, name: 'Abigail' },
+]
 
-const user = usersById[userId]
+const usersById = collect(users).keyBy('id').all()
+// → { 1: { id: 1, name: 'Taylor' }, 2: { id: 2, name: 'Abigail' } }
+
+const user = usersById[1]
+// → { id: 1, name: 'Taylor' }
 ```
 
 This transforms O(n) search into O(1) lookup. Instead of scanning the array each time you need a user, you index once and access directly.
@@ -64,17 +81,27 @@ collect(['a', 'b', 'a', 'c'])
 **By property:**
 
 ```typescript
-collect(users)
-    .unique('email')
-    .all()
+collect([
+  { id: 1, email: 'taylor@example.com' },
+  { id: 2, email: 'abigail@test.com' },
+  { id: 3, email: 'taylor@example.com' },
+])
+  .unique('email')
+  .all()
+// → [{ id: 1, email: 'taylor@example.com' }, { id: 2, email: 'abigail@test.com' }]
 ```
 
 **By computed key**, one user per email domain:
 
 ```typescript
-collect(users)
-    .unique(u => u.email.split('@')[1])
-    .all()
+collect([
+  { name: 'Taylor', email: 'taylor@example.com' },
+  { name: 'Abigail', email: 'abigail@example.com' },
+  { name: 'James', email: 'james@test.com' },
+])
+  .unique(u => u.email.split('@')[1])
+  .all()
+// → [{ name: 'Taylor', ... }, { name: 'James', ... }]
 ```
 
 
@@ -141,21 +168,35 @@ Reshaping data for charting libraries:
 Pie chart data:
 
 ```typescript
+const stats = [
+  { category: 'Electronics', total: 1500 },
+  { category: 'Clothing', total: 800 },
+  { category: 'Books', total: 300 },
+]
+
 const pieData = collect(stats)
-    .map(s => ({ name: s.category, value: s.total })) // [!code highlight]
-    .all()
+  .map(s => ({ name: s.category, value: s.total }))
+  .all()
+// → [{ name: 'Electronics', value: 1500 }, ...]
 ```
 
 With percentages:
 
 ```typescript
+const stats = [
+  { category: 'Electronics', value: 60 },
+  { category: 'Clothing', value: 30 },
+  { category: 'Books', value: 10 },
+]
+
 const total = collect(stats).sum('value')
 const withPercentages = collect(stats)
-    .map(s => ({ // [!code highlight]
-        ...s, // [!code highlight]
-        percentage: total > 0 ? (s.value / total) * 100 : 0, // [!code highlight]
-    })) // [!code highlight]
-    .all()
+  .map(s => ({
+    ...s,
+    percentage: total > 0 ? (s.value / total) * 100 : 0,
+  }))
+  .all()
+// → [{ category: 'Electronics', value: 60, percentage: 60 }, ...]
 ```
 
 
@@ -164,12 +205,22 @@ const withPercentages = collect(stats)
 Grouping contacts by first letter for a scrollable list:
 
 ```typescript
+const contacts = [
+  { name: 'Alice' },
+  { name: 'Bob' },
+  { name: 'Anna' },
+]
+
 const sections = collect(contacts)
-    .sortBy('name')
-    .groupBy(c => c.name[0].toUpperCase())
-    .map((items, letter) => ({ letter, items: items.all() }))
-    .values()
-    .all()
+  .sortBy('name')
+  .groupBy(c => c.name[0].toUpperCase())
+  .map((items, letter) => ({ letter, items: items.all() }))
+  .values()
+  .all()
+// → [
+//     { letter: 'A', items: [{ name: 'Alice' }, { name: 'Anna' }] },
+//     { letter: 'B', items: [{ name: 'Bob' }] },
+//   ]
 ```
 
 
@@ -178,15 +229,26 @@ const sections = collect(contacts)
 Grouping tasks by status for a board view:
 
 ```typescript
+const tasks = [
+  { title: 'Design', status: 'done', position: 1 },
+  { title: 'Implement', status: 'in-progress', position: 1 },
+  { title: 'Test', status: 'todo', position: 1 },
+]
+
 const columns = collect(tasks)
-    .groupBy('status')
-    .map((items, status) => ({
-        status,
-        items: items.sortBy('position').all(),
-        count: items.count(),
-    }))
-    .values()
-    .all()
+  .groupBy('status')
+  .map((items, status) => ({
+    status,
+    items: items.sortBy('position').all(),
+    count: items.count(),
+  }))
+  .values()
+  .all()
+// → [
+//     { status: 'done', items: [...], count: 1 },
+//     { status: 'in-progress', items: [...], count: 1 },
+//     { status: 'todo', items: [...], count: 1 },
+//   ]
 ```
 
 
@@ -196,9 +258,16 @@ Handle empty collections gracefully:
 
 ```typescript
 collect([]).first()
-collect([]).first() ?? fallback
+// → undefined
 
-collect(items).firstOrFail()
+collect([]).first() ?? 'fallback'
+// → 'fallback'
+
+collect([{ name: 'Taylor' }]).firstOrFail()
+// → { name: 'Taylor' }
+
+collect([]).firstOrFail()
+// → throws ItemNotFoundException
 ```
 
 - `first()` returns `undefined` on empty collections
@@ -207,5 +276,5 @@ collect(items).firstOrFail()
 
 ## What's next
 
-- [LazyCollection](/03-lazy) — Process huge datasets without memory issues
-- [Performance](/05-benchmarks) — When to use collect-ts vs native methods
+- [LazyCollection](/03-lazy): Process huge datasets without memory issues
+- [Performance](/05-benchmarks): When to use collect-ts vs native methods

@@ -94,7 +94,7 @@ collect(items)
     .sum('value')
 
 collect(items)
-    .avg('score')  // meanBy → avg
+    .avg('score')
 
 collect(items)
     .min('price')
@@ -167,26 +167,22 @@ const products = [
     { name: 'Keyboard', price: 79, stock: 0 }
 ]
 
-// Comparison operators
 collect(products)
     .where('price', '>', 50)
     .all()
 // → [{ name: 'Laptop', ... }, { name: 'Keyboard', ... }]
 
-// Multiple conditions
 collect(products)
     .where('price', '<', 100)
     .where('stock', '>', 0)
     .all()
 // → [{ name: 'Mouse', ... }]
 
-// Where in array
 collect(products)
     .whereIn('name', ['Laptop', 'Mouse'])
     .all()
 // → [{ name: 'Laptop', ... }, { name: 'Mouse', ... }]
 
-// Where between
 collect(products)
     .whereBetween('price', [50, 500])
     .all()
@@ -270,7 +266,6 @@ const tasks = [
     { title: 'Test', priority: 2, created: '2024-01-12' }
 ]
 
-// Sort by priority (asc), then by created date (desc)
 collect(tasks)
     .sortBy('priority')
     .sortByDesc('created')
@@ -294,7 +289,7 @@ _.zip(a, b)
 ```typescript [collect-ts]
 collect(items)
     .pluck('name')
-    .all()  // map + property → pluck
+    .all()
 
 collect(items)
     .flatMap(fn)
@@ -367,11 +362,11 @@ collect(items)
 
 collect(items)
     .skip(5)
-    .all()  // drop → skip
+    .all()
 
 collect(items)
     .slice(1, 2)
-    .all()  // note: length, not end index
+    .all()
 ```
 
 :::
@@ -395,7 +390,7 @@ collect(items)
     .every(fn)
 
 collect(items)
-    .contains(value)  // includes → contains
+    .contains(value)
 
 collect(items)
     .isEmpty()
@@ -418,11 +413,11 @@ _.merge(a, b)
 ```typescript [collect-ts]
 collect(obj)
     .only(['a', 'b'])
-    .all()  // pick → only
+    .all()
 
 collect(obj)
     .except(['c', 'd'])
-    .all()  // omit → except
+    .all()
 
 collect(obj)
     .keys()
@@ -443,30 +438,40 @@ collect(a)
 
 Methods lodash doesn't have (or requires multiple calls):
 
+Conditional operations:
+
 ```typescript
-// Conditional operations
 collect(items)
     .when(shouldFilter, c => c.where('active', true))
     .all()
+```
 
-// Tap for debugging
+Tap for debugging:
+
+```typescript
 collect(items)
     .filter(fn)
     .tap(c => console.log('After filter:', c.count()))
     .map(fn)
     .all()
+```
 
-// Safe access with defaults
+Safe access with defaults:
+
+```typescript
 collect(items)
     .firstOr(defaultItem)
 
 collect(items)
-    .sole()  // throws if not exactly one match
+    .sole()
+```
 
-// Pagination
+`sole()` throws if not exactly one match. Pagination example:
+
+```typescript
 collect(items)
     .forPage(2, 10)
-    .all()  // page 2, 10 per page
+    .all()
 ```
 
 ## Migration Gotchas
@@ -475,13 +480,17 @@ collect(items)
 
 lodash's `_.chain()` requires `.value()`. collect-ts requires nothing for single values, `.all()` for arrays/objects:
 
+Returns a number directly:
+
 ```typescript
-// Returns a number directly
 collect([1, 2, 3])
     .sum()
 // → 6
+```
 
-// Returns the array
+Returns the array:
+
+```typescript
 collect([1, 2, 3])
     .map(n => n * 2)
     .all()
@@ -490,12 +499,16 @@ collect([1, 2, 3])
 
 ### 2. Slice takes length, not end index
 
+lodash uses start index and end index:
+
 ```typescript
-// lodash: start index, end index
 _.slice([1, 2, 3, 4, 5], 1, 3)
 // → [2, 3]
+```
 
-// collect-ts: start index, length
+collect-ts uses start index and length:
+
+```typescript
 collect([1, 2, 3, 4, 5])
     .slice(1, 2)
     .all()
@@ -514,17 +527,24 @@ collect([1, 2, 3, 4, 5])
 
 ### 4. groupBy returns Collections, not arrays
 
+lodash returns plain arrays:
+
 ```typescript
-// lodash: values are arrays
 _.groupBy(items, 'category')
 // → { a: [...], b: [...] }
+```
 
-// collect-ts: values are Collections
+collect-ts returns Collection instances:
+
+```typescript
 collect(items)
     .groupBy('category')
-// → Collection of Collections
+// → { a: Collection, b: Collection }
+```
 
-// To get plain arrays, use .all() on the outer result
+To get plain arrays, use `.all()` on the outer result:
+
+```typescript
 collect(items)
     .groupBy('category')
     .map(g => g.all())
@@ -541,18 +561,23 @@ interface User {
     id: number
     profile: { email: string }
 }
+```
 
-// lodash: no error, fails at runtime
+lodash has no error, but fails at runtime:
+
+```typescript
 _.map(users, 'profile.emial')
+```
 
-// collect-ts: compile-time error
+collect-ts catches it at compile time:
+
+```typescript
 collect(users)
     .pluck('profile.emial') // [!code error]
-// Error: 'profile.emial' is not a valid path on User
 ```
 
 ## What's next
 
-- [Full API Reference](/collections) — All 130+ methods
-- [Common Patterns](/02-patterns) — Real-world examples
-- [Performance](/05-benchmarks) — When to use what
+- [Full API Reference](/api/): All 130+ methods
+- [Common Patterns](/02-patterns): Real-world examples
+- [Performance](/05-benchmarks): When to use what

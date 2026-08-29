@@ -14,9 +14,6 @@ import D2Diagram from './components/D2Diagram.vue';
 export default {
 	extends: DefaultTheme,
 	enhanceApp({ app }) {
-		// Target of the ```d2 fence renderer in plugins/markdown-d2.ts. Registered
-		// eagerly, not async: the component's whole job is to inline SVG that was
-		// rendered at build time, so it has to be present during SSR.
 		app.component('D2Diagram', D2Diagram);
 		app.component('Benchmarks', Benchmarks);
 	},
@@ -27,15 +24,45 @@ export default {
 	},
 	setup() {
 		const route = useRoute();
-		// Zoomable images. Diagrams enlarge too, but medium-zoom only handles
-		// <img> — D2Diagram.vue ships its own <dialog> lightbox for SVGs.
 		const initZoom = () => {
 			mediumZoom('.vp-doc img:not(.no-zoom)', { background: 'var(--vp-c-bg)' });
 		};
-		onMounted(initZoom);
+
+		const initCopyFilter = () => {
+			// Intercept copy button clicks to exclude output lines
+			document.querySelectorAll('.vp-doc div[class*="language-"] button.copy').forEach((btn) => {
+				btn.addEventListener('click', (e) => {
+					const codeBlock = btn.closest('div[class*="language-"]');
+					if (!codeBlock) return;
+
+					const code = codeBlock.querySelector('pre code');
+					if (!code) return;
+
+					// Get text from all lines EXCEPT output lines
+					const lines = code.querySelectorAll('.line:not(.output-line)');
+					const text = Array.from(lines)
+						.map((line) => line.textContent || '')
+						.join('\n');
+
+					// Override clipboard
+					navigator.clipboard.writeText(text);
+					e.stopPropagation();
+					e.preventDefault();
+				});
+			});
+		};
+
+		onMounted(() => {
+			initZoom();
+			initCopyFilter();
+		});
 		watch(
 			() => route.path,
-			() => nextTick(initZoom),
+			() =>
+				nextTick(() => {
+					initZoom();
+					initCopyFilter();
+				}),
 		);
 	},
 } satisfies Theme;

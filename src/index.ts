@@ -10,6 +10,7 @@ export type {
 	Collapse,
 	Collectable,
 	CollectedState,
+	CollectFunction,
 	CollectionKey,
 	CollectionKind,
 	CollectionLike,
@@ -49,9 +50,7 @@ export type {
 } from './LazyCollection.js';
 export {
 	AsyncLazyCollection,
-	asyncLazy,
 	isAsyncLazyCollection,
 	isLazyCollection,
 	LazyCollection,
-	lazy,
 } from './LazyCollection.js';

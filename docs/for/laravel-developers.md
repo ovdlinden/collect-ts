@@ -30,6 +30,8 @@ The method names are the same. The arguments are the same. The behavior is the s
 
 Your controller passes data to the frontend. On the frontend, you manipulate it with the same Collection API:
 
+Instant search and sorting with no server round-trip:
+
 ```tsx
 import { usePage } from '@inertiajs/react'
 import { collect } from 'collect-ts'
@@ -40,7 +42,6 @@ export default function ProductList() {
     const [search, setSearch] = useState('')
     const [sortBy, setSortBy] = useState('name')
 
-    // Instant search + sorting — no server round-trip
     const displayed = collect(products)
         .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
         .sortBy(sortBy)
@@ -55,7 +56,7 @@ export default function ProductList() {
             <button onClick={() => setSortBy('price')}>Sort by Price</button>
             <ul>
                 {displayed.map(p => (
-                    <li key={p.id}>{p.name} — ${p.price}</li>
+                    <li key={p.id}>{p.name} - ${p.price}</li>
                 )).all()}
             </ul>
         </div>
@@ -77,8 +78,9 @@ interface User {
 }
 
 collect(users).pluck('emial') // [!code error]
-// TypeScript error: 'emial' does not exist on User
 ```
+
+TypeScript error: `'emial'` does not exist on `User`.
 
 When you rename a property in your types, every Collection call that references the old name becomes a compile error instead of a runtime bug.
 
@@ -95,7 +97,7 @@ Typo in the path? Caught at compile time.
 
 ## LazyCollection for Large Datasets
 
-Same concept as Laravel's `LazyCollection` — generator-based evaluation for memory efficiency:
+Same concept as Laravel's `LazyCollection`, generator-based evaluation for memory efficiency:
 
 ```typescript
 import { lazy } from 'collect-ts'
@@ -108,6 +110,6 @@ const errors = lazy(readLines('huge-log.jsonl'))
 
 ## What's next
 
-- [TypeScript Guide](/01-typescript) — More on type safety and inference
-- [Common Patterns](/02-patterns) — Sorting, grouping, chart data
-- [Full API Reference](/collections) — All 130+ methods
+- [TypeScript Guide](/01-typescript): More on type safety and inference
+- [Common Patterns](/02-patterns): Sorting, grouping, chart data
+- [Full API Reference](/api/): All 130+ methods

@@ -40,19 +40,43 @@ const guideSidebar = [
 		],
 	},
 	{
-		text: 'API Reference',
-		link: '/api/',
+		text: 'Reference',
+		items: [
+			{ text: 'Collections', link: '/collections/' },
+			{ text: 'Type Signatures', link: '/api/' },
+		],
 	},
 ] satisfies DefaultTheme.SidebarItem[];
 
+const collectionsSidebar = [
+	{ text: 'Collections', link: '/collections/' },
+	{
+		text: 'Guides',
+		collapsed: true,
+		items: [
+			{ text: 'Creating', link: '/collections/creating' },
+			{ text: 'Finding', link: '/collections/finding' },
+			{ text: 'Filtering', link: '/collections/filtering' },
+			{ text: 'Transforming', link: '/collections/transforming' },
+			{ text: 'Grouping', link: '/collections/grouping' },
+			{ text: 'Aggregating', link: '/collections/aggregating' },
+			{ text: 'Sorting', link: '/collections/sorting' },
+			{ text: 'Combining', link: '/collections/combining' },
+			{ text: 'Checking', link: '/collections/checking' },
+		],
+	},
+	{ text: 'Type Signatures', link: '/api/' },
+] satisfies DefaultTheme.SidebarItem[];
+
 const sidebar: DefaultTheme.Sidebar = {
+	'/collections/': collectionsSidebar,
 	'/api/': typedocSidebar,
 	'/': guideSidebar,
 };
 
 const nav = [
 	{ text: 'Quick Start', link: '/00-quickstart' },
-	{ text: 'API', link: '/api/' },
+	{ text: 'Collections', link: '/collections/' },
 	{ text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
 ] satisfies DefaultTheme.NavItem[];
 
@@ -76,7 +100,7 @@ export default defineConfig({
 			md.use(groupIconMdPlugin);
 			md.use(d2FencePlugin);
 			md.use(outputContainerPlugin);
-			md.use(outputPreprocessPlugin);
+			// Note: outputPreprocessPlugin removed - using Shiki transformer instead
 		},
 		codeTransformers: [transformerOutputLines()],
 		theme: {

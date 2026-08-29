@@ -36,15 +36,19 @@ LazyCollection processes items on-demand using generators. It wins when:
 
 **Example**: Taking 10 items from a million-element range:
 
-```javascript
-// LazyCollection: iterates 10 elements
-LazyCollection.range(1, 1_000_000).take(10).all()
+LazyCollection iterates only 10 elements:
 
-// Native: allocates 1M elements, then slices
+```javascript
+LazyCollection.range(1, 1_000_000).take(10).all()
+```
+
+Native allocates 1M elements, then slices:
+
+```javascript
 Array.from({ length: 1_000_000 }, (_, i) => i + 1).slice(0, 10)
 ```
 
-The lazy version wins because it avoids allocating the full array — not because generators are intrinsically faster. A hand-written `for` loop that also exits early is ~138x faster than LazyCollection, but generators give you a composable API without manual loop management.
+The lazy version wins because it avoids allocating the full array, not because generators are intrinsically faster. A hand-written `for` loop that also exits early is ~138x faster than LazyCollection, but generators give you a composable API without manual loop management.
 
 ## Methodology
 
@@ -62,6 +66,6 @@ Run all benchmarks, or target a specific file.
 
 ## What's next
 
-- [Quick Start](/00-quickstart) — Get started with collect-ts
-- [LazyCollection](/03-lazy) — When lazy evaluation wins
-- [Full API Reference](/collections) — All 130+ methods
+- [Quick Start](/00-quickstart): Get started with collect-ts
+- [LazyCollection](/03-lazy): When lazy evaluation wins
+- [Full API Reference](/api/): All 130+ methods

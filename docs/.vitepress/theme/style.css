@@ -27,13 +27,14 @@ html {
 	hyphens: none;
 }
 
-/* Inline code stays whole. The doc body sets overflow-wrap:anywhere for long
-   prose and URLs; inherited into a code chip it shatters a short token like
-   `refreshMr` mid-string inside a narrow table cell, and each fragment then
-   draws its own padded, rounded background. Tables already scroll on overflow
-   (VitePress default), so keep the chip intact instead of breaking it. */
+/* Inline code - lighter styling for better reading flow.
+   Laravel-inspired: subtle, doesn't break prose rhythm. */
 .vp-doc :not(pre) > code {
 	white-space: nowrap;
+	background: var(--vp-c-default-soft);
+	padding: 0.15em 0.4em;
+	border-radius: 4px;
+	font-size: 0.9em;
 }
 
 .vp-doc h1,
@@ -292,5 +293,13 @@ html {
 
 .vp-doc div[class*="language-"] .code-output .output-value {
 	color: var(--doc-c-accent);
+}
+
+/* Continuation lines for multi-line outputs */
+.vp-doc div[class*="language-"] .code-output .output-indent {
+	color: var(--vp-c-text-3);
+	margin-right: 0.5em;
+	display: inline-block;
+	width: 1.5em; /* same visual width as arrow */
 }
 

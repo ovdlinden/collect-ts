@@ -130,5 +130,5 @@ The constraint in the second function ensures it only accepts items that have an
 
 ## What's next
 
-- [Common Patterns](/02-patterns) — Sorting, grouping, chart data, and more
-- [LazyCollection](/03-lazy) — Memory-efficient processing for large datasets
+- [Common Patterns](/02-patterns): Sorting, grouping, chart data, and more
+- [LazyCollection](/03-lazy): Memory-efficient processing for large datasets

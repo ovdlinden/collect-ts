@@ -1,245 +1,101 @@
-# LazyCollection
+# Lazy Evaluation
 
-You're processing a 2GB log file. With a regular Collection, it loads everything into memory and your app crashes.
+Regular collections allocate at every step. Filter a million items, take 10, and you still allocate a million-item array.
 
-LazyCollection uses JavaScript generators to process items one at a time. Only what you need, when you need it.
+Lazy collections don't. Each item flows through the full pipeline before the next enters. When you have 10, iteration stops.
 
 ```typescript
-import { lazy } from 'collect-ts'
-
-const errors = lazy(readLines('huge-log.jsonl'))
-    .filter(entry => entry.level === 'error')
-    .take(100)
+collect(hugeArray)
+    .lazy()
+    .filter(item => item.active)
+    .take(10)
     .all()
+// → [first 10 active items]
 ```
 
-This processes a huge file without loading it all into memory.
+After 10 items pass the filter, the rest of `hugeArray` is never touched.
 
-::: info Related Guides
-- **Need type safety?** See [TypeScript](/01-typescript) for compile-time validation.
-- **More collection patterns?** See [Common Patterns](/02-patterns) for sorting, grouping, and more.
-:::
+## When to use it
 
-## When to Use It
+Use `.lazy()` when the source is large, when you'll stop early (`.take()`, `.first()`), or when the source is external. For small arrays, skip it. Generator overhead costs more than it saves.
 
-| Scenario | Use |
-|----------|-----|
-| Processing large files | `lazy()` |
-| Streaming API responses | `lazy()` |
-| Taking first N from huge dataset | `lazy()` (stops early) |
-| Small arrays (under 1000 items) | `collect()` (simpler) |
-| Need to iterate multiple times | `collect()` (caches results) |
+## Execution
 
+Nothing runs until you ask for results:
 
-## How It Works
+| Method | Pulls |
+|--------|-------|
+| `.all()` | Everything |
+| `.first()` | One item |
+| `.take(n)` | Up to n |
+| `.count()`, `.sum()` | Everything |
+| `for...of` | One per iteration |
 
-Both return `6`. The difference is how much work they do:
+## Generators
 
-| | Eager | Lazy |
-|---|---|---|
-| **filter()** | 5 calls (all items) | 3 calls (stops at match) |
-| **map()** | 3 calls (all passing) | 1 call (just the result) |
-| **Total** | 8 operations | 4 operations |
-
-Eager processes all items through each step before moving on. Lazy processes one item all the way through, returns immediately when it has an answer, and never touches items 4 and 5.
+For sources you can't load into memory, use a generator. The `function*` syntax marks it. Each `yield` produces one value:
 
 ```typescript
-collect([1, 2, 3, 4, 5]).filter(n => n > 2).map(n => n * 2).first()
-
-lazy([1, 2, 3, 4, 5]).filter(n => n > 2).map(n => n * 2).first()
-```
-
-On a dataset of millions, this is the difference between "works" and "crashes".
-
-
-## Processing Large Files
-
-Stream a file line by line:
-
-```typescript
-import { createReadStream } from 'fs'
-import { createInterface } from 'readline'
-
-async function* readLines(path: string) {
-    const rl = createInterface({
-        input: createReadStream(path),
-        crlfDelay: Infinity
-    })
-
-    for await (const line of rl) {
-        yield JSON.parse(line)
+function* range(start: number, end: number) {
+    for (let i = start; i <= end; i++) {
+        yield i
     }
 }
 
-const errors = lazy(readLines('huge-log.jsonl'))
-    .filter(entry => entry.level === 'error')
-    .take(100)
+collect(range(1, 1_000_000))
+    .lazy()
+    .filter(n => n % 2 === 0)
+    .take(10)
     .all()
+// → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 ```
 
-This finds the first 100 errors in a 10GB log file. Memory stays flat regardless of file size.
+The first 10 even numbers, without ever allocating a million-element array.
 
+### Async sources
 
-## Paginated APIs
-
-Fetch pages on demand:
+For APIs or anything async, use `async function*` with `collect.async()`:
 
 ```typescript
-async function* fetchAllPages(endpoint: string) {
+async function* fetchUsers() {
     let page = 1
-    let hasMore = true
-
-    while (hasMore) {
-        const response = await fetch(`${endpoint}?page=${page}`)
-        const data = await response.json()
-
-        for (const item of data.items) {
-            yield item
-        }
-
-        hasMore = data.hasNextPage
+    while (true) {
+        const data = await fetch(`/api/users?page=${page}`).then(r => r.json())
+        if (!data.length) return
+        for (const user of data) yield user
         page++
     }
 }
 
-const activeUsers = lazy(fetchAllPages('/api/users'))
+await collect.async(fetchUsers())
     .filter(u => u.active)
     .take(50)
     .all()
+// → [first 50 active users]
 ```
 
-Stops after finding 50 active users. If you find 50 on page 2, pages 3+ are never fetched.
+Pages fetch on demand. If 50 active users appear by page 3, page 4 is never requested.
 
+## Caching
 
-## Infinite Sequences
+Each terminal call re-iterates the source. Two calls, two fetches.
 
-Generate values forever. Take only what you need:
+`.remember()` caches items as they stream through. The first call fills the cache, subsequent calls read from it:
 
 ```typescript
-function* fibonacci() {
-    let [a, b] = [0, 1]
-    while (true) {
-        yield a
-        ;[a, b] = [b, a + b]
-    }
-}
-
-lazy(fibonacci()).take(10).all()
-
-lazy(fibonacci()).first(n => n > 1000)
+const results = collect(fetchUsers()).lazy() // [!code --]
+const results = collect(fetchUsers()).lazy().remember() // [!code ++]
+results.count()
+results.first()
 ```
 
-The first returns `[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]`. The second returns `1597`.
+## Gotchas
 
+**Generators are single-use.** Once exhausted, they're empty. Iterate twice and the second pass yields nothing.
 
-::: details When NOT to Use It
-
-LazyCollection re-evaluates on each iteration. This causes problems when:
-
-**You need to sort:**
-
-```typescript
-lazy(hugeArray).sortBy('name').take(10)
-```
-
-Sorting requires loading all items first, defeating lazy evaluation.
-
-**You iterate multiple times:**
-
-```typescript
-const users = lazy(fetchAllPages('/api/users'))
-users.count()
-users.first()
-```
-
-This re-fetches from the API on each call. Use `remember()` to cache, or convert to a regular Collection:
-
-```typescript
-const users = lazy(fetchAllPages('/api/users')).remember()
-users.count()
-users.first()
-
-const users = lazy(fetchAllPages('/api/users')).collect()
-```
-
-With `remember()`, results are cached after the first iteration. Converting to a Collection also works.
-
-**Your generator has side effects:**
-
-```typescript
-function* withSideEffects() {
-    console.log('Started!')
-    yield 1
-}
-```
-
-Side effects run on every iteration. The `console.log` executes every time you iterate.
-
-:::
-
-## Converting
-
-**Collection → LazyCollection:**
-
-```typescript
-const eagerCollection = collect([1, 2, 3, 4, 5])
-const lazyVersion = eagerCollection.lazy()
-```
-
-**LazyCollection → Collection:**
-
-```typescript
-const lazyCollection = lazy([1, 2, 3, 4, 5])
-const eagerVersion = lazyCollection.collect()
-```
-
-
-::: details Performance Tips
-
-**Place `take()` early:**
-
-```typescript
-lazy(hugeArray)
-    .filter(x => x.valid)
-    .take(10) // [!code ++]
-    .map(x => transform(x))
-
-lazy(hugeArray)
-    .filter(x => x.valid)
-    .map(x => expensiveTransform(x)) // [!code --]
-    .take(10) // [!code --]
-```
-
-The first stops after finding 10 valid items. The second transforms everything before taking 10.
-
-**Use `first()` directly:**
-
-```typescript
-lazy(items).filter(x => x.id === target).first() // [!code ++]
-
-lazy(items).filter(x => x.id === target).take(1).all()[0] // [!code --]
-```
-
-The first is direct. The second is verbose and does the same thing.
-
-**Avoid operations that need all items:**
-
-```typescript
-lazy(items).sortBy('name') // [!code --]
-lazy(items).reverse() // [!code --]
-lazy(items).last() // [!code --]
-lazy(items).count() // [!code --]
-```
-
-These defeat lazy evaluation. `sortBy` and `reverse` must load all items. `last` and `count` must iterate all.
-
-:::
-
-## Available Methods
-
-Most Collection methods work on LazyCollection. Terminal operations like all, first, count, and sum trigger evaluation. Until you call one, nothing runs.
+**Side effects repeat.** A generator that logs will log on every iteration.
 
 ## What's next
 
-- [Performance](/05-benchmarks) — When lazy beats eager (and when it doesn't)
-- [Full API Reference](/collections) — All methods that work with LazyCollection
+- [Benchmarks](/05-benchmarks)
+- [API Reference](/api/)

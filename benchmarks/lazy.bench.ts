@@ -10,7 +10,7 @@
  * Shows both the overhead cost of abstractions AND where lazy evaluation wins.
  */
 import { bench, describe } from 'vitest';
-import { collect, LazyCollection, lazy } from '../src/index.js';
+import { collect } from '../src/index.js';
 
 // Dataset sizes — lazy benefits emerge at scale
 const SIZES = {
@@ -61,7 +61,8 @@ describe('Early termination: take(10) from 1M items', () => {
 	});
 
 	bench('LazyCollection', () => {
-		lazy(large)
+		collect(large)
+			.lazy()
 			.filter((x) => x.value > 0.5)
 			.map((x) => x.value * 2)
 			.take(10)
@@ -90,7 +91,7 @@ describe('First match: first() with condition on 1M items', () => {
 	});
 
 	bench('LazyCollection', () => {
-		lazy(large).first((x) => x.id === 500);
+		collect(large).lazy().first((x) => x.id === 500);
 	});
 });
 
@@ -132,7 +133,8 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 	});
 
 	bench('LazyCollection', () => {
-		lazy(small)
+		collect(small)
+			.lazy()
 			.filter((x) => x.value > 0.2)
 			.map((x) => ({ ...x, doubled: x.value * 2 }))
 			.filter((x) => x.doubled > 1)
@@ -165,7 +167,8 @@ describe('Full processing: map all 100K items (no early exit)', () => {
 	});
 
 	bench('LazyCollection', () => {
-		lazy(small)
+		collect(small)
+			.lazy()
 			.map((x) => x.value * 2)
 			.all();
 	});
@@ -196,6 +199,6 @@ describe('Range: sum of first 10 from range(1, 1_000_000)', () => {
 	});
 
 	bench('LazyCollection.range', () => {
-		LazyCollection.range(1, 1_000_000).take(10).sum();
+		collect.lazy.range(1, 1_000_000).take(10).sum();
 	});
 });

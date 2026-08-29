@@ -34,7 +34,7 @@ features:
 
 ### Coming from Laravel?
 
-Same `collect()`, `where()`, `pluck()` you already know — now in your Inertia frontend.
+Same `collect()`, `where()`, `pluck()` you already know, now in your Inertia frontend.
 
 [Laravel Developers →](/for/laravel-developers)
 
@@ -86,10 +86,10 @@ One line per operation, readable at a glance.
 
 ## What's next
 
-- **[Quick Start](/00-quickstart)** — Installation and basic usage
-- **[TypeScript Guide](/01-typescript)** — Understand type safety and inference
-- **[Common Patterns](/02-patterns)** — Sorting, grouping, and real-world examples
-- **[Full API Reference](/collections)** — All 130+ methods documented
+- **[Quick Start](/00-quickstart)**: Installation and basic usage
+- **[TypeScript Guide](/01-typescript)**: Understand type safety and inference
+- **[Common Patterns](/02-patterns)**: Sorting, grouping, and real-world examples
+- **[Full API Reference](/api/)**: All 130+ methods documented
 
 <style>
 .vp-card-container {

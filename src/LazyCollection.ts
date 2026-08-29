@@ -62,7 +62,13 @@ function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefin
 		};
 	}
 
-	return [...source];
+	// Wrap iterable in a generator factory to defer consumption
+	return function* () {
+		let index = 0;
+		for (const value of source) {
+			yield [index++, value] as [number, T];
+		}
+	};
 }
 
 function* makeIterator<T>(source: LazySource<T>): Generator<[number, T]> {
@@ -374,6 +380,11 @@ export class LazyCollection<T> implements Iterable<T> {
 	/** Async because JS can't block like PHP's sleep(). */
 	throttle(seconds: number): ProxiedAsyncLazyCollection<T> {
 		return wrapAsync(new AsyncLazyCollection(this.source, seconds * 1000));
+	}
+
+	/** Convert to AsyncLazyCollection for async iteration. */
+	async(): ProxiedAsyncLazyCollection<T> {
+		return wrapAsync(new AsyncLazyCollection(this.source, 0));
 	}
 
 	collect(): Collection<T> {
@@ -852,3 +863,19 @@ export function asyncLazy<T>(
 
 	return wrapAsync(new AsyncLazyCollection<T>([...(source as Iterable<T>)], 0));
 }
+
+/** Static factory methods for lazy collections */
+export const lazyStatics = {
+	range: (from: number, to: number): ProxiedLazyCollection<number> => LazyCollection.range(from, to),
+	times: <U>(n: number, callback?: (index: number) => U): ProxiedLazyCollection<U | number> =>
+		LazyCollection.times(n, callback),
+	empty: <U>(): ProxiedLazyCollection<U> => LazyCollection.empty<U>(),
+};
+
+/** Static factory methods for async lazy collections */
+export const asyncStatics = {
+	range: (from: number, to: number): ProxiedAsyncLazyCollection<number> => AsyncLazyCollection.range(from, to),
+	times: <U>(n: number, callback?: (index: number) => U): ProxiedAsyncLazyCollection<U | number> =>
+		AsyncLazyCollection.times(n, callback),
+	empty: <U>(): ProxiedAsyncLazyCollection<U> => AsyncLazyCollection.empty<U>(),
+};
