@@ -39,6 +39,9 @@ jobs:
       - name: Run benchmarks
         run: pnpm bench:ci
 
+      - name: Check benchmark docs freshness
+        run: pnpm bench:check
+
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:

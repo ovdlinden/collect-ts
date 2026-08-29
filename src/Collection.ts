@@ -1,6 +1,6 @@
 /** @see https://laravel.com/docs/collections */
 
-import { arrayContains, arrayFilterByKey, arrayFilterBySet, arrayFindByKey, arrayMapByKey } from './arrayUtils.js';
+import { arrayContains, arrayFilterByKey, arrayFilterBySet, arrayFindByKey, arrayGroupByKey, arrayMapByKey } from './arrayUtils.js';
 import {
 	InvalidArgumentException,
 	ItemNotFoundException,
@@ -661,11 +661,8 @@ export function wrapWithProxy<T, C extends CollectionLike<T>>(collection: C, get
 				return value;
 			}
 
-			const higherOrderProxy = HigherOrderCollectionProxy.create<T, Record<string, unknown>>(
-				target as AnyCollection,
-				prop as ProxyableMethod,
-				wrapResult,
-			);
+			// Lazy HOM proxy - only created when property access occurs (not on direct call)
+			let higherOrderProxy: Record<string, unknown> | null = null;
 
 			const callableProxy = function (this: C, ...args: unknown[]) {
 				const result = (value as (...a: unknown[]) => unknown).apply(target, args);
@@ -688,7 +685,16 @@ export function wrapWithProxy<T, C extends CollectionLike<T>>(collection: C, get
 						return Function.prototype.bind.bind(callableProxy);
 					}
 
-					return (higherOrderProxy as Record<string, unknown>)[accessProp];
+					// Lazy creation: only create HOM proxy when actually accessing a property
+					if (!higherOrderProxy) {
+						higherOrderProxy = HigherOrderCollectionProxy.create<T, Record<string, unknown>>(
+							target as AnyCollection,
+							prop as ProxyableMethod,
+							wrapResult,
+						);
+					}
+
+					return higherOrderProxy[accessProp];
 				},
 
 				apply(_target, _thisArg, args) {
@@ -7427,6 +7433,42 @@ export interface CollectFunction {
 	 * Zero allocation overhead.
 	 */
 	sum: <T>(items: T[], callback?: (value: T, index: number) => number) => number;
+
+	/**
+	 * Filter items by key/value without creating Collection.
+	 * Zero allocation overhead - faster than native filter with callback.
+	 */
+	where: <T, K extends keyof T>(items: T[], key: K, value: T[K]) => T[];
+
+	/**
+	 * Extract values by key without creating Collection.
+	 * Zero allocation overhead - faster than native map with callback.
+	 */
+	pluck: <T, K extends keyof T>(items: T[], key: K) => T[K][];
+
+	/**
+	 * Average values without creating Collection.
+	 * Zero allocation overhead.
+	 */
+	avg: <T>(items: T[], callback?: (value: T, index: number) => number) => number;
+
+	/**
+	 * Group items by key without creating Collection.
+	 * Zero allocation overhead.
+	 */
+	groupBy: <T, K extends keyof T>(items: T[], key: K) => Record<string, T[]>;
+
+	/**
+	 * Index items by key without creating Collection.
+	 * Zero allocation overhead.
+	 */
+	keyBy: <T, K extends keyof T>(items: T[], key: K) => Record<string, T>;
+
+	/**
+	 * Get unique items without creating Collection.
+	 * Zero allocation overhead.
+	 */
+	unique: <T, K extends keyof T>(items: T[], key?: K) => T[];
 }
 
 function collectImpl<T>(items?: CollectInput<T> | Collection<T, CollectionKind>): ProxiedCollection<T, CollectionKind> {
@@ -7509,6 +7551,62 @@ collectImpl.sum = <T>(items: T[], callback?: (value: T, index: number) => number
 		}
 	}
 	return total;
+};
+
+collectImpl.where = <T, K extends keyof T>(items: T[], key: K, value: T[K]): T[] => {
+	return arrayFilterByKey(items, key, value, '==');
+};
+
+collectImpl.pluck = <T, K extends keyof T>(items: T[], key: K): T[K][] => {
+	return arrayMapByKey(items, key);
+};
+
+collectImpl.avg = <T>(items: T[], callback?: (value: T, index: number) => number): number => {
+	if (items.length === 0) return 0;
+	let total = 0;
+	if (callback) {
+		for (let i = 0; i < items.length; i++) {
+			total += callback(items[i], i);
+		}
+	} else {
+		for (let i = 0; i < items.length; i++) {
+			const val = items[i];
+			if (typeof val === 'number') total += val;
+		}
+	}
+	return total / items.length;
+};
+
+collectImpl.groupBy = <T, K extends keyof T>(items: T[], key: K): Record<string, T[]> => {
+	const map = arrayGroupByKey(items, key);
+	return Object.fromEntries(map);
+};
+
+collectImpl.keyBy = <T, K extends keyof T>(items: T[], key: K): Record<string, T> => {
+	const result: Record<string, T> = {};
+	for (let i = 0; i < items.length; i++) {
+		const item = items[i];
+		const k = String(item[key]);
+		result[k] = item;
+	}
+	return result;
+};
+
+collectImpl.unique = <T, K extends keyof T>(items: T[], key?: K): T[] => {
+	if (!key) {
+		return [...new Set(items)];
+	}
+	const seen = new Set<unknown>();
+	const result: T[] = [];
+	for (let i = 0; i < items.length; i++) {
+		const item = items[i];
+		const k = item[key];
+		if (!seen.has(k)) {
+			seen.add(k);
+			result.push(item);
+		}
+	}
+	return result;
 };
 
 export const collect: CollectFunction = collectImpl as CollectFunction;

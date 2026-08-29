@@ -10,6 +10,7 @@
  */
 
 import { bench, describe } from 'vitest';
+import { STABLE_BENCH } from './bench-options.js';
 
 // Generate test data at different scales
 const generate = (n: number) =>
@@ -35,34 +36,34 @@ const categories = new Set(['cat-0', 'cat-1', 'cat-2', 'cat-3', 'cat-4']);
 describe('sum @ 1K', () => {
 	bench('native reduce', () => {
 		data1K.reduce((acc, x) => acc + x.value, 0);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		let total = 0;
 		for (let i = 0; i < data1K.length; i++) total += data1K[i].value;
 		return total;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('sum @ 10K', () => {
 	bench('native reduce', () => {
 		data10K.reduce((acc, x) => acc + x.value, 0);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		let total = 0;
 		for (let i = 0; i < data10K.length; i++) total += data10K[i].value;
 		return total;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('sum @ 100K', () => {
 	bench('native reduce', () => {
 		data100K.reduce((acc, x) => acc + x.value, 0);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		let total = 0;
 		for (let i = 0; i < data100K.length; i++) total += data100K[i].value;
 		return total;
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -72,33 +73,33 @@ describe('sum @ 100K', () => {
 describe('filter (simple) @ 10K', () => {
 	bench('native filter', () => {
 		data10K.filter((x) => x.value > 50);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: typeof data10K = [];
 		for (let i = 0; i < data10K.length; i++) {
 			if (data10K[i].value > 50) result.push(data10K[i]);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('filter (closure) @ 10K', () => {
 	bench('native filter', () => {
 		data10K.filter((x) => x.value > threshold);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: typeof data10K = [];
 		for (let i = 0; i < data10K.length; i++) {
 			if (data10K[i].value > threshold) result.push(data10K[i]);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('filter (complex closure) @ 10K', () => {
 	bench('native filter', () => {
 		data10K.filter((x) => categories.has(x.category) && x.value > threshold);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: typeof data10K = [];
 		for (let i = 0; i < data10K.length; i++) {
@@ -107,20 +108,20 @@ describe('filter (complex closure) @ 10K', () => {
 			}
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('filter @ 100K', () => {
 	bench('native filter', () => {
 		data100K.filter((x) => x.value > threshold);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: typeof data100K = [];
 		for (let i = 0; i < data100K.length; i++) {
 			if (data100K[i].value > threshold) result.push(data100K[i]);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -130,40 +131,40 @@ describe('filter @ 100K', () => {
 describe('map (simple) @ 10K', () => {
 	bench('native map', () => {
 		data10K.map((x) => x.value * 2);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: number[] = [];
 		for (let i = 0; i < data10K.length; i++) {
 			result.push(data10K[i].value * 2);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('map (object transform) @ 10K', () => {
 	bench('native map', () => {
 		data10K.map((x) => ({ id: x.id, doubled: x.value * 2 }));
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: { id: number; doubled: number }[] = [];
 		for (let i = 0; i < data10K.length; i++) {
 			result.push({ id: data10K[i].id, doubled: data10K[i].value * 2 });
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('map @ 100K', () => {
 	bench('native map', () => {
 		data100K.map((x) => x.value * 2);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: number[] = [];
 		for (let i = 0; i < data100K.length; i++) {
 			result.push(data100K[i].value * 2);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -178,7 +179,7 @@ describe('unique @ 10K', () => {
 			seen.add(x.category);
 			return true;
 		});
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const seen = new Set<string>();
 		const result: typeof data10K = [];
@@ -190,7 +191,7 @@ describe('unique @ 10K', () => {
 			}
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('unique @ 100K', () => {
@@ -201,7 +202,7 @@ describe('unique @ 100K', () => {
 			seen.add(x.category);
 			return true;
 		});
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const seen = new Set<string>();
 		const result: typeof data100K = [];
@@ -213,7 +214,7 @@ describe('unique @ 100K', () => {
 			}
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -230,7 +231,7 @@ describe('groupBy @ 10K', () => {
 			},
 			{} as Record<string, typeof data10K>,
 		);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: Record<string, typeof data10K> = {};
 		for (let i = 0; i < data10K.length; i++) {
@@ -239,7 +240,7 @@ describe('groupBy @ 10K', () => {
 			(result[cat] ??= []).push(data10K[i]);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('groupBy @ 100K', () => {
@@ -252,7 +253,7 @@ describe('groupBy @ 100K', () => {
 			},
 			{} as Record<string, typeof data100K>,
 		);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: Record<string, typeof data100K> = {};
 		for (let i = 0; i < data100K.length; i++) {
@@ -261,7 +262,7 @@ describe('groupBy @ 100K', () => {
 			(result[cat] ??= []).push(data100K[i]);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -271,27 +272,27 @@ describe('groupBy @ 100K', () => {
 describe('pluck @ 10K', () => {
 	bench('native map', () => {
 		data10K.map((x) => x.value);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: number[] = [];
 		for (let i = 0; i < data10K.length; i++) {
 			result.push(data10K[i].value);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('pluck @ 100K', () => {
 	bench('native map', () => {
 		data100K.map((x) => x.value);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		const result: number[] = [];
 		for (let i = 0; i < data100K.length; i++) {
 			result.push(data100K[i].value);
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -304,14 +305,14 @@ describe('chained (filter→map→sum) @ 10K', () => {
 			.filter((x) => x.active)
 			.map((x) => x.value)
 			.reduce((a, b) => a + b, 0);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		let total = 0;
 		for (let i = 0; i < data10K.length; i++) {
 			if (data10K[i].active) total += data10K[i].value;
 		}
 		return total;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('chained (filter→map→sum) @ 100K', () => {
@@ -320,12 +321,12 @@ describe('chained (filter→map→sum) @ 100K', () => {
 			.filter((x) => x.active)
 			.map((x) => x.value)
 			.reduce((a, b) => a + b, 0);
-	});
+	}, STABLE_BENCH);
 	bench('for loop', () => {
 		let total = 0;
 		for (let i = 0; i < data100K.length; i++) {
 			if (data100K[i].active) total += data100K[i].value;
 		}
 		return total;
-	});
+	}, STABLE_BENCH);
 });

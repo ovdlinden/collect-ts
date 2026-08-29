@@ -21,15 +21,31 @@ export function arrayFilterByKey<T, K extends keyof T>(
 	const result: T[] = [];
 	const len = items.length;
 
+	// Fast paths for common operators - avoid switch in hot loop
+	if (operator === '==' || operator === '=') {
+		for (let i = 0; i < len; i++) {
+			const item = items[i];
+			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
+			if (item[key] == value) result.push(item);
+		}
+		return result;
+	}
+
+	if (operator === '===') {
+		for (let i = 0; i < len; i++) {
+			const item = items[i];
+			if (item[key] === value) result.push(item);
+		}
+		return result;
+	}
+
+	// Slow path for other operators
 	for (let i = 0; i < len; i++) {
 		const item = items[i];
 		const itemValue = item[key];
 		let matches = false;
 
 		switch (operator) {
-			case '===':
-				matches = itemValue === value;
-				break;
 			case '!=':
 			case '<>':
 				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
@@ -48,7 +64,6 @@ export function arrayFilterByKey<T, K extends keyof T>(
 				matches = (itemValue as number) <= (value as number);
 				break;
 			default:
-				// '=', '==', or unknown operators default to loose equality
 				// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
 				matches = itemValue == value;
 				break;

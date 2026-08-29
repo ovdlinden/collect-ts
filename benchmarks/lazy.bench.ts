@@ -13,6 +13,7 @@
  */
 import { bench, describe } from 'vitest';
 import { collect } from '../src/index.js';
+import { STABLE_BENCH } from './bench-options.js';
 
 // =============================================================================
 // Native Generator Utilities — fair comparison against LazyCollection
@@ -97,21 +98,21 @@ describe('Early termination: take(10) from 1M items', () => {
 			}
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Array', () => {
 		large
 			.filter((x) => x.value > 0.5)
 			.map((x) => x.value * 2)
 			.slice(0, 10);
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Generator', () => {
 		const filtered = nativeGeneratorFilter(large, (x) => x.value > 0.5);
 		const mapped = nativeGeneratorMap(filtered, (x) => x.value * 2);
 		const taken = nativeGeneratorTake(mapped, 10);
 		return nativeGeneratorToArray(taken);
-	});
+	}, STABLE_BENCH);
 
 	bench('Collection (eager)', () => {
 		collect(large)
@@ -119,7 +120,7 @@ describe('Early termination: take(10) from 1M items', () => {
 			.map((x) => x.value * 2)
 			.take(10)
 			.all();
-	});
+	}, STABLE_BENCH);
 
 	bench('LazyCollection', () => {
 		collect(large)
@@ -128,7 +129,7 @@ describe('Early termination: take(10) from 1M items', () => {
 			.map((x) => x.value * 2)
 			.take(10)
 			.all();
-	});
+	}, STABLE_BENCH);
 });
 
 // =============================================================================
@@ -141,31 +142,31 @@ describe('First match: first() with condition on 1M items', () => {
 			if (large[i].id === 500) return large[i];
 		}
 		return undefined;
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Array.find', () => {
 		large.find((x) => x.id === 500);
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Generator', () => {
 		return nativeGeneratorFirst(large, (x) => x.id === 500);
-	});
+	}, STABLE_BENCH);
 
 	bench('Collection (eager)', () => {
 		collect(large).first((x) => x.id === 500);
-	});
+	}, STABLE_BENCH);
 
 	bench('LazyCollection', () => {
 		collect(large).lazy().first((x) => x.id === 500);
-	});
+	}, STABLE_BENCH);
 
 	bench('Collection.lazyFirst', () => {
 		collect(large).lazyFirst((x) => x.id === 500);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect.first (static)', () => {
 		collect.first(large, (x) => x.id === 500);
-	});
+	}, STABLE_BENCH);
 });
 
 // =============================================================================
@@ -185,7 +186,7 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 			}
 		}
 		return sum;
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Array', () => {
 		small
@@ -193,14 +194,14 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 			.map((x) => x.value * 2)
 			.filter((x) => x > 1)
 			.reduce((a, b) => a + b, 0);
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Generator', () => {
 		const step1 = nativeGeneratorFilter(small, (x) => x.value > 0.2);
 		const step2 = nativeGeneratorMap(step1, (x) => x.value * 2);
 		const step3 = nativeGeneratorFilter(step2, (x) => x > 1);
 		return nativeGeneratorSum(step3);
-	});
+	}, STABLE_BENCH);
 
 	bench('Collection (eager)', () => {
 		collect(small)
@@ -208,7 +209,7 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 			.map((x) => x.value * 2)
 			.filter((x) => x > 1)
 			.sum();
-	});
+	}, STABLE_BENCH);
 
 	bench('LazyCollection', () => {
 		collect(small)
@@ -217,7 +218,7 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 			.map((x) => x.value * 2)
 			.filter((x) => x > 1)
 			.sum();
-	});
+	}, STABLE_BENCH);
 });
 
 // =============================================================================
@@ -231,33 +232,33 @@ describe('Full processing: map all 100K items (no early exit)', () => {
 			result[i] = small[i].value * 2;
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Array.map', () => {
 		small.map((x) => x.value * 2);
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Generator', () => {
 		const mapped = nativeGeneratorMap(small, (x) => x.value * 2);
 		return nativeGeneratorToArray(mapped);
-	});
+	}, STABLE_BENCH);
 
 	bench('Collection (eager)', () => {
 		collect(small)
 			.map((x) => x.value * 2)
 			.all();
-	});
+	}, STABLE_BENCH);
 
 	bench('LazyCollection', () => {
 		collect(small)
 			.lazy()
 			.map((x) => x.value * 2)
 			.all();
-	});
+	}, STABLE_BENCH);
 
 	bench('collect.map (static)', () => {
 		collect.map(small, (x) => x.value * 2);
-	});
+	}, STABLE_BENCH);
 });
 
 // =============================================================================
@@ -270,27 +271,27 @@ describe('Range: sum of first 10 from range(1, 1_000_000)', () => {
 			sum += i;
 		}
 		return sum;
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Array.from + slice', () => {
 		Array.from({ length: 1_000_000 }, (_, i) => i + 1)
 			.slice(0, 10)
 			.reduce((a, b) => a + b, 0);
-	});
+	}, STABLE_BENCH);
 
 	bench('Native Generator', () => {
 		const range = nativeGeneratorRange(1, 1_000_000);
 		const taken = nativeGeneratorTake(range, 10);
 		return nativeGeneratorSum(taken);
-	});
+	}, STABLE_BENCH);
 
 	bench('Collection (eager)', () => {
 		collect(Array.from({ length: 1_000_000 }, (_, i) => i + 1))
 			.take(10)
 			.sum();
-	});
+	}, STABLE_BENCH);
 
 	bench('LazyCollection.range', () => {
 		collect.lazy.range(1, 1_000_000).take(10).sum();
-	});
+	}, STABLE_BENCH);
 });

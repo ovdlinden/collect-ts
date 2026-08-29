@@ -47,11 +47,12 @@
 		"unused": "knip",
 		"size": "size-limit",
 		"size:check": "size-limit",
-		"bench": "vitest bench",
-		"bench:lazy": "vitest bench benchmarks/lazy.bench.ts",
-		"bench:async": "vitest bench benchmarks/async-lazy.bench.ts",
+		"bench": "node --expose-gc --predictable ./node_modules/vitest/vitest.mjs bench",
+		"bench:lazy": "node --expose-gc --predictable ./node_modules/vitest/vitest.mjs bench benchmarks/lazy.bench.ts",
+		"bench:async": "node --expose-gc --predictable ./node_modules/vitest/vitest.mjs bench benchmarks/async-lazy.bench.ts",
 		"bench:ci": "tsx scripts/benchmark-ci.ts",
-		"bench:docs": "tsx docs/scripts/generate-benchmark-data.ts"
+		"bench:docs": "tsx docs/scripts/generate-benchmark-data.ts",
+		"bench:check": "tsx scripts/check-benchmark-freshness.ts"
 	},
 	"keywords": [
 		"laravel",

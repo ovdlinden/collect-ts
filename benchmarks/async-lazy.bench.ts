@@ -7,6 +7,7 @@
  */
 import { bench, describe } from 'vitest';
 import { collect } from '../src/index.js';
+import { STABLE_BENCH } from './bench-options.js';
 
 async function* paginatedAPI(pages: number, pageSize: number) {
 	for (let page = 0; page < pages; page++) {
@@ -31,7 +32,7 @@ describe('Async early termination: take(10) from paginated stream', () => {
 			.filter((x) => x.value > 0.5)
 			.take(10)
 			.all();
-	});
+	}, STABLE_BENCH);
 
 	bench('manual async iteration', async () => {
 		const result: { id: number; value: number }[] = [];
@@ -42,7 +43,7 @@ describe('Async early termination: take(10) from paginated stream', () => {
 			}
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('Async first match: first() on async generator', () => {
@@ -51,14 +52,14 @@ describe('Async first match: first() on async generator', () => {
 			.async(asyncNumbers(100_000))
 			.filter((x) => x > 500)
 			.first();
-	});
+	}, STABLE_BENCH);
 
 	bench('manual async iteration', async () => {
 		for await (const x of asyncNumbers(100_000)) {
 			if (x > 500) return x;
 		}
 		return undefined;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('Async chained: filter → map → take on async stream', () => {
@@ -69,7 +70,7 @@ describe('Async chained: filter → map → take on async stream', () => {
 			.map((x) => x * 2)
 			.take(100)
 			.all();
-	});
+	}, STABLE_BENCH);
 
 	bench('manual async iteration', async () => {
 		const result: number[] = [];
@@ -80,13 +81,13 @@ describe('Async chained: filter → map → take on async stream', () => {
 			}
 		}
 		return result;
-	});
+	}, STABLE_BENCH);
 });
 
 describe('Async range: collect.async.range vs manual', () => {
 	bench('collect.async.range', async () => {
 		await collect.async.range(1, 1_000_000).take(10).sum();
-	});
+	}, STABLE_BENCH);
 
 	bench('manual async range', async () => {
 		let sum = 0;
@@ -96,5 +97,5 @@ describe('Async range: collect.async.range vs manual', () => {
 			count++;
 		}
 		return sum;
-	});
+	}, STABLE_BENCH);
 });

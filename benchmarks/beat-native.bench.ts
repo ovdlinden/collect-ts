@@ -33,6 +33,7 @@
 
 import { bench, describe } from 'vitest';
 import { collect } from '../src/index.js';
+import { STABLE_BENCH } from './bench-options.js';
 
 const generate = (n: number) =>
 	Array.from({ length: n }, (_, i) => ({
@@ -51,16 +52,16 @@ const data10K = generate(10_000);
 describe('sum: callback-free path', () => {
 	bench('native: reduce with callback', () => {
 		data10K.reduce((a, x) => a + x.value, 0);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: sum("value") - no callback', () => {
 		collect(data10K).sum('value');
-	});
+	}, STABLE_BENCH);
 
 	// For comparison: what if we had to use a callback?
 	bench('collect: sum(x => x.value) - with callback', () => {
 		collect(data10K).sum((x) => x.value);
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -70,15 +71,15 @@ describe('sum: callback-free path', () => {
 describe('find: callback-free path', () => {
 	bench('native: find with callback', () => {
 		data10K.find((x) => x.id === 5000);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: firstWhere("id", 5000) - no callback', () => {
 		collect(data10K).firstWhere('id', 5000);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: first(x => x.id === 5000) - with callback', () => {
 		collect(data10K).first((x) => x.id === 5000);
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -95,11 +96,11 @@ describe('groupBy: callback-free path', () => {
 			},
 			{} as Record<string, typeof data10K>,
 		);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: groupBy("category") - no callback', () => {
 		collect(data10K).groupBy('category').all();
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -109,17 +110,17 @@ describe('groupBy: callback-free path', () => {
 describe('where: optimized equality check', () => {
 	bench('native: filter with callback', () => {
 		data10K.filter((x) => x.active === true);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: where("active", true) - fast path', () => {
 		collect(data10K).where('active', true).toArray();
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: filter callback', () => {
 		collect(data10K)
 			.filter((x) => x.active === true)
 			.toArray();
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -129,11 +130,11 @@ describe('where: optimized equality check', () => {
 describe('pluck: direct property access', () => {
 	bench('native: map with callback', () => {
 		data10K.map((x) => x.value);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: pluck("value") - direct access', () => {
 		collect(data10K).pluck('value').toArray();
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -148,11 +149,11 @@ describe('unique: callback-free dedup', () => {
 			seen.add(x.category);
 			return true;
 		});
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: unique("category") - no callback', () => {
 		collect(data10K).unique('category').toArray();
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -162,19 +163,19 @@ describe('unique: callback-free dedup', () => {
 describe('min/max: callback-free path', () => {
 	bench('native: reduce with callback (min)', () => {
 		data10K.reduce((min, x) => (x.value < min ? x.value : min), Number.POSITIVE_INFINITY);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: min("value")', () => {
 		collect(data10K).min('value');
-	});
+	}, STABLE_BENCH);
 
 	bench('native: reduce with callback (max)', () => {
 		data10K.reduce((max, x) => (x.value > max ? x.value : max), Number.NEGATIVE_INFINITY);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: max("value")', () => {
 		collect(data10K).max('value');
-	});
+	}, STABLE_BENCH);
 });
 
 // ============================================================================
@@ -184,11 +185,11 @@ describe('min/max: callback-free path', () => {
 describe('chained: where → sum', () => {
 	bench('native: filter + reduce', () => {
 		data10K.filter((x) => x.active).reduce((a, x) => a + x.value, 0);
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: where → sum', () => {
 		collect(data10K).where('active', true).sum('value');
-	});
+	}, STABLE_BENCH);
 });
 
 describe('chained: groupBy → map → sum', () => {
@@ -205,7 +206,7 @@ describe('chained: groupBy → map → sum', () => {
 			category: k,
 			total: items.reduce((a, x) => a + x.value, 0),
 		}));
-	});
+	}, STABLE_BENCH);
 
 	bench('collect: groupBy → map → sum', () => {
 		collect(data10K)
@@ -215,5 +216,5 @@ describe('chained: groupBy → map → sum', () => {
 				total: items.sum('value'),
 			}))
 			.all();
-	});
+	}, STABLE_BENCH);
 });

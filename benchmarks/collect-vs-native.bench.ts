@@ -8,6 +8,7 @@
 
 import { bench, describe } from 'vitest';
 import { collect } from '../src/index.js';
+import { STABLE_BENCH } from './bench-options.js';
 
 const generate = (n: number) =>
 	Array.from({ length: n }, (_, i) => ({
@@ -33,51 +34,51 @@ for (const size of sizes) {
 	describe(`sum @ ${size}`, () => {
 		bench('native: items.reduce((a,x) => a + x.value, 0)', () => {
 			data.reduce((a, x) => a + x.value, 0);
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).sum("value")', () => {
 			collect(data).sum('value');
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`avg @ ${size}`, () => {
 		bench('native: items.reduce() / items.length', () => {
 			data.reduce((a, x) => a + x.value, 0) / data.length;
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).avg("value")', () => {
 			collect(data).avg('value');
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`filter @ ${size}`, () => {
 		bench('native: items.filter(x => x.active)', () => {
 			data.filter((x) => x.active);
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).where("active", true)', () => {
 			collect(data).where('active', true).all();
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`pluck @ ${size}`, () => {
 		bench('native: items.map(x => x.value)', () => {
 			data.map((x) => x.value);
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).pluck("value")', () => {
 			collect(data).pluck('value').all();
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`unique @ ${size}`, () => {
 		bench('native: [...new Set(items.map(x => x.category))]', () => {
 			[...new Set(data.map((x) => x.category))];
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).unique("category")', () => {
 			collect(data).unique('category').all();
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`groupBy @ ${size}`, () => {
@@ -90,21 +91,21 @@ for (const size of sizes) {
 				},
 				{} as Record<string, typeof data>,
 			);
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).groupBy("category")', () => {
 			collect(data).groupBy('category').all();
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`find @ ${size}`, () => {
 		bench(`native: items.find(x => x.id === ${midId})`, () => {
 			data.find((x) => x.id === midId);
-		});
+		}, STABLE_BENCH);
 
 		bench(`collect-ts: collect(items).firstWhere("id", ${midId})`, () => {
 			collect(data).firstWhere('id', midId);
-		});
+		}, STABLE_BENCH);
 	});
 
 	describe(`chained: filter → pluck → sum @ ${size}`, () => {
@@ -113,10 +114,10 @@ for (const size of sizes) {
 				.filter((x) => x.active)
 				.map((x) => x.value)
 				.reduce((a, b) => a + b, 0);
-		});
+		}, STABLE_BENCH);
 
 		bench('collect-ts: collect(items).where().pluck().sum()', () => {
 			collect(data).where('active', true).pluck('value').sum();
-		});
+		}, STABLE_BENCH);
 	});
 }
