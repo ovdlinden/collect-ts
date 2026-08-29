@@ -16,6 +16,13 @@ interface ExampleBlock {
   code: string;
 }
 
+interface MethodSearchData {
+  name: string;
+  category: string;
+  description: string;
+  signature: string;
+}
+
 interface SeeRef {
   method: string;
   description: string;
@@ -228,6 +235,66 @@ function parseCategoryDescriptions(source: string): CategoryDescription[] {
   }
 
   return descriptions;
+}
+
+function stripGenerics(str: string): string {
+  let result = '';
+  let depth = 0;
+  for (const char of str) {
+    if (char === '<') depth++;
+    else if (char === '>') depth--;
+    else if (depth === 0) result += char;
+  }
+  return result;
+}
+
+function splitTopLevel(str: string, delimiter: string): string[] {
+  const parts: string[] = [];
+  let current = '';
+  let depth = 0;
+
+  for (const char of str) {
+    if (char === '<' || char === '(' || char === '[' || char === '{') depth++;
+    else if (char === '>' || char === ')' || char === ']' || char === '}') depth--;
+    else if (char === delimiter && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current.trim()) parts.push(current.trim());
+
+  return parts;
+}
+
+function simplifyParams(params: string): string {
+  if (!params.trim()) return '';
+
+  return collect(splitTopLevel(params, ','))
+    .map((p) => {
+      const match = p.trim().match(/^(\w+)(\?)?/);
+      return match ? match[1] + (match[2] || '') : p;
+    })
+    .join(', ');
+}
+
+function extractSignaturesFromSource(source: string): Map<string, string> {
+  const signatures = new Map<string, string>();
+
+  for (const line of source.split('\n')) {
+    const match = line.match(/^\t(\w+)(?:<[^>]*>)?\(([^)]*)\)(?::\s*([^{;]+))?[{;]/);
+    if (!match) continue;
+
+    const [, name, params, returnType] = match;
+    if (name.startsWith('_') || signatures.has(name)) continue;
+
+    const simplifiedParams = simplifyParams(params);
+    const simplifiedReturn = stripGenerics(returnType?.trim() || 'void').replace(/\s+/g, ' ').trim();
+    signatures.set(name, `${name}(${simplifiedParams}): ${simplifiedReturn}`);
+  }
+
+  return signatures;
 }
 
 function parseJSDoc(source: string): MethodDoc[] {
@@ -457,11 +524,20 @@ function generateGuidePage(
 
 // Main
 const sourceCode = fs.readFileSync('src/Collection.ts', 'utf-8');
+const lazySourceCode = fs.readFileSync('src/LazyCollection.ts', 'utf-8');
+
 const methods = parseJSDoc(sourceCode);
 const categoryDescriptions = parseCategoryDescriptions(sourceCode);
 
+// Extract signatures from both source files
+const signatures = new Map([
+  ...extractSignaturesFromSource(sourceCode),
+  ...extractSignaturesFromSource(lazySourceCode),
+]);
+
 console.log(`Found ${methods.length} documented methods`);
 console.log(`Found ${categoryDescriptions.length} category descriptions`);
+console.log(`Extracted ${signatures.size} method signatures`);
 
 // Build method → filename lookup for cross-page links
 const methodToFile = new Map<string, string>();
@@ -490,5 +566,17 @@ for (const [filename, fileMethods] of byFile) {
   console.log(`Writing ${outPath} (${fileMethods.length} methods)`);
   fs.writeFileSync(outPath, content);
 }
+
+// Generate methods.json for search index
+const searchData: MethodSearchData[] = methods.map((m) => ({
+  name: m.name,
+  category: CATEGORY_MAP[m.category] || 'other',
+  description: m.description.slice(0, 500),
+  signature: signatures.get(m.name) || `${m.name}()`,
+}));
+
+const methodsJsonPath = 'docs/.vitepress/theme/data/methods.json';
+fs.writeFileSync(methodsJsonPath, JSON.stringify(searchData, null, '\t'));
+console.log(`Written ${methodsJsonPath} (${searchData.length} methods)`);
 
 console.log('Done!');
