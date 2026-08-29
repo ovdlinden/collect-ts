@@ -2,8 +2,7 @@
  * @see https://laravel.com/docs/collections
  */
 
-export const VERSION = '0.4.0' as const;
-export const LARAVEL_COLLECTION_VERSION = '12.43' as const;
+export { VERSION, LARAVEL_COLLECTION_VERSION } from './version.js';
 
 export type {
 	Arrayable,

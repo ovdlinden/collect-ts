@@ -38,19 +38,27 @@ collect([1, 2, 3, 4, 5])
 // → 24
 ```
 
+## Common Operations
+
+| Task | Method |
+|------|--------|
+| Filter items | [`where()`](/collections/filtering#where), [`filter()`](/collections/filtering#filter) |
+| Extract values | [`pluck()`](/collections/transforming#pluck) |
+| Group data | [`groupBy()`](/collections/grouping#groupby) |
+| Get first match | [`first()`](/collections/finding#first), [`firstWhere()`](/collections/finding#firstwhere) |
+| Aggregate | [`sum()`](/collections/aggregating#sum), [`avg()`](/collections/aggregating#avg) |
+
 ## LazyCollection for Large Datasets
 
 Process millions of items without loading everything into memory:
 
 ```typescript
-import { lazy } from 'collect-ts'
-
-lazy(hugeDataset)
-  .filter(item => item.active)
-  .map(item => item.id)
-  .take(100)
-  .all()
-// → [first 100 active item IDs]
+collect(hugeDataset)
+    .lazy()
+    .filter(item => item.active)
+    .take(100)
+    .all()
+// → [first 100 active items]
 ```
 
 ## What's next

@@ -52,7 +52,6 @@ const collectionsSidebar = [
 	{ text: 'Collections', link: '/collections/' },
 	{
 		text: 'Guides',
-		collapsed: true,
 		items: [
 			{ text: 'Creating', link: '/collections/creating' },
 			{ text: 'Finding', link: '/collections/finding' },

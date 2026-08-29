@@ -3808,7 +3808,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	shift(count: number): Collection<T>;
 	shift(count = 1): T | Collection<T> | null {
 		if (count < 0) {
-			throw new InvalidArgumentException('Number of shifted items may not be less than zero.');
+			throw new InvalidArgumentException('Number of shifted items may not be less than zero.', 'shift');
 		}
 
 		const keys = Object.keys(this.items);
@@ -5219,11 +5219,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		const count = items.count();
 
 		if (count === 0) {
-			throw new ItemNotFoundException();
+			throw new ItemNotFoundException('No matching items.', 'sole');
 		}
 
 		if (count > 1) {
-			throw new MultipleItemsFoundException(count);
+			throw new MultipleItemsFoundException(count, 'sole');
 		}
 
 		// biome-ignore lint/style/noNonNullAssertion: count === 1
@@ -5269,7 +5269,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		const item = this.first(filter, (() => placeholder) as unknown as () => T);
 
 		if (item === (placeholder as unknown)) {
-			throw new ItemNotFoundException();
+			throw new ItemNotFoundException('No matching element found.', 'firstOrFail');
 		}
 
 		return item as T;
@@ -5433,7 +5433,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	random(number?: number | ((collection: Collection<T>) => number), preserveKeys = false): T | Collection<T> {
 		const values = this.#arrayItems ?? Object.values(this.items);
 		if (values.length === 0) {
-			throw new InvalidArgumentException('Cannot get random item from empty collection.');
+			throw new InvalidArgumentException('Cannot get random item from empty collection.', 'random');
 		}
 
 		if (number === undefined) {
@@ -5445,6 +5445,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		if (count > values.length) {
 			throw new InvalidArgumentException(
 				`You requested ${count} items, but there are only ${values.length} items available.`,
+				'random',
 			);
 		}
 
@@ -5491,10 +5492,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 */
 	sliding(size = 2, step = 1): Collection<Collection<T>> {
 		if (size < 1) {
-			throw new InvalidArgumentException('Size value must be at least 1.');
+			throw new InvalidArgumentException('Size value must be at least 1.', 'sliding');
 		}
 		if (step < 1) {
-			throw new InvalidArgumentException('Step value must be at least 1.');
+			throw new InvalidArgumentException('Step value must be at least 1.', 'sliding');
 		}
 
 		const entries = Object.entries(this.items);

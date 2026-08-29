@@ -1,10 +1,11 @@
 export class MultipleItemsFoundException extends Error {
-	public count: number;
-
-	constructor(count: number) {
-		super(`${count} items were found.`);
+	constructor(
+		public readonly count: number,
+		public readonly method?: string,
+	) {
+		const message = `${count} items were found.`;
+		super(method ? `${method}(): ${message}` : message);
 		this.name = 'MultipleItemsFoundException';
-		this.count = count;
 	}
 
 	getCount(): number {
