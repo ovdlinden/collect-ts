@@ -156,51 +156,75 @@ const docsDir = join(import.meta.dirname, '../docs');
 const srcDir = join(import.meta.dirname, '../src');
 const outputPath = join(docsDir, '.vitepress/theme/data/search-index.json');
 
+// Strip angle-bracket generics using bracket-depth tracking (no fragile regex)
+function stripGenerics(str: string): string {
+	let result = '';
+	let depth = 0;
+	for (const char of str) {
+		if (char === '<') depth++;
+		else if (char === '>') depth--;
+		else if (depth === 0) result += char;
+	}
+	return result;
+}
+
 // Extract method signatures from TypeScript source files
 function extractSignatures(): Map<string, string> {
-	const signatures = new Map<string, string>();
 	const files = ['Collection.ts', 'LazyCollection.ts'];
 
-	for (const file of files) {
-		const content = readFileSync(join(srcDir, file), 'utf-8');
-		const lines = content.split('\n');
+	return new Map(
+		collect(files)
+			.flatMap((file) => extractSignaturesFromFile(join(srcDir, file)))
+			.all(),
+	);
+}
 
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			// Match method declarations (non-implementation overloads or single declarations)
-			// Pattern: methodName(params): ReturnType;
-			// or: methodName<T>(params): ReturnType {
-			const match = line.match(/^\t(\w+)(?:<[^>]+>)?\(([^)]*)\)(?::\s*([^{;]+))?[{;]/);
-			if (match) {
-				const [, name, params, returnType] = match;
-				// Skip internal/private methods and already captured
-				if (name.startsWith('_') || signatures.has(name)) continue;
-				// Skip if it's an implementation (has { at end) and we already have the signature
-				if (line.endsWith('{') && signatures.has(name)) continue;
+function extractSignaturesFromFile(filePath: string): [string, string][] {
+	const content = readFileSync(filePath, 'utf-8');
 
-				// Simplify the signature
-				const simplifiedParams = simplifyParams(params);
-				const simplifiedReturn = simplifyReturn(returnType?.trim() || 'void');
-				signatures.set(name, `${name}(${simplifiedParams}): ${simplifiedReturn}`);
-			}
-		}
-	}
+	return collect(content.split('\n'))
+		.map((line) => {
+			// Match method declarations: methodName(params): ReturnType; or methodName<T>(params): ReturnType {
+			const match = line.match(/^\t(\w+)(?:<[^>]*>)?\(([^)]*)\)(?::\s*([^{;]+))?[{;]/);
+			if (!match) return null;
 
-	return signatures;
+			const [, name, params, returnType] = match;
+			if (name.startsWith('_')) return null;
+
+			return { name, params, returnType: returnType?.trim() || 'void' };
+		})
+		.filter((m): m is NonNullable<typeof m> => m !== null)
+		.unique('name') // Keep first overload only
+		.map((m) => {
+			const simplifiedParams = simplifyParams(m.params);
+			const simplifiedReturn = stripGenerics(m.returnType).replace(/\s+/g, ' ').trim();
+			return [m.name, `${m.name}(${simplifiedParams}): ${simplifiedReturn}`] as [string, string];
+		})
+		.all();
 }
 
 function simplifyParams(params: string): string {
 	if (!params.trim()) return '';
 
-	// Split by top-level commas (not inside angle brackets or parens)
+	return collect(splitTopLevel(params, ','))
+		.map((p) => {
+			// Extract just the parameter name and optional marker
+			const match = p.trim().match(/^(\w+)(\?)?/);
+			return match ? match[1] + (match[2] || '') : p;
+		})
+		.join(', ');
+}
+
+// Split string by delimiter, but only at top level (not inside brackets)
+function splitTopLevel(str: string, delimiter: string): string[] {
 	const parts: string[] = [];
 	let current = '';
 	let depth = 0;
 
-	for (const char of params) {
+	for (const char of str) {
 		if (char === '<' || char === '(' || char === '[' || char === '{') depth++;
 		else if (char === '>' || char === ')' || char === ']' || char === '}') depth--;
-		else if (char === ',' && depth === 0) {
+		else if (char === delimiter && depth === 0) {
 			parts.push(current.trim());
 			current = '';
 			continue;
@@ -209,23 +233,7 @@ function simplifyParams(params: string): string {
 	}
 	if (current.trim()) parts.push(current.trim());
 
-	// Simplify each parameter
-	return parts
-		.map((p) => {
-			// Extract just the name and optional marker
-			const nameMatch = p.match(/^(\w+)(\?)?/);
-			if (!nameMatch) return p;
-			return nameMatch[1] + (nameMatch[2] || '');
-		})
-		.join(', ');
-}
-
-function simplifyReturn(ret: string): string {
-	// Remove generic parameters for cleaner display
-	return ret
-		.replace(/<[^>]+>/g, '')
-		.replace(/\s+/g, ' ')
-		.trim();
+	return parts;
 }
 
 function extractMarkdownSections(content: string, filePath: string): SearchEntry[] {

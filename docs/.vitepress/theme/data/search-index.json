@@ -277,7 +277,7 @@
 		"16": [
 			2,
 			49,
-			4,
+			3,
 			2
 		],
 		"17": [
@@ -688,7 +688,7 @@
 		"92": [
 			2,
 			39,
-			4,
+			3,
 			2
 		],
 		"93": [
@@ -795,7 +795,7 @@
 		"111": [
 			2,
 			26,
-			4,
+			3,
 			4
 		],
 		"112": [
@@ -1156,7 +1156,7 @@
 	"averageFieldLength": [
 		2.0055865921787723,
 		44.78770949720671,
-		3.5185905557554884,
+		3.4863381942398903,
 		2.275839434471697
 	],
 	"storedFields": {
@@ -1322,7 +1322,7 @@
 				"toArray()"
 			],
 			"text": " The toArray method converts the collection into a plain array. For associative collections keyed objects, it returns a record instead. Nested collections are also recursively converted to arrays/records. collect1, 2, 3 .toArray //  1, 2, 3 For an associative collection: collect{ a: 1, b: 2 } .toArray //  { a: 1, b: 2 } For nested collections: collectcollect1, 2, collect3, 4 .toArray //  1, 2, 3, 4 For Get raw items without recursion, use all. For Get values as new collection, use values.",
-			"signature": "toArray(): T[] | Record"
+			"signature": "toArray(): T[]"
 		},
 		"17": {
 			"id": "/collections/aggregating#tojson",
@@ -1472,7 +1472,7 @@
 				"zip()"
 			],
 			"text": " The zip method merges together the values of the given array with the values of the original collection at their corresponding index. This is useful for pairing related data from multiple sources, such as names with scores or dates with values. To pair names with scores: collect'Alice', 'Bob', 'Charlie' .zip85, 92, 78 //  'Alice', 85, 'Bob', 92, 'Charlie', 78 You may pass multiple arrays: collect1, 2, 3 .zip'a', 'b', 'c', true, false, true //  1, 'a', true, 2, 'b', false, 3, 'c', true For Use v",
-			"signature": "zip(...arrays: U[][]): Collection>"
+			"signature": "zip(...arrays: U[][]): Collection"
 		},
 		"33": {
 			"id": "/collections/combining#diff",
@@ -1848,7 +1848,7 @@
 				"skip()"
 			],
 			"text": " The skip method returns a new collection without the first N items. collect1, 2, 3, 4, 5 .skip2 //  3, 4, 5 For Take the first N items, use take. For Skip and take in one call, use slice.",
-			"signature": "skip(count): Collection"
+			"signature": "skip(count): ProxiedLazyCollection"
 		},
 		"72": {
 			"id": "/collections/filtering#skipuntil",
@@ -1876,7 +1876,7 @@
 				"take()"
 			],
 			"text": " The take method returns a new collection with the specified number of items. You may pass a negative integer to take that many items from the end of the collection. collect1, 2, 3, 4, 5 .take3 //  1, 2, 3 With negative values, it takes from the end: collect1, 2, 3, 4, 5 .take-2 //  4, 5 For Skip the first N items, use skip. For Skip and take in one call, use slice.",
-			"signature": "take(limit): Collection"
+			"signature": "take(limit): ProxiedLazyCollection"
 		},
 		"75": {
 			"id": "/collections/filtering#takeuntil",
@@ -2053,7 +2053,7 @@
 				"all()"
 			],
 			"text": " The all method returns the underlying array or object represented by the collection. Array-backed collections return an array, while associative collections return a plain object. For an array collection: collect1, 2, 3.all //  1, 2, 3 For an associative collection: collect{ name: 'Taylor', role: 'admin' }.all //  { name: 'Taylor', role: 'admin' } For always getting an array, use toArray. For Static version, use unwrap.",
-			"signature": "all(): T[] | Record"
+			"signature": "all(): T[]"
 		},
 		"93": {
 			"id": "/collections/finding#get",
@@ -2233,7 +2233,7 @@
 				"chunk()"
 			],
 			"text": " Split the collection into chunks of the given size. collect1, 2, 3, 4, 5 .chunk2 // //   Collection 1, 2, //   Collection 3, 4, //   Collection 5, // For Split into N groups, use split. For Create overlapping windows, use sliding.",
-			"signature": "chunk(size, preserveKeys): Collection>"
+			"signature": "chunk(size): ProxiedLazyCollection"
 		},
 		"112": {
 			"id": "/collections/grouping#chunkwhile",
@@ -2252,7 +2252,7 @@
 				"split()"
 			],
 			"text": " The split method breaks a collection into the given number of groups, distributing extra items across earlier groups to balance sizes as evenly as possible. To split into three groups: collect1, 2, 3, 4, 5 .split3 // //   1, 2, //   3, 4, //   5, // For Fill non-terminal groups completely first, use splitIn. For Split into fixed-size chunks instead, use chunk.",
-			"signature": "split(numberOfGroups): Collection>"
+			"signature": "split(numberOfGroups): Collection"
 		},
 		"114": {
 			"id": "/collections/grouping#splitin",
@@ -2262,7 +2262,7 @@
 				"splitIn()"
 			],
 			"text": " The splitIn method breaks a collection into the given number of groups, filling non-terminal groups completely before allocating the remainder to the final group. Unlike split, which balances group sizes, splitIn creates full-sized chunks until items run out. To split into three groups: collect1, 2, 3, 4, 5, 6, 7 .splitIn3 // //   1, 2, 3, //   4, 5, 6, //   7, // For Distribute items evenly across groups, use split. For Split into fixed-size chunks, use chunk.",
-			"signature": "splitIn(numberOfGroups): Collection>"
+			"signature": "splitIn(numberOfGroups): Collection"
 		},
 		"115": {
 			"id": "/collections/grouping#countby",
@@ -2282,7 +2282,7 @@
 				"groupBy()"
 			],
 			"text": " Group items by a key or callback result. By property: collect { name: 'Taylor', role: 'admin' }, { name: 'Abigail', role: 'editor' }, { name: 'James', role: 'editor' }, .groupBy'role' //  { //     admin: { name: 'Taylor', role: 'admin' }, //     editor: //       { name: 'Abigail', role: 'editor' }, //       { name: 'James', role: 'editor' }, //     , //   } You may also pass a callback: collect { id: 1, total: 150 }, { id: 2, total: 50 }, { id: 3, total: 200 }, .groupByo => o.total > 100 ? 'lar",
-			"signature": "groupBy(groupBy, preserveKeys): Collection>"
+			"signature": "groupBy(groupBy, preserveKeys): Collection"
 		},
 		"117": {
 			"id": "/collections/grouping#keyby",
@@ -2311,7 +2311,7 @@
 				"sliding()"
 			],
 			"text": " The sliding method returns a new collection of chunks representing a \"sliding window\" view of the items. Each chunk contains size consecutive items, and the window advances by step items between chunks. For pairs of consecutive items: collect1, 2, 3, 4, 5 .sliding2 //  1, 2, 2, 3, 3, 4, 4, 5 For triplets with a step of 2: collect1, 2, 3, 4, 5, 6 .sliding3, 2 //  1, 2, 3, 3, 4, 5 For Non-overlapping fixed-size chunks, use chunk. For Conditional chunking, use chunkWhile.",
-			"signature": "sliding(size, step): Collection>"
+			"signature": "sliding(size, step): Collection"
 		},
 		"120": {
 			"id": "/collections/#introduction",
@@ -2596,7 +2596,7 @@
 				"collapse()"
 			],
 			"text": " The collapse method collapses a collection of arrays into a single, flat collection. It merges the elements of nested arrays or Collections into one level. collect1, 2, 3, 4, 5 .collapse //  1, 2, 3, 4, 5 You may also use nested Collections: collectcollect1, 2, collect3, 4 .collapse //  1, 2, 3, 4 For Recursively flatten to any depth, use flatten. For Map then collapse, use flatMap.",
-			"signature": "collapse(): Collection>"
+			"signature": "collapse(): Collection"
 		},
 		"150": {
 			"id": "/collections/transforming#collapsewithkeys",
@@ -2616,7 +2616,7 @@
 				"flatten()"
 			],
 			"text": " The flatten method flattens a multi-dimensional collection into a single dimension. You may optionally pass a depth argument to limit how many levels deep the flattening should go. To flatten all levels: collect1, 2, 3, 4 .flatten //  1, 2, 3, 4 To flatten just one level: collect1, 2, 3 .flatten1 //  1, 2, 3 For Flatten by exactly one level, use collapse. For Flatten to dot notation keys, use dot.",
-			"signature": "flatten(): Collection>"
+			"signature": "flatten(): Collection"
 		},
 		"152": {
 			"id": "/collections/transforming#flip",
@@ -6141,10 +6141,6 @@
 					"16": 1,
 					"17": 1,
 					"18": 1
-				},
-				"2": {
-					"16": 1,
-					"92": 1
 				}
 			}
 		],
@@ -7575,6 +7571,9 @@
 			{
 				"2": {
 					"62": 1,
+					"71": 1,
+					"74": 1,
+					"111": 1,
 					"140": 1,
 					"178": 1
 				}
@@ -7764,7 +7763,6 @@
 			"preservekeys",
 			{
 				"2": {
-					"111": 1,
 					"116": 1
 				}
 			}
@@ -12509,8 +12507,6 @@
 					"5": 1,
 					"6": 1,
 					"7": 1,
-					"16": 1,
-					"92": 1,
 					"100": 1,
 					"101": 1,
 					"102": 1,
@@ -13403,21 +13399,6 @@
 			}
 		],
 		[
-			"collection>",
-			{
-				"2": {
-					"32": 1,
-					"111": 1,
-					"113": 1,
-					"114": 1,
-					"116": 1,
-					"119": 1,
-					"149": 1,
-					"151": 1
-				}
-			}
-		],
-		[
 			"collection",
 			{
 				"0": {
@@ -13582,6 +13563,7 @@
 					"178": 1
 				},
 				"2": {
+					"32": 1,
 					"33": 1,
 					"35": 1,
 					"37": 1,
@@ -13599,8 +13581,6 @@
 					"57": 1,
 					"67": 1,
 					"68": 1,
-					"71": 1,
-					"74": 1,
 					"77": 1,
 					"78": 1,
 					"79": 1,
@@ -13618,8 +13598,12 @@
 					"97": 1,
 					"98": 1,
 					"99": 1,
+					"113": 1,
+					"114": 1,
 					"115": 1,
+					"116": 1,
 					"117": 1,
+					"119": 1,
 					"131": 1,
 					"132": 1,
 					"134": 1,
@@ -13627,7 +13611,9 @@
 					"136": 1,
 					"137": 1,
 					"138": 1,
+					"149": 1,
 					"150": 1,
+					"151": 1,
 					"152": 1,
 					"153": 1,
 					"157": 1,
