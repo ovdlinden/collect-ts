@@ -9,21 +9,21 @@ The `all` method returns the underlying array or object represented by
 the collection. Array-backed collections return an array, while
 associative collections return a plain object.
 
-Array collection
+For an array collection:
 
 ```typescript
 collect([1, 2, 3]).all()
 // → [1, 2, 3]
 ```
 
-Associative collection
+For an associative collection:
 
 ```typescript
 collect({ name: 'Taylor', role: 'admin' }).all()
 // → { name: 'Taylor', role: 'admin' }
 ```
 
-For always getting an array, see the [toArray](/collections/aggregating#toarray) method. For Static version, see the [unwrap](/collections/creating#unwrap) method.
+For always getting an array, use [`toArray`](/collections/aggregating#toarray). For Static version, use [`unwrap`](/collections/creating#unwrap).
 
 ---
 
@@ -33,28 +33,26 @@ The `get` method returns the item at a given key. If the key does not
 exist, `undefined` is returned. You may optionally pass a default value
 as the second argument, or a callback that returns the default.
 
-Basic usage
-
 ```typescript
 collect({ name: 'Taylor', role: 'admin' }).get('name')
 // → 'Taylor'
 ```
 
-With default value
+You may pass a default value:
 
 ```typescript
 collect({ name: 'Taylor' }).get('role', 'guest')
 // → 'guest'
 ```
 
-With default callback
+Or pass a callback that returns the default:
 
 ```typescript
 collect({ name: 'Taylor' }).get('role', () => computeDefault())
 // → result of computeDefault()
 ```
 
-For Get or store a default value, see the [getOrPut](#getorput) method. For Remove and return an item by key, see the [pull](#pull) method.
+For Get or store a default value, use [`getOrPut`](#getorput). For Remove and return an item by key, use [`pull`](#pull).
 
 ---
 
@@ -64,8 +62,6 @@ The `getOrPut` method retrieves an item by key. If the key does not exist,
 the default value is stored in the collection and returned. This is useful
 for lazily populating collection values.
 
-Basic usage
-
 ```typescript
 const data = collect({ a: 1 })
 data.getOrPut('b', 2)
@@ -74,14 +70,14 @@ data.all()
 // → { a: 1, b: 2 }
 ```
 
-With factory function
+You may also pass a factory function:
 
 ```typescript
 data.getOrPut('expensive', () => computeExpensiveValue())
 // → computed value (only computed if key missing)
 ```
 
-For Get without storing a default, see the [get](#get) method. For Store a value at a key, see the [put](/collections/combining#put) method.
+For Get without storing a default, use [`get`](#get). For Store a value at a key, use [`put`](/collections/combining#put).
 
 ---
 
@@ -98,7 +94,7 @@ collect([1, 2, 3])
 // → 1
 ```
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([1, 2, 3, 4])
@@ -106,7 +102,7 @@ collect([1, 2, 3, 4])
 // → 3
 ```
 
-With default
+You may also pass a default:
 
 ```typescript
 collect([])
@@ -114,7 +110,7 @@ collect([])
 // → 'default'
 ```
 
-For Get the last item instead, see the [last](#last) method. For throwing when no item found, see the [firstOrFail](#firstorfail) method. For Get the only item, throws if not exactly one, see the [sole](#sole) method. For Find by key/value pair, see the [firstWhere](#firstwhere) method.
+For Get the last item instead, use [`last`](#last). For throwing when no item found, use [`firstOrFail`](#firstorfail).
 
 ---
 
@@ -131,7 +127,7 @@ collect([1, 2, 3])
 // → 3
 ```
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([1, 2, 3, 4])
@@ -139,7 +135,7 @@ collect([1, 2, 3, 4])
 // → 2
 ```
 
-For Get the first item instead, see the [first](#first) method. For Remove and return the last item, see the [pop](#pop) method.
+For Get the first item instead, use [`first`](#first). For Remove and return the last item, use [`pop`](#pop).
 
 ---
 
@@ -148,21 +144,21 @@ For Get the first item instead, see the [first](#first) method. For Remove and r
 The `keys` method returns all of the collection's keys as a new collection.
 For array-backed collections, this returns the numeric indices as strings.
 
-Associative collection
+For an associative collection:
 
 ```typescript
 collect({ a: 1, b: 2 }).keys()
 // → Collection ['a', 'b']
 ```
 
-Array collection
+For an array collection:
 
 ```typescript
 collect([10, 20, 30]).keys()
 // → Collection ['0', '1', '2']
 ```
 
-For Get all values, see the [values](#values) method. For Check if a key exists, see the [has](/collections/checking#has) method.
+For Get all values, use [`values`](#values). For Check if a key exists, use [`has`](/collections/checking#has).
 
 ---
 
@@ -171,14 +167,14 @@ For Get all values, see the [values](#values) method. For Check if a key exists,
 The `values` method returns all of the collection's values as a new
 collection with reset, sequential integer keys.
 
-Associative collection
+For an associative collection:
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 }).values()
 // → Collection [1, 2, 3]
 ```
 
-Resetting keys after filtering
+To reset keys after filtering:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -187,7 +183,7 @@ collect([1, 2, 3, 4, 5])
 // → Collection [3, 4, 5] with keys 0, 1, 2
 ```
 
-For Get all keys, see the [keys](#keys) method. For Get the raw underlying data, see the [all](#all) method.
+For Get all keys, use [`keys`](#keys). For Get the raw underlying data, use [`all`](#all).
 
 ---
 
@@ -197,28 +193,26 @@ The `slice` method returns a slice of the collection starting at the
 given index. You may pass a second argument to limit the size of the
 returned slice.
 
-Basic usage
-
 ```typescript
 collect([1, 2, 3, 4, 5]).slice(2)
 // → Collection [3, 4, 5]
 ```
 
-With length limit
+You may also pass a length limit:
 
 ```typescript
 collect([1, 2, 3, 4, 5]).slice(1, 2)
 // → Collection [2, 3]
 ```
 
-Negative offset
+With a negative offset, it counts from the end:
 
 ```typescript
 collect([1, 2, 3, 4, 5]).slice(-2)
 // → Collection [4, 5]
 ```
 
-For Take items from beginning or end, see the [take](/collections/filtering#take) method. For Skip items from the beginning, see the [skip](/collections/filtering#skip) method. For Paginate the collection, see the [forPage](/collections/filtering#forpage) method.
+For Take items from beginning or end, use [`take`](/collections/filtering#take). For Skip items from the beginning, use [`skip`](/collections/filtering#skip).
 
 ---
 
@@ -228,8 +222,6 @@ The `pull` method removes and returns an item from the collection by its
 key. If the key does not exist, the default value is returned. This method
 mutates the collection.
 
-Basic usage
-
 ```typescript
 const data = collect({ name: 'Taylor', role: 'admin' })
 data.pull('name')
@@ -238,14 +230,14 @@ data.all()
 // → { role: 'admin' }
 ```
 
-With default value
+You may pass a default value:
 
 ```typescript
 collect({ a: 1 }).pull('missing', 'default')
 // → 'default'
 ```
 
-For Get without removing, see the [get](#get) method. For Remove and return the last item, see the [pop](#pop) method. For Remove and return the first item, see the [shift](#shift) method. For Remove without returning, see the [forget](/collections/transforming#forget) method.
+For Get without removing, use [`get`](#get). For Remove and return the last item, use [`pop`](#pop).
 
 ---
 
@@ -255,7 +247,7 @@ The `pop` method removes and returns the last item from the collection.
 You may pass a count to remove and return multiple items from the end.
 If the collection is empty, `null` is returned.
 
-Single item
+For a single item:
 
 ```typescript
 const data = collect([1, 2, 3, 4, 5])
@@ -265,21 +257,21 @@ data.all()
 // → [1, 2, 3, 4]
 ```
 
-Multiple items
+For multiple items:
 
 ```typescript
 collect([1, 2, 3, 4, 5]).pop(2)
 // → Collection [4, 5]
 ```
 
-Empty collection
+For an empty collection:
 
 ```typescript
 collect([]).pop()
 // → null
 ```
 
-For Remove from the beginning, see the [shift](#shift) method. For Remove by key, see the [pull](#pull) method. For Get last without removing, see the [last](#last) method.
+For Remove from the beginning, use [`shift`](#shift). For Remove by key, use [`pull`](#pull).
 
 ---
 
@@ -289,7 +281,7 @@ The `shift` method removes and returns the first item from the collection.
 You may pass a count to remove and return multiple items from the beginning.
 If the collection is empty, `null` is returned.
 
-Single item
+For a single item:
 
 ```typescript
 const data = collect([1, 2, 3, 4, 5])
@@ -299,21 +291,21 @@ data.all()
 // → [2, 3, 4, 5]
 ```
 
-Multiple items
+For multiple items:
 
 ```typescript
 collect([1, 2, 3, 4, 5]).shift(2)
 // → Collection [1, 2]
 ```
 
-Empty collection
+For an empty collection:
 
 ```typescript
 collect([]).shift()
 // → null
 ```
 
-For Remove from the end, see the [pop](#pop) method. For Remove by key, see the [pull](#pull) method. For Get first without removing, see the [first](#first) method.
+For Remove from the end, use [`pop`](#pop). For Remove by key, use [`pull`](#pull).
 
 ---
 
@@ -322,8 +314,6 @@ For Remove from the end, see the [pop](#pop) method. For Remove by key, see the 
 The `select` method selects the given keys from each item in the
 collection, similar to a SQL SELECT statement. This is useful for
 extracting only the properties you need from complex objects.
-
-Basic usage
 
 ```typescript
 const users = collect([
@@ -334,7 +324,7 @@ users.select(['name', 'email'])
 // → Collection [{ name: 'Taylor', email: '...' }, { name: 'Abigail', email: '...' }]
 ```
 
-Nested properties
+For nested properties:
 
 ```typescript
 collect([{ user: { name: 'Taylor' }, meta: { active: true } }])
@@ -342,7 +332,7 @@ collect([{ user: { name: 'Taylor' }, meta: { active: true } }])
 // → Collection [{ 'user.name': 'Taylor' }]
 ```
 
-For Extract a single property as values, see the [pluck](/collections/transforming#pluck) method. For Select keys from the collection itself, see the [only](/collections/filtering#only) method. For Transform items with full control, see the [map](/collections/transforming#map) method.
+For Extract a single property as values, use [`pluck`](/collections/transforming#pluck). For Select keys from the collection itself, use [`only`](/collections/filtering#only).
 
 ---
 
@@ -353,28 +343,26 @@ returns its key if found. If the item is not found, `false` is returned.
 By default, comparison uses loose equality. Pass `true` as the second
 argument for strict comparison.
 
-Basic search
-
 ```typescript
 collect([2, 4, 6, 8]).search(4)
 // → '1'
 ```
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([2, 4, 6, 8]).search(item => item > 5)
 // → '2'
 ```
 
-Strict comparison
+For strict comparison:
 
 ```typescript
 collect([2, 4, '6', 8]).search('6', true)
 // → '2'
 ```
 
-For Check if a value exists, see the [contains](/collections/filtering#contains) method. For Get the first matching item, see the [first](#first) method. For Find by key/value pair, see the [firstWhere](#firstwhere) method.
+For Check if a value exists, use [`contains`](/collections/filtering#contains). For Get the first matching item, use [`first`](#first).
 
 ---
 
@@ -383,14 +371,44 @@ For Check if a value exists, see the [contains](/collections/filtering#contains)
 The `sole` method returns the first element in the collection that passes a given truth test,
 but only if the truth test matches exactly one element.
 
-If no elements match or more than one element matches, an exception is thrown.
+```typescript
+collect([1, 2, 3, 4])
+    .sole(n => n === 2)
+// → 2
+```
+
+You may also use key/value syntax:
+
+```typescript
+collect([{ id: 1, active: true }, { id: 2, active: false }])
+    .sole('active', true)
+// → { id: 1, active: true }
+```
+
+For Get first matching item without throwing, use [`first`](#first). For Check without throwing, use [`hasSole`](/collections/checking#hassole).
 
 ---
 
 ### firstOrFail()
 
 The `firstOrFail` method returns the first element in the collection, or throws an
-ItemNotFoundException if the collection is empty or no matching element is found.
+`ItemNotFoundException` if the collection is empty or no matching element is found.
+
+```typescript
+collect([1, 2, 3])
+    .firstOrFail(n => n > 2)
+// → 3
+```
+
+You may also use key/value syntax:
+
+```typescript
+collect([{ id: 1 }, { id: 2 }])
+    .firstOrFail('id', 2)
+// → { id: 2 }
+```
+
+For Get first matching item without throwing, use [`first`](#first). For Get item only if exactly one matches, use [`sole`](#sole).
 
 ---
 
@@ -400,28 +418,26 @@ The `random` method returns a random item from the collection. You may
 optionally pass an integer to specify how many items you would like to
 retrieve. If the collection is empty, an exception is thrown.
 
-Single random item
-
 ```typescript
 collect([1, 2, 3, 4, 5]).random()
 // → 3 (random)
 ```
 
-Multiple random items
+For multiple random items:
 
 ```typescript
 collect([1, 2, 3, 4, 5]).random(2)
 // → Collection [4, 1] (random)
 ```
 
-With callback for count
+You may also pass a callback for count:
 
 ```typescript
 collect([1, 2, 3, 4, 5]).random(items => items.count() - 2)
 // → Collection of 3 random items
 ```
 
-For Randomize the entire collection, see the [shuffle](/collections/sorting#shuffle) method. For Get the first item, see the [first](#first) method.
+For Randomize the entire collection, use [`shuffle`](/collections/sorting#shuffle). For Get the first item, use [`first`](#first).
 
 ---
 
@@ -438,7 +454,7 @@ collect([
 // → { id: 1, name: 'Taylor', role: 'admin' }
 ```
 
-With comparison operator
+You may also pass a comparison operator:
 
 ```typescript
 collect([
@@ -457,8 +473,6 @@ The `value` method retrieves a given value from the first element of the
 collection. This is useful for quickly extracting a single property from
 the first item without having to call `first()` separately.
 
-Basic usage
-
 ```typescript
 collect([
     { name: 'Taylor', role: 'admin' },
@@ -467,14 +481,14 @@ collect([
 // → 'Taylor'
 ```
 
-With default
+You may pass a default:
 
 ```typescript
 collect([]).value('name', 'Unknown')
 // → 'Unknown'
 ```
 
-For Get the first item, see the [first](#first) method. For Extract a property from all items, see the [pluck](/collections/transforming#pluck) method. For Get by collection key, see the [get](#get) method.
+For Get the first item, use [`first`](#first). For Extract a property from all items, use [`pluck`](/collections/transforming#pluck).
 
 ---
 

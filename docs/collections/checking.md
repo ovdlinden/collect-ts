@@ -17,7 +17,7 @@ collect([1, '1'])
 // → true
 ```
 
-Key/value with strict comparison
+You may also use key/value with strict comparison:
 
 ```typescript
 collect([{ id: 1 }, { id: '1' }])
@@ -25,7 +25,7 @@ collect([{ id: 1 }, { id: '1' }])
 // → true (first item matches, second does not)
 ```
 
-For loose equality (==), see the [contains](/collections/filtering#contains) method. For the inverse (true if not found), see the [doesntContainStrict](#doesntcontainstrict) method.
+For loose equality (`==`), use [`contains`](/collections/filtering#contains). For the inverse (true if not found), use [`doesntContainStrict`](#doesntcontainstrict).
 
 ---
 
@@ -42,7 +42,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([
@@ -53,7 +53,7 @@ collect([
 // → true
 ```
 
-For the inverse (true if found), see the [contains](/collections/filtering#contains) method. For strict equality (===), see the [doesntContainStrict](#doesntcontainstrict) method.
+For the inverse (true if found), use [`contains`](/collections/filtering#contains). For strict equality (`===`), use [`doesntContainStrict`](#doesntcontainstrict).
 
 ---
 
@@ -70,7 +70,7 @@ collect([1, 2, 3])
 // → true (string '1' is not strictly equal to number 1)
 ```
 
-For the inverse with strict equality, see the [containsStrict](#containsstrict) method. For loose equality (==), see the [doesntContain](#doesntcontain) method.
+For the inverse with strict equality, use [`containsStrict`](#containsstrict). For loose equality (`==`), use [`doesntContain`](#doesntcontain).
 
 ---
 
@@ -80,7 +80,7 @@ The `has` method determines if a given key exists in the collection.
 
 When an array of keys is passed, returns `true` only if ALL keys exist.
 
-Single key
+For a single key:
 
 ```typescript
 collect({ a: 1, b: 2 })
@@ -88,7 +88,7 @@ collect({ a: 1, b: 2 })
 // → true
 ```
 
-Multiple keys (all must exist)
+For multiple keys (all must exist):
 
 ```typescript
 collect({ a: 1, b: 2 })
@@ -96,7 +96,7 @@ collect({ a: 1, b: 2 })
 // → false (c does not exist)
 ```
 
-For checking if any key exists, see the [hasAny](#hasany) method. For Check if a value exists, see the [contains](/collections/filtering#contains) method.
+For checking if any key exists, use [`hasAny`](#hasany). For Check if a value exists, use [`contains`](/collections/filtering#contains).
 
 ---
 
@@ -113,7 +113,7 @@ collect({ a: 1, b: 2 })
 // → true (b exists)
 ```
 
-No matches
+If no keys match:
 
 ```typescript
 collect({ a: 1, b: 2 })
@@ -121,7 +121,7 @@ collect({ a: 1, b: 2 })
 // → false
 ```
 
-For checking if all keys exist, see the [has](#has) method. For Check if a value exists, see the [contains](/collections/filtering#contains) method.
+For checking if all keys exist, use [`has`](#has). For Check if a value exists, use [`contains`](/collections/filtering#contains).
 
 ---
 
@@ -135,7 +135,7 @@ collect([])
 // → true
 ```
 
-Non-empty collection
+For a non-empty collection:
 
 ```typescript
 collect([1, 2, 3])
@@ -143,7 +143,7 @@ collect([1, 2, 3])
 // → false
 ```
 
-For the inverse (true if has items), see the [isNotEmpty](#isnotempty) method. For Get the number of items, see the [count](/collections/aggregating#count) method.
+For the inverse (true if has items), use [`isNotEmpty`](#isnotempty). For Get the number of items, use [`count`](/collections/aggregating#count).
 
 ---
 
@@ -157,7 +157,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-Empty collection
+For an empty collection:
 
 ```typescript
 collect([])
@@ -165,7 +165,7 @@ collect([])
 // → false
 ```
 
-For the inverse (true if empty), see the [isEmpty](#isempty) method. For Get the number of items, see the [count](/collections/aggregating#count) method.
+For the inverse (true if empty), use [`isEmpty`](#isempty). For Get the number of items, use [`count`](/collections/aggregating#count).
 
 ---
 
@@ -181,7 +181,7 @@ collect(['a'])
 // → true
 ```
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -189,7 +189,7 @@ collect([1, 2, 3, 4, 5])
 // → true (only 5 passes)
 ```
 
-For checking if more than one item, see the [hasMany](#hasmany) method. For Similar but throws if not exactly one, see the [hasSole](#hassole) method. For Get the number of items, see the [count](/collections/aggregating#count) method.
+For checking if more than one item, use [`hasMany`](#hasmany). For Similar but throws if not exactly one, use [`hasSole`](#hassole).
 
 ---
 
@@ -206,7 +206,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -214,7 +214,7 @@ collect([1, 2, 3, 4, 5])
 // → true (4 and 5 pass)
 ```
 
-For checking if exactly one item, see the [containsOneItem](#containsoneitem) method. For checking if exactly one matching item, see the [hasSole](#hassole) method.
+For checking if exactly one item, use [`containsOneItem`](#containsoneitem). For checking if exactly one matching item, use [`hasSole`](#hassole).
 
 ---
 
@@ -232,7 +232,7 @@ collect([1, 2, 3, 4, 5])
 // → true (only 5 passes)
 ```
 
-Multiple matches
+For multiple matches:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -240,7 +240,7 @@ collect([1, 2, 3, 4, 5])
 // → false (4 and 5 both pass)
 ```
 
-For getting the item (throws if not exactly one), see the [sole](/collections/finding#sole) method. For Check without filter, see the [containsOneItem](#containsoneitem) method. For checking if more than one item, see the [hasMany](#hasmany) method.
+For getting the item (throws if not exactly one), use [`sole`](/collections/finding#sole). For Check without filter, use [`containsOneItem`](#containsoneitem).
 
 ---
 
@@ -251,7 +251,7 @@ The `every` method verifies that all elements of the collection pass a given tru
 Returns `true` if the callback returns truthy for every item. If the collection is
 empty, `every` returns `true` (vacuous truth).
 
-With callback
+You may also pass a callback:
 
 ```typescript
 collect([1, 2, 3])
@@ -259,7 +259,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-With property key
+You may also pass a property key:
 
 ```typescript
 collect([{ active: true }, { active: true }])
@@ -267,7 +267,7 @@ collect([{ active: true }, { active: true }])
 // → true
 ```
 
-Key/operator/value syntax
+Or use key/operator/value syntax:
 
 ```typescript
 collect([{ qty: 5 }, { qty: 10 }])
@@ -275,7 +275,7 @@ collect([{ qty: 5 }, { qty: 10 }])
 // → true
 ```
 
-For checking if any item passes, see the [some](#some) method. For Check if a specific value exists, see the [contains](/collections/filtering#contains) method.
+For checking if any item passes, use [`some`](#some). For Check if a specific value exists, use [`contains`](/collections/filtering#contains).
 
 ---
 
@@ -292,7 +292,7 @@ collect([1, 2, 3, 4, 5])
 // → true
 ```
 
-For Primary method (identical behavior), see the [contains](/collections/filtering#contains) method. For checking if all items pass, see the [every](#every) method.
+For Primary method (identical behavior), use [`contains`](/collections/filtering#contains). For checking if all items pass, use [`every`](#every).
 
 ---
 
@@ -309,6 +309,6 @@ collect({ a: 1, b: 2 })
 // → true
 ```
 
-For Primary method for key existence checks, see the [has](#has) method. For Get value at offset, see the [offsetGet](/collections/finding#offsetget) method.
+For Primary method for key existence checks, use [`has`](#has). For Get value at offset, use [`offsetGet`](/collections/finding#offsetget).
 
 ---

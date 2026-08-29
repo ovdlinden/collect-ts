@@ -429,19 +429,22 @@ function generateGuidePage(
         }
       }
 
-      // Related methods as prose (Laravel style)
+      // Related methods as prose (Laravel style) — trust the reader to explore
+      // Limit to 2 most relevant alternatives; use tighter phrasing
       if (method.see.length > 0) {
-        const refs = collect(method.see).map((s) => {
-          const targetFile = methodToFile.get(s.method);
-          const isSamePage = targetFile === filename;
-          const anchor = s.method.toLowerCase();
-          const link = isSamePage
-            ? `[${s.method}](#${anchor})`
-            : `[${s.method}](/collections/${targetFile}#${anchor})`;
-          return s.description
-            ? `For ${s.description}, see the ${link} method.`
-            : `See the ${link} method.`;
-        }).join(' ');
+        const refs = collect(method.see)
+          .take(2)
+          .map((s) => {
+            const targetFile = methodToFile.get(s.method);
+            const isSamePage = targetFile === filename;
+            const anchor = s.method.toLowerCase();
+            const link = isSamePage
+              ? `[\`${s.method}\`](#${anchor})`
+              : `[\`${s.method}\`](/collections/${targetFile}#${anchor})`;
+            return s.description
+              ? `For ${s.description}, use ${link}.`
+              : `See ${link}.`;
+          }).join(' ');
         lines.push(refs, '');
       }
 

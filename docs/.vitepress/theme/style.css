@@ -303,3 +303,29 @@ html {
 	width: 1.5em; /* same visual width as arrow */
 }
 
+/* Prose links - subtle by default, brand color on hover ------------------- */
+/* Links should be discoverable paths, not visual destinations. Reserve red
+   for intentional emphasis (headings, the method being documented). */
+.vp-doc a:not(.header-anchor):not([class*="VPNav"]):not([class*="VPSidebar"]):not([class*="outline-link"]) {
+	color: var(--vp-c-text-1);
+	text-decoration: underline;
+	text-decoration-color: var(--doc-c-primary-soft);
+	text-underline-offset: 2px;
+	transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.vp-doc a:not(.header-anchor):not([class*="VPNav"]):not([class*="VPSidebar"]):not([class*="outline-link"]):hover {
+	color: var(--doc-c-primary);
+	text-decoration-color: var(--doc-c-primary);
+}
+
+/* Breathing room between method sections ----------------------------------- */
+.vp-doc hr {
+	margin: 2.5rem 0;
+	border-color: var(--vp-c-divider);
+}
+
+.vp-doc h3:not(:first-child) {
+	margin-top: 3rem;
+}
+

@@ -7,23 +7,23 @@
 
 The `range` method creates a collection containing numbers within a specified range.
 
-Works in both directions: ascending when from < to, descending otherwise.
+Works in both directions: ascending when `from < to`, descending otherwise.
 
-Ascending
+In ascending order:
 
 ```typescript
 Collection.range(1, 5)
 // → Collection [1, 2, 3, 4, 5]
 ```
 
-Descending
+In descending order:
 
 ```typescript
 Collection.range(5, 1)
 // → Collection [5, 4, 3, 2, 1]
 ```
 
-For Generate by calling a function N times, see the [times](#times) method.
+For Generate by calling a function N times, use [`times`](#times).
 
 ---
 
@@ -34,21 +34,21 @@ The `times` method creates a new collection by invoking the given closure a spec
 The callback receives 1-based indices (1, 2, 3...). Without a callback,
 returns a collection of numbers 1 through N.
 
-With callback
+You may also pass a callback:
 
 ```typescript
 Collection.times(3, i => i * 2)
 // → Collection [2, 4, 6]
 ```
 
-Without callback
+Without a callback, it returns numbers 1 through N:
 
 ```typescript
 Collection.times(3)
 // → Collection [1, 2, 3]
 ```
 
-For Generate a range between two numbers, see the [range](#range) method.
+For Generate a range between two numbers, use [`range`](#range).
 
 ---
 
@@ -64,7 +64,7 @@ collect([1, 2, 3])
 // → Collection [2, 4, 6]
 ```
 
-Extract property
+To extract a property:
 
 ```typescript
 collect([
@@ -75,7 +75,7 @@ collect([
 // → ['Taylor', 'Abigail']
 ```
 
-For Extract a single property by key, see the [pluck](#pluck) method. For Transform and change keys, see the [mapWithKeys](#mapwithkeys) method. For Map and flatten results, see the [flatMap](#flatmap) method. For Mutate the collection in place, see the [transform](#transform) method.
+For Extract a single property by key, use [`pluck`](#pluck). For Transform and change keys, use [`mapWithKeys`](#mapwithkeys).
 
 ---
 
@@ -92,7 +92,7 @@ collect([
 // → { John: 'Sales', Jane: 'Marketing' }
 ```
 
-For Transform values keeping original keys, see the [map](#map) method. For Key by a property without transforming values, see the [keyBy](/collections/grouping#keyby) method. For Extract values by key, see the [pluck](#pluck) method.
+For Transform values keeping original keys, use [`map`](#map). For Key by a property without transforming values, use [`keyBy`](/collections/grouping#keyby).
 
 ---
 
@@ -111,7 +111,7 @@ collect([
 // → { Sales: ['John', 'Jane'], Marketing: ['Bob'] }
 ```
 
-For Similar but returns nested Collections, see the [mapToGroups](#maptogroups) method. For Group by key without value transformation, see the [groupBy](/collections/grouping#groupby) method. For Map to single key-value pairs, see the [mapWithKeys](#mapwithkeys) method.
+For Similar but returns nested Collections, use [`mapToGroups`](#maptogroups). For Group by key without value transformation, use [`groupBy`](/collections/grouping#groupby).
 
 ---
 
@@ -130,7 +130,7 @@ collect([
 // → { Sales: Collection(['John', 'Jane']), Marketing: Collection(['Bob']) }
 ```
 
-For Similar but returns plain arrays, see the [mapToDictionary](#maptodictionary) method. For Group by key without value transformation, see the [groupBy](/collections/grouping#groupby) method.
+For Similar but returns plain arrays, use [`mapToDictionary`](#maptodictionary). For Group by key without value transformation, use [`groupBy`](/collections/grouping#groupby).
 
 ---
 
@@ -150,7 +150,7 @@ collect([100, 250, 50])
 // → ['$100.00', '$250.00', '$50.00']
 ```
 
-For Transform with arbitrary callback, see the [map](#map) method. For passing entire collection to a class constructor, see the [pipeInto](#pipeinto) method.
+For Transform with arbitrary callback, use [`map`](#map). For passing entire collection to a class constructor, use [`pipeInto`](#pipeinto).
 
 ---
 
@@ -166,7 +166,7 @@ collect([[1, 2], [3, 4], [5, 6]])
 // → [3, 7, 11]
 ```
 
-With key as final argument
+You may also pass a key as the final argument:
 
 ```typescript
 collect([['Taylor', 'Laravel'], ['Caleb', 'Livewire']])
@@ -174,7 +174,7 @@ collect([['Taylor', 'Laravel'], ['Caleb', 'Livewire']])
 // → ['0: Taylor - Laravel', '1: Caleb - Livewire']
 ```
 
-For Iterate without transforming, see the [eachSpread](#eachspread) method. For Map and flatten results, see the [flatMap](#flatmap) method.
+For Iterate without transforming, use [`eachSpread`](#eachspread). For Map and flatten results, use [`flatMap`](#flatmap).
 
 ---
 
@@ -188,7 +188,7 @@ collect([[1, 2], [3, 4]])
 // → Collection [2, 4, 6, 8]
 ```
 
-For Transform without flattening, see the [map](#map) method. For Flatten without mapping, see the [flatten](#flatten) method. For Flatten arrays of arrays, see the [collapse](#collapse) method.
+For Transform without flattening, use [`map`](#map). For Flatten without mapping, use [`flatten`](#flatten).
 
 ---
 
@@ -203,7 +203,7 @@ collect([[1, 2], [3, 4], [5]])
 // → [1, 2, 3, 4, 5]
 ```
 
-With nested Collections
+You may also use nested Collections:
 
 ```typescript
 collect([collect([1, 2]), collect([3, 4])])
@@ -211,7 +211,7 @@ collect([collect([1, 2]), collect([3, 4])])
 // → [1, 2, 3, 4]
 ```
 
-For Recursively flatten to any depth, see the [flatten](#flatten) method. For Map then collapse, see the [flatMap](#flatmap) method.
+For Recursively flatten to any depth, use [`flatten`](#flatten). For Map then collapse, use [`flatMap`](#flatmap).
 
 ---
 
@@ -227,7 +227,7 @@ collect([{ name: 'John' }, { email: 'john@example.com' }, { role: 'admin' }])
 // → { name: 'John', email: 'john@example.com', role: 'admin' }
 ```
 
-With overlapping keys
+With overlapping keys, later values override:
 
 ```typescript
 collect([{ a: 1 }, { a: 2, b: 3 }])
@@ -235,7 +235,7 @@ collect([{ a: 1 }, { a: 2, b: 3 }])
 // → { a: 2, b: 3 }
 ```
 
-For Collapse arrays into a flat array, see the [collapse](#collapse) method. For Merge another collection into this one, see the [merge](/collections/combining#merge) method.
+For Collapse arrays into a flat array, use [`collapse`](#collapse). For Merge another collection into this one, use [`merge`](/collections/combining#merge).
 
 ---
 
@@ -245,7 +245,7 @@ The `flatten` method flattens a multi-dimensional collection into a single dimen
 You may optionally pass a depth argument to limit how many levels deep the flattening
 should go.
 
-Flatten all levels
+To flatten all levels:
 
 ```typescript
 collect([[1, [2, [3]]], [4]])
@@ -253,7 +253,7 @@ collect([[1, [2, [3]]], [4]])
 // → [1, 2, 3, 4]
 ```
 
-Flatten one level
+To flatten just one level:
 
 ```typescript
 collect([[1, [2]], [3]])
@@ -261,7 +261,7 @@ collect([[1, [2]], [3]])
 // → [1, [2], 3]
 ```
 
-For Flatten by exactly one level, see the [collapse](#collapse) method. For Flatten to dot notation keys, see the [dot](#dot) method.
+For Flatten by exactly one level, use [`collapse`](#collapse). For Flatten to dot notation keys, use [`dot`](#dot).
 
 ---
 
@@ -276,7 +276,7 @@ collect({ name: 'taylor', framework: 'laravel' })
 // → { taylor: 'name', laravel: 'framework' }
 ```
 
-Array to object
+For an array, keys become values:
 
 ```typescript
 collect(['a', 'b', 'c'])
@@ -284,7 +284,7 @@ collect(['a', 'b', 'c'])
 // → { a: '0', b: '1', c: '2' }
 ```
 
-For Get just the keys, see the [keys](/collections/finding#keys) method. For Get just the values, see the [values](/collections/finding#values) method.
+For Get just the keys, use [`keys`](/collections/finding#keys). For Get just the values, use [`values`](/collections/finding#values).
 
 ---
 
@@ -295,7 +295,7 @@ specified size. This method behaves like PHP's `array_pad` function. To pad to t
 left, specify a negative size. No padding occurs if the absolute value of the given
 size is less than or equal to the length of the array.
 
-Pad right
+To pad to the right:
 
 ```typescript
 collect([1, 2, 3])
@@ -303,7 +303,7 @@ collect([1, 2, 3])
 // → [1, 2, 3, 0, 0]
 ```
 
-Pad left
+To pad to the left:
 
 ```typescript
 collect([1, 2, 3])
@@ -311,7 +311,7 @@ collect([1, 2, 3])
 // → [0, 0, 1, 2, 3]
 ```
 
-For Take items from start or end, see the [take](/collections/filtering#take) method. For Insert items at a position, see the [splice](#splice) method.
+For Take items from start or end, use [`take`](/collections/filtering#take). For Insert items at a position, use [`splice`](#splice).
 
 ---
 
@@ -322,7 +322,7 @@ The `forget` method removes an item from the collection by its key.
 Unlike `except`, this method modifies the collection in place. For numeric keys,
 the collection does not re-index the remaining items.
 
-Remove single key
+To remove a single key:
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -330,7 +330,7 @@ collect({ a: 1, b: 2, c: 3 })
 // → Collection { a: 1, c: 3 }
 ```
 
-Remove multiple keys
+To remove multiple keys:
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -338,15 +338,13 @@ collect({ a: 1, b: 2, c: 3 })
 // → Collection { b: 2 }
 ```
 
-For returning new collection without specified keys, see the [except](/collections/filtering#except) method. For Remove and return a single value, see the [pull](/collections/finding#pull) method.
+For returning new collection without specified keys, use [`except`](/collections/filtering#except). For Remove and return a single value, use [`pull`](/collections/finding#pull).
 
 ---
 
 ### pluck()
 
 Extract values at a given path from each item.
-
-Extract values
 
 ```typescript
 collect([
@@ -357,7 +355,7 @@ collect([
 // → ['Taylor', 'Abigail']
 ```
 
-With custom keys
+You may also specify custom keys:
 
 ```typescript
 collect([
@@ -368,7 +366,7 @@ collect([
 // → { 1: 'Taylor', 2: 'Abigail' }
 ```
 
-For Transform items with full callback control, see the [map](#map) method. For Get first item's value at path, see the [value](/collections/finding#value) method.
+For Transform items with full callback control, use [`map`](#map). For Get first item's value at path, use [`value`](/collections/finding#value).
 
 ---
 
@@ -385,7 +383,7 @@ collection.all();
 // → [2, 4, 6]
 ```
 
-Chain after transform
+You may chain after transform:
 
 ```typescript
 collect({ price: 100, tax: 10 })
@@ -394,7 +392,7 @@ collect({ price: 100, tax: 10 })
 // → 120
 ```
 
-For Transform without mutation, see the [map](#map) method. For Iterate without transforming, see the [each](#each) method.
+For Transform without mutation, use [`map`](#map). For Iterate without transforming, use [`each`](#each).
 
 ---
 
@@ -405,33 +403,33 @@ You may pass a second argument to limit the size of the removed slice, and a thi
 containing replacement items to insert at the splice point. This method modifies the
 original collection.
 
-Remove from index
+To remove from an index:
 
 ```typescript
 const collection = collect([1, 2, 3, 4, 5]);
 const chunk = collection.splice(2);
-chunk.all();       // → [3, 4, 5]
-collection.all();  // → [1, 2]
+// chunk      → [3, 4, 5]
+// collection → [1, 2]
 ```
 
-Remove specific length
+To remove a specific length:
 
 ```typescript
 const collection = collect([1, 2, 3, 4, 5]);
 const chunk = collection.splice(2, 1);
-chunk.all();       // → [3]
-collection.all();  // → [1, 2, 4, 5]
+// chunk      → [3]
+// collection → [1, 2, 4, 5]
 ```
 
-Replace items
+To replace items:
 
 ```typescript
 const collection = collect([1, 2, 3, 4, 5]);
 collection.splice(2, 1, [10, 11]);
-collection.all();  // → [1, 2, 10, 11, 4, 5]
+// → [1, 2, 10, 11, 4, 5]
 ```
 
-For Extract without mutation, see the [slice](/collections/finding#slice) method. For Take from start or end, see the [take](/collections/filtering#take) method.
+For Extract without mutation, use [`slice`](/collections/finding#slice). For Take from start or end, use [`take`](/collections/filtering#take).
 
 ---
 
@@ -448,7 +446,7 @@ collect({
 // → { 'user.name': 'John', 'user.address.city': 'NYC' }
 ```
 
-Flatten configuration
+To flatten configuration:
 
 ```typescript
 collect({
@@ -458,7 +456,7 @@ collect({
 // → { 'database.host': 'localhost', 'database.port': 3306, 'cache.driver': 'redis' }
 ```
 
-For Expand dot notation back to nested structure, see the [undot](#undot) method. For Flatten nested arrays, see the [flatten](#flatten) method.
+For Expand dot notation back to nested structure, use [`undot`](#undot). For Flatten nested arrays, use [`flatten`](#flatten).
 
 ---
 
@@ -475,7 +473,7 @@ collect({
 // → { user: { name: 'John', address: { city: 'NYC' } } }
 ```
 
-Expand form data
+To expand form data:
 
 ```typescript
 collect({
@@ -487,7 +485,7 @@ collect({
 // → { items: { 0: { name: 'Widget', price: 100 }, 1: { name: 'Gadget', price: 200 } } }
 ```
 
-For Flatten to dot notation, see the [dot](#dot) method.
+For Flatten to dot notation, use [`dot`](#dot).
 
 ---
 
@@ -503,7 +501,7 @@ collect([1, 2, 3])
 // logs: 1, 2, 3
 ```
 
-Stop early
+To stop early:
 
 ```typescript
 collect([1, 2, 3])
@@ -515,7 +513,7 @@ collect([1, 2, 3])
 // logs: 1
 ```
 
-For Execute callback on entire collection, see the [tap](#tap) method. For Transform items instead of side effects, see the [map](#map) method. For Spread array items as arguments, see the [eachSpread](#eachspread) method.
+For Execute callback on entire collection, use [`tap`](#tap). For Transform items instead of side effects, use [`map`](#map).
 
 ---
 
@@ -534,7 +532,7 @@ collect([['John', 35], ['Jane', 28]])
 // Logs: "Jane is 28 years old"
 ```
 
-With key as final argument
+You may also pass a key as the final argument:
 
 ```typescript
 collect([['a', 'b'], ['c', 'd']])
@@ -543,7 +541,7 @@ collect([['a', 'b'], ['c', 'd']])
     });
 ```
 
-For Transform with spread arguments, see the [mapSpread](#mapspread) method. For Iterate without spreading, see the [each](#each) method.
+For Transform with spread arguments, use [`mapSpread`](#mapspread). For Iterate without spreading, use [`each`](#each).
 
 ---
 
@@ -559,7 +557,7 @@ const copy = original.collect();
 // original and copy are separate instances
 ```
 
-For Convert subclass to base Collection, see the [toBase](#tobase) method.
+For Convert subclass to base Collection, use [`toBase`](#tobase).
 
 ---
 
@@ -576,7 +574,7 @@ const base = custom.toBase();
 // base instanceof Collection === true
 ```
 
-For Create a new collection copy, see the [collect](#collect) method.
+For Create a new collection copy, use [`collect`](#collect).
 
 ---
 
@@ -592,7 +590,7 @@ collect([1, 2, 3])
 // → 12
 ```
 
-Conditional logic
+For conditional logic:
 
 ```typescript
 collect([
@@ -604,7 +602,7 @@ collect([
 // → '3 users'
 ```
 
-For Execute callback but return collection unchanged, see the [tap](#tap) method. For passing collection to a class constructor, see the [pipeInto](#pipeinto) method. For passing through multiple callbacks, see the [pipeThrough](#pipethrough) method.
+For Execute callback but return collection unchanged, use [`tap`](#tap). For passing collection to a class constructor, use [`pipeInto`](#pipeinto).
 
 ---
 
@@ -625,7 +623,7 @@ collect([10, 20, 30])
 // → { total: 60, avg: 20 }
 ```
 
-For passing collection to a callback, see the [pipe](#pipe) method. For Create instances from each item, see the [mapInto](#mapinto) method.
+For passing collection to a callback, use [`pipe`](#pipe). For Create instances from each item, use [`mapInto`](#mapinto).
 
 ---
 
@@ -645,7 +643,7 @@ collect([1, 2, 3])
 // → 'Total: 12'
 ```
 
-Composable transformations
+For composable transformations:
 
 ```typescript
 const addTax = (c) => c.map(p => p * 1.1);
@@ -656,7 +654,7 @@ collect([100, 200])
 // → [110, 220]
 ```
 
-For passing through a single callback, see the [pipe](#pipe) method.
+For passing through a single callback, use [`pipe`](#pipe).
 
 ---
 
@@ -666,7 +664,7 @@ Pass the collection to the given callback and return it unchanged.
 
 Useful for debugging or side effects mid-chain.
 
-Debug mid-chain
+To debug mid-chain:
 
 ```typescript
 collect([1, 2, 3])
@@ -675,7 +673,7 @@ collect([1, 2, 3])
   .filter(n => n > 2)
 ```
 
-For Execute callback for each item, see the [each](#each) method. For Transform and return callback result, see the [pipe](#pipe) method. For Log collection contents, see the [dump](#dump) method.
+For Execute callback for each item, use [`each`](#each). For Transform and return callback result, use [`pipe`](#pipe).
 
 ---
 
@@ -685,7 +683,7 @@ The `dump` method outputs the collection's items to the console and returns the 
 allowing you to inspect the contents at any point in a method chain without interrupting
 the flow.
 
-Debug mid-chain
+To debug mid-chain:
 
 ```typescript
 collect([1, 2, 3])
@@ -696,14 +694,14 @@ collect([1, 2, 3])
 // → [4, 6]
 ```
 
-With label
+You may also pass a label:
 
 ```typescript
 collection.dump('after filter')
 // Logs: [items...] 'after filter'
 ```
 
-For Dump and halt execution, see the [dd](#dd) method. For Execute any callback mid-chain, see the [tap](#tap) method.
+For Dump and halt execution, use [`dd`](#dd). For Execute any callback mid-chain, use [`tap`](#tap).
 
 ---
 
@@ -720,7 +718,7 @@ collect([1, 2, 3])
     .filter(n => n > 3)  // Never reached
 ```
 
-For Dump without halting, see the [dump](#dump) method.
+For Dump without halting, use [`dump`](#dump).
 
 ---
 
@@ -730,15 +728,13 @@ The `when` method will execute the given callback when the first argument given 
 method evaluates to true. The collection instance and the resolved value are passed to
 the closure. An optional second callback is executed when the condition is falsy.
 
-Basic condition
-
 ```typescript
 collect([1, 2, 3])
     .when(shouldDouble, c => c.map(n => n * 2))
     .all()
 ```
 
-With default callback
+You may pass a default callback:
 
 ```typescript
 const filterActive = true
@@ -754,14 +750,14 @@ collect([
 // → [{ name: 'Desk', active: true }]
 ```
 
-Callback condition
+You may also pass a callback as the condition:
 
 ```typescript
 collect([1, 2, 3])
     .when(c => c.count() > 2, c => c.take(2))
 ```
 
-For Execute when condition is falsy, see the [unless](#unless) method. For Execute when collection is empty, see the [whenEmpty](#whenempty) method. For Execute when collection has items, see the [whenNotEmpty](#whennotempty) method.
+For Execute when condition is falsy, use [`unless`](#unless). For Execute when collection is empty, use [`whenEmpty`](#whenempty).
 
 ---
 
@@ -771,7 +767,7 @@ The `unless` method will execute the given callback when the first argument give
 method evaluates to false. This is the inverse of the `when` method. An optional second
 callback is executed when the condition is truthy.
 
-Skip filtering for admins
+To skip filtering for admins:
 
 ```typescript
 const isAdmin = false
@@ -783,7 +779,7 @@ collect([
 // → [{ title: 'Public Post', public: true }]
 ```
 
-With default callback
+You may pass a default callback:
 
 ```typescript
 const showAll = true
@@ -799,7 +795,7 @@ collect([
 // → both posts (showAll is true)
 ```
 
-For Execute when condition is truthy, see the [when](#when) method. For Execute when collection is empty, see the [whenEmpty](#whenempty) method.
+For Execute when condition is truthy, use [`when`](#when). For Execute when collection is empty, use [`whenEmpty`](#whenempty).
 
 ---
 
@@ -808,7 +804,7 @@ For Execute when condition is truthy, see the [when](#when) method. For Execute 
 The `whenEmpty` method will execute the given callback when the collection is empty.
 An optional second callback is executed when the collection is not empty.
 
-Provide defaults for empty collection
+To provide defaults for an empty collection:
 
 ```typescript
 collect([])
@@ -817,7 +813,7 @@ collect([])
 // → ['default']
 ```
 
-Log empty state
+To log empty state:
 
 ```typescript
 collect([])
@@ -825,7 +821,7 @@ collect([])
 // logs: 'No results found'
 ```
 
-For Execute when collection has items, see the [whenNotEmpty](#whennotempty) method. For Execute on arbitrary condition, see the [when](#when) method. For Check if collection is empty, see the [isEmpty](/collections/checking#isempty) method.
+For Execute when collection has items, use [`whenNotEmpty`](#whennotempty). For Execute on arbitrary condition, use [`when`](#when).
 
 ---
 
@@ -834,7 +830,7 @@ For Execute when collection has items, see the [whenNotEmpty](#whennotempty) met
 The `whenNotEmpty` method will execute the given callback when the collection is not empty.
 An optional second callback is executed when the collection is empty.
 
-Process only if items exist
+To process only if items exist:
 
 ```typescript
 collect([
@@ -845,7 +841,7 @@ collect([
 // → [100, 200]
 ```
 
-With empty fallback
+You may pass an empty fallback:
 
 ```typescript
 collect([{ name: 'Taylor' }])
@@ -856,7 +852,7 @@ collect([{ name: 'Taylor' }])
 // → { name: 'Taylor' }
 ```
 
-For Execute when collection is empty, see the [whenEmpty](#whenempty) method. For Execute on arbitrary condition, see the [when](#when) method. For Check if collection has items, see the [isNotEmpty](/collections/checking#isnotempty) method.
+For Execute when collection is empty, use [`whenEmpty`](#whenempty). For Execute on arbitrary condition, use [`when`](#when).
 
 ---
 

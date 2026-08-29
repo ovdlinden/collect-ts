@@ -14,7 +14,7 @@ collect([1, 2, 3, 4, 5])
 // → [5, 4, 3, 2, 1]
 ```
 
-For Sort items, see the [sort](#sort) method. For Sort in descending order, see the [sortDesc](#sortdesc) method. For Randomize order, see the [shuffle](#shuffle) method.
+For Sort items, use [`sort`](#sort). For Sort in descending order, use [`sortDesc`](#sortdesc).
 
 ---
 
@@ -30,7 +30,7 @@ collect([1, 2, 3, 4, 5])
 // → [3, 1, 4, 5, 2] (random order)
 ```
 
-For Get random item(s), see the [random](/collections/finding#random) method. For Sort items, see the [sort](#sort) method. For Reverse order, see the [reverse](#reverse) method.
+For Get random item(s), use [`random`](/collections/finding#random). For Sort items, use [`sort`](#sort).
 
 ---
 
@@ -47,7 +47,7 @@ collect([5, 3, 1, 2, 4])
 // → [1, 2, 3, 4, 5]
 ```
 
-Custom comparator
+You may pass a custom comparator:
 
 ```typescript
 collect([
@@ -61,7 +61,7 @@ collect([
 //   ]
 ```
 
-For Sort in descending order, see the [sortDesc](#sortdesc) method. For Sort by property or callback, see the [sortBy](#sortby) method. For Sort by keys instead of values, see the [sortKeys](#sortkeys) method. For Reverse the order, see the [reverse](#reverse) method.
+For Sort in descending order, use [`sortDesc`](#sortdesc). For Sort by property or callback, use [`sortBy`](#sortby).
 
 ---
 
@@ -75,7 +75,7 @@ collect([1, 2, 3, 4, 5])
 // → [5, 4, 3, 2, 1]
 ```
 
-For Sort in ascending order, see the [sort](#sort) method. For Sort by property in descending order, see the [sortByDesc](#sortbydesc) method.
+For Sort in ascending order, use [`sort`](#sort). For Sort by property in descending order, use [`sortByDesc`](#sortbydesc).
 
 ---
 
@@ -85,8 +85,6 @@ The `sortBy` method sorts the collection by the given key.
 
 The sorted collection keeps the original array keys, so in the following example
 we will use the `values` method to reset the keys to consecutively numbered indexes.
-
-By property
 
 ```typescript
 collect([
@@ -100,7 +98,7 @@ collect([
 //   ]
 ```
 
-By callback
+You may also pass a callback:
 
 ```typescript
 collect([
@@ -114,7 +112,7 @@ collect([
 //   ]
 ```
 
-For Sort in descending order, see the [sortByDesc](#sortbydesc) method. For Sort with custom comparator, see the [sort](#sort) method. For Sort by keys instead of values, see the [sortKeys](#sortkeys) method. For Reverse the order, see the [reverse](#reverse) method.
+For Sort in descending order, use [`sortByDesc`](#sortbydesc). For Sort with custom comparator, use [`sort`](#sort).
 
 ---
 
@@ -123,8 +121,6 @@ For Sort in descending order, see the [sortByDesc](#sortbydesc) method. For Sort
 The `sortByDesc` method sorts the collection in the opposite order as the `sortBy` method.
 
 This method has the same signature as `sortBy`, but will sort in descending order.
-
-By property
 
 ```typescript
 collect([
@@ -138,7 +134,7 @@ collect([
 //   ]
 ```
 
-By callback
+You may also pass a callback:
 
 ```typescript
 collect([
@@ -152,7 +148,7 @@ collect([
 //   ]
 ```
 
-For Sort in ascending order, see the [sortBy](#sortby) method. For Sort simple values descending, see the [sortDesc](#sortdesc) method.
+For Sort in ascending order, use [`sortBy`](#sortby). For Sort simple values descending, use [`sortDesc`](#sortdesc).
 
 ---
 
@@ -168,7 +164,7 @@ collect({ b: 2, a: 1, c: 3 })
 // → { a: 1, b: 2, c: 3 }
 ```
 
-For Sort keys in descending order, see the [sortKeysDesc](#sortkeysdesc) method. For Sort keys with custom callback, see the [sortKeysUsing](#sortkeysusing) method. For Sort by values, see the [sortBy](#sortby) method.
+For Sort keys in descending order, use [`sortKeysDesc`](#sortkeysdesc). For Sort keys with custom callback, use [`sortKeysUsing`](#sortkeysusing).
 
 ---
 
@@ -182,7 +178,7 @@ collect({ a: 1, b: 2, c: 3 })
 // → { c: 3, b: 2, a: 1 }
 ```
 
-For Sort keys in ascending order, see the [sortKeys](#sortkeys) method. For Sort keys with custom callback, see the [sortKeysUsing](#sortkeysusing) method.
+For Sort keys in ascending order, use [`sortKeys`](#sortkeys). For Sort keys with custom callback, use [`sortKeysUsing`](#sortkeysusing).
 
 ---
 
@@ -193,7 +189,7 @@ The `sortKeysUsing` method sorts the collection by its keys using a callback.
 The callback must be a comparison function returning a negative integer, zero, or
 a positive integer to indicate sort order.
 
-Natural sort
+For natural sorting:
 
 ```typescript
 collect({ 'item2': 'b', 'item10': 'c', 'item1': 'a' })
@@ -201,6 +197,6 @@ collect({ 'item2': 'b', 'item10': 'c', 'item1': 'a' })
 // → { item1: 'a', item2: 'b', item10: 'c' }
 ```
 
-For Sort keys alphabetically, see the [sortKeys](#sortkeys) method. For Sort keys in descending order, see the [sortKeysDesc](#sortkeysdesc) method.
+For Sort keys alphabetically, use [`sortKeys`](#sortkeys). For Sort keys in descending order, use [`sortKeysDesc`](#sortkeysdesc).
 
 ---

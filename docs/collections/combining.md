@@ -9,7 +9,7 @@ The `zip` method merges together the values of the given array with the values o
 the original collection at their corresponding index. This is useful for pairing
 related data from multiple sources, such as names with scores or dates with values.
 
-Pair names with scores
+To pair names with scores:
 
 ```typescript
 collect(['Alice', 'Bob', 'Charlie'])
@@ -17,7 +17,7 @@ collect(['Alice', 'Bob', 'Charlie'])
 // → [['Alice', 85], ['Bob', 92], ['Charlie', 78]]
 ```
 
-Multiple arrays
+You may pass multiple arrays:
 
 ```typescript
 collect([1, 2, 3])
@@ -25,7 +25,7 @@ collect([1, 2, 3])
 // → [[1, 'a', true], [2, 'b', false], [3, 'c', true]]
 ```
 
-For Use values as keys paired with another array's values, see the [combine](#combine) method. For Create cartesian product instead of pairing by index, see the [crossJoin](#crossjoin) method.
+For Use values as keys paired with another array's values, use [`combine`](#combine). For Create cartesian product instead of pairing by index, use [`crossJoin`](#crossjoin).
 
 ---
 
@@ -35,15 +35,13 @@ The `diff` method compares the collection against another array or collection
 based on its values. This method returns the values in the original collection
 that are not present in the given collection.
 
-Basic difference
-
 ```typescript
 collect([1, 2, 3, 4, 5])
     .diff([2, 4, 6])
 // → [1, 3, 5]
 ```
 
-Find missing items
+To find missing items:
 
 ```typescript
 const required = ['name', 'email', 'phone']
@@ -52,7 +50,7 @@ collect(required).diff(provided)
 // → ['phone']
 ```
 
-For Get items present in both collections, see the [intersect](#intersect) method. For comparing by keys instead of values, see the [diffKeys](#diffkeys) method. For comparing by both keys and values, see the [diffAssoc](#diffassoc) method. For comparing with a custom callback, see the [diffUsing](#diffusing) method.
+For Get items present in both collections, use [`intersect`](#intersect). For comparing by keys instead of values, use [`diffKeys`](#diffkeys).
 
 ---
 
@@ -62,7 +60,7 @@ The `diffUsing` method compares the collection against another array or collecti
 using a callback. The callback should return 0 when two values are considered equal,
 a negative number when the first is less than the second, or a positive number otherwise.
 
-Case-insensitive comparison
+For case-insensitive comparison:
 
 ```typescript
 collect(['Apple', 'Banana'])
@@ -72,7 +70,7 @@ collect(['Apple', 'Banana'])
 // → ['Banana']
 ```
 
-For comparing using default equality, see the [diff](#diff) method. For comparing keys and values with a callback, see the [diffAssocUsing](#diffassocusing) method.
+For comparing using default equality, use [`diff`](#diff). For comparing keys and values with a callback, use [`diffAssocUsing`](#diffassocusing).
 
 ---
 
@@ -82,7 +80,7 @@ The `diffKeys` method compares the collection against another array or collectio
 based on its keys. This method returns the key/value pairs in the original
 collection whose keys are not present in the given collection.
 
-Find extra fields
+To find extra fields:
 
 ```typescript
 collect({ name: 'Alice', age: 30, city: 'NYC' })
@@ -90,7 +88,7 @@ collect({ name: 'Alice', age: 30, city: 'NYC' })
 // → { city: 'NYC' }
 ```
 
-For comparing by values instead of keys, see the [diff](#diff) method. For comparing by both keys and values, see the [diffAssoc](#diffassoc) method. For comparing keys with a custom callback, see the [diffKeysUsing](#diffkeysusing) method.
+For comparing by values instead of keys, use [`diff`](#diff). For comparing by both keys and values, use [`diffAssoc`](#diffassoc).
 
 ---
 
@@ -100,7 +98,7 @@ The `diffKeysUsing` method compares the collection against another array or coll
 based on its keys using a callback. The callback should return 0 when two keys are
 considered equal.
 
-Case-insensitive key comparison
+For case-insensitive key comparison:
 
 ```typescript
 collect({ Name: 'Alice', AGE: 30 })
@@ -110,7 +108,7 @@ collect({ Name: 'Alice', AGE: 30 })
 // → {} (all keys match case-insensitively)
 ```
 
-For comparing keys using default equality, see the [diffKeys](#diffkeys) method.
+For comparing keys using default equality, use [`diffKeys`](#diffkeys).
 
 ---
 
@@ -120,7 +118,7 @@ The `diffAssoc` method compares the collection against another array or collecti
 based on both its keys and values. This method returns the key/value pairs in the
 original collection that are not present in the given collection.
 
-Compare key-value pairs
+To compare key-value pairs:
 
 ```typescript
 collect({ color: 'red', size: 'large', price: 100 })
@@ -128,7 +126,7 @@ collect({ color: 'red', size: 'large', price: 100 })
 // → { size: 'large', price: 100 }
 ```
 
-For comparing by values only, see the [diff](#diff) method. For comparing by keys only, see the [diffKeys](#diffkeys) method. For comparing with a custom key callback, see the [diffAssocUsing](#diffassocusing) method.
+For comparing by values only, use [`diff`](#diff). For comparing by keys only, use [`diffKeys`](#diffkeys).
 
 ---
 
@@ -138,7 +136,7 @@ The `diffAssocUsing` method compares the collection against another array or col
 based on its keys and values, using a callback for key comparison. The callback should
 return 0 when two keys are considered equal.
 
-Case-insensitive key comparison
+For case-insensitive key comparison:
 
 ```typescript
 collect({ Name: 'Alice', Age: 30 })
@@ -148,7 +146,7 @@ collect({ Name: 'Alice', Age: 30 })
 // → { Age: 30 } (Name matches, Age differs in value)
 ```
 
-For comparing using default key equality, see the [diffAssoc](#diffassoc) method. For comparing values with a custom callback, see the [diffUsing](#diffusing) method.
+For comparing using default key equality, use [`diffAssoc`](#diffassoc). For comparing values with a custom callback, use [`diffUsing`](#diffusing).
 
 ---
 
@@ -158,7 +156,7 @@ The `intersect` method removes any values from the original collection that are
 not present in the given array or collection. The resulting collection will
 preserve the original collection's keys.
 
-Find common elements
+To find common elements:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -166,7 +164,7 @@ collect([1, 2, 3, 4, 5])
 // → [2, 4]
 ```
 
-Check permissions
+To check permissions:
 
 ```typescript
 const userPermissions = ['read', 'write', 'delete']
@@ -175,7 +173,7 @@ collect(userPermissions).intersect(required)
 // → ['read']
 ```
 
-For Get items NOT present in the other collection, see the [diff](#diff) method. For Intersect by keys instead of values, see the [intersectByKeys](#intersectbykeys) method. For Intersect by both keys and values, see the [intersectAssoc](#intersectassoc) method. For Intersect with a custom callback, see the [intersectUsing](#intersectusing) method.
+For Get items NOT present in the other collection, use [`diff`](#diff). For Intersect by keys instead of values, use [`intersectByKeys`](#intersectbykeys).
 
 ---
 
@@ -185,7 +183,7 @@ The `intersectUsing` method removes values not present in the given array or col
 using a callback for comparison. The callback should return 0 when two values are
 considered equal.
 
-Case-insensitive intersection
+For case-insensitive intersection:
 
 ```typescript
 collect(['Apple', 'Banana', 'Cherry'])
@@ -195,7 +193,7 @@ collect(['Apple', 'Banana', 'Cherry'])
 // → ['Apple', 'Cherry']
 ```
 
-For Intersect using default equality, see the [intersect](#intersect) method.
+For Intersect using default equality, use [`intersect`](#intersect).
 
 ---
 
@@ -205,7 +203,7 @@ The `intersectAssoc` method compares the collection against another array or col
 returning key/value pairs that are present in both. Unlike `intersect`, this method
 considers both keys and values when determining matches.
 
-Find matching key-value pairs
+To find matching key-value pairs:
 
 ```typescript
 collect({ name: 'Alice', age: 30, city: 'NYC' })
@@ -213,7 +211,7 @@ collect({ name: 'Alice', age: 30, city: 'NYC' })
 // → { name: 'Alice', city: 'NYC' }
 ```
 
-For Intersect by values only, see the [intersect](#intersect) method. For Intersect by keys only, see the [intersectByKeys](#intersectbykeys) method. For Intersect with a custom key callback, see the [intersectAssocUsing](#intersectassocusing) method.
+For Intersect by values only, use [`intersect`](#intersect). For Intersect by keys only, use [`intersectByKeys`](#intersectbykeys).
 
 ---
 
@@ -223,7 +221,7 @@ The `intersectAssocUsing` method compares the collection against another array o
 based on both keys and values, using a callback for key comparison. The callback should
 return 0 when two keys are considered equal.
 
-Case-insensitive key matching
+For case-insensitive key matching:
 
 ```typescript
 collect({ Name: 'Alice', AGE: 30 })
@@ -233,7 +231,7 @@ collect({ Name: 'Alice', AGE: 30 })
 // → { Name: 'Alice', AGE: 30 }
 ```
 
-For Intersect using default key equality, see the [intersectAssoc](#intersectassoc) method.
+For Intersect using default key equality, use [`intersectAssoc`](#intersectassoc).
 
 ---
 
@@ -243,7 +241,7 @@ The `intersectByKeys` method removes any keys from the original collection that 
 not present in the given array or collection. This is useful for filtering an object
 to only include specific fields.
 
-Filter to allowed fields
+To filter to allowed fields:
 
 ```typescript
 collect({ name: 'Alice', age: 30, password: 'secret' })
@@ -251,7 +249,7 @@ collect({ name: 'Alice', age: 30, password: 'secret' })
 // → { name: 'Alice', age: 30 }
 ```
 
-For Intersect by values instead of keys, see the [intersect](#intersect) method. For Intersect by both keys and values, see the [intersectAssoc](#intersectassoc) method. For Similar but accepts key names as arguments, see the [only](/collections/filtering#only) method.
+For Intersect by values instead of keys, use [`intersect`](#intersect). For Intersect by both keys and values, use [`intersectAssoc`](#intersectassoc).
 
 ---
 
@@ -261,7 +259,7 @@ The `merge` method merges the given array or collection with the original collec
 If a string key in the given items matches a string key in the original collection,
 the given item's value will overwrite the value in the original collection.
 
-Merge objects
+To merge objects:
 
 ```typescript
 collect({ name: 'Alice', age: 25 })
@@ -269,7 +267,7 @@ collect({ name: 'Alice', age: 25 })
 // → { name: 'Alice', age: 30, city: 'NYC' }
 ```
 
-Merge arrays (appends with numeric keys)
+For arrays, items are appended:
 
 ```typescript
 collect([1, 2])
@@ -277,7 +275,7 @@ collect([1, 2])
 // → [1, 2, 3, 4]
 ```
 
-For keeping original values for duplicate keys, see the [union](#union) method. For Merge nested objects recursively, see the [mergeRecursive](#mergerecursive) method. For always appending without key consideration, see the [concat](#concat) method.
+For keeping original values for duplicate keys, use [`union`](#union). For Merge nested objects recursively, use [`mergeRecursive`](#mergerecursive).
 
 ---
 
@@ -288,7 +286,7 @@ the original collection. If a string key in the given items matches a string key
 in the original collection, the values for these keys are merged together into an
 object, and this is done recursively for nested structures.
 
-Recursive merge
+For recursive merge:
 
 ```typescript
 collect({ user: { name: 'Alice', settings: { theme: 'dark' } } })
@@ -296,7 +294,7 @@ collect({ user: { name: 'Alice', settings: { theme: 'dark' } } })
 // → { user: { name: 'Alice', settings: { theme: 'dark', language: 'en' } } }
 ```
 
-For Shallow merge (overwrites nested objects), see the [merge](#merge) method. For Similar but overwrites instead of merging arrays, see the [replaceRecursive](#replacerecursive) method.
+For Shallow merge (overwrites nested objects), use [`merge`](#merge). For Similar but overwrites instead of merging arrays, use [`replaceRecursive`](#replacerecursive).
 
 ---
 
@@ -306,7 +304,7 @@ The `union` method adds the given array to the collection. If the given array
 contains keys that are already in the original collection, the original collection's
 values will be preferred. This is the opposite of `merge` which prefers new values.
 
-Prefer original values
+To prefer original values:
 
 ```typescript
 collect({ a: 1, b: 2 })
@@ -314,7 +312,7 @@ collect({ a: 1, b: 2 })
 // → { a: 1, b: 2, c: 4 }
 ```
 
-Fill in defaults
+To fill in defaults:
 
 ```typescript
 const userSettings = collect(user.settings)
@@ -322,7 +320,7 @@ const userSettings = collect(user.settings)
 // Original settings preserved, defaults fill gaps
 ```
 
-For preferring new values for duplicate keys, see the [merge](#merge) method.
+For preferring new values for duplicate keys, use [`merge`](#merge).
 
 ---
 
@@ -332,7 +330,7 @@ The `combine` method combines the values of the collection, as keys, with the
 values of another array or collection. This is useful for creating key-value
 pairs from two separate lists.
 
-Create key-value mapping
+To create key-value mapping:
 
 ```typescript
 collect(['name', 'age', 'city'])
@@ -340,7 +338,7 @@ collect(['name', 'age', 'city'])
 // → { name: 'Alice', age: 30, city: 'NYC' }
 ```
 
-Build form data
+To build form data:
 
 ```typescript
 collect(fieldNames)
@@ -348,7 +346,7 @@ collect(fieldNames)
 // → { field1: value1, field2: value2, ... }
 ```
 
-For Pair by index into nested arrays instead of key-value, see the [zip](#zip) method. For Extract key-value pairs from objects, see the [pluck](/collections/transforming#pluck) method.
+For Pair by index into nested arrays instead of key-value, use [`zip`](#zip). For Extract key-value pairs from objects, use [`pluck`](/collections/transforming#pluck).
 
 ---
 
@@ -357,7 +355,7 @@ For Pair by index into nested arrays instead of key-value, see the [zip](#zip) m
 The `crossJoin` method cross joins the collection's values among the given arrays
 or collections, returning a Cartesian product with all possible permutations.
 
-Two-way cross join
+For a two-way cross join:
 
 ```typescript
 collect(['S', 'M', 'L'])
@@ -369,7 +367,7 @@ collect(['S', 'M', 'L'])
 // ]
 ```
 
-Three-way cross join
+For a three-way cross join:
 
 ```typescript
 collect([1, 2])
@@ -377,7 +375,7 @@ collect([1, 2])
 // → [[1, 'a', true], [1, 'a', false], [1, 'b', true], ...]
 ```
 
-For Pair by index instead of creating all combinations, see the [zip](#zip) method.
+For Pair by index instead of creating all combinations, use [`zip`](#zip).
 
 ---
 
@@ -387,15 +385,13 @@ The `concat` method appends the given array or collection's values onto the end
 of another collection. Unlike `merge`, this method does not consider keys and
 simply appends all values to the end.
 
-Concatenate arrays
-
 ```typescript
 collect([1, 2, 3])
     .concat([4, 5, 6])
 // → [1, 2, 3, 4, 5, 6]
 ```
 
-Chain multiple concatenations
+You may chain multiple concatenations:
 
 ```typescript
 collect(['a'])
@@ -404,7 +400,7 @@ collect(['a'])
 // → ['a', 'b', 'c', 'd']
 ```
 
-For Merge with key consideration, see the [merge](#merge) method. For Append single items (mutates collection), see the [push](#push) method.
+For Merge with key consideration, use [`merge`](#merge). For Append single items (mutates collection), use [`push`](#push).
 
 ---
 
@@ -413,8 +409,6 @@ For Merge with key consideration, see the [merge](#merge) method. For Append sin
 The `put` method sets the given key and value in the collection. If the key
 already exists, its value will be overwritten. This method mutates the collection.
 
-Add or update item
-
 ```typescript
 collect({ a: 1, b: 2 })
     .put('c', 3)
@@ -422,7 +416,7 @@ collect({ a: 1, b: 2 })
 // → { a: 10, b: 2, c: 3 }
 ```
 
-Build object dynamically
+To build an object dynamically:
 
 ```typescript
 collect({})
@@ -431,7 +425,7 @@ collect({})
 // → { name: 'Alice', age: 30 }
 ```
 
-For Append without specifying a key, see the [push](#push) method. For Retrieve a value by key, see the [get](/collections/finding#get) method. For Get and remove by key, see the [pull](/collections/finding#pull) method.
+For Append without specifying a key, use [`push`](#push). For Retrieve a value by key, use [`get`](/collections/finding#get).
 
 ---
 
@@ -440,7 +434,7 @@ For Append without specifying a key, see the [push](#push) method. For Retrieve 
 The `push` method appends one or more items to the end of the collection.
 This method mutates the collection and returns it for chaining.
 
-Append single item
+To append a single item:
 
 ```typescript
 collect([1, 2, 3])
@@ -448,7 +442,7 @@ collect([1, 2, 3])
 // → [1, 2, 3, 4]
 ```
 
-Append multiple items
+To append multiple items:
 
 ```typescript
 collect(['a', 'b'])
@@ -456,7 +450,7 @@ collect(['a', 'b'])
 // → ['a', 'b', 'c', 'd', 'e']
 ```
 
-For Add to the beginning, see the [prepend](#prepend) method. For Set by key, see the [put](#put) method. For Append without mutation, see the [concat](#concat) method. For push alias, see the [add](#add) method.
+For Add to the beginning, use [`prepend`](#prepend). For Set by key, use [`put`](#put).
 
 ---
 
@@ -466,7 +460,7 @@ The `prepend` method adds an item to the beginning of the collection.
 You may optionally pass a second argument to set the key of the prepended item.
 This method mutates the collection.
 
-Prepend value
+To prepend a value:
 
 ```typescript
 collect([2, 3, 4])
@@ -474,7 +468,7 @@ collect([2, 3, 4])
 // → [1, 2, 3, 4]
 ```
 
-Prepend with key
+To prepend with a key:
 
 ```typescript
 collect({ b: 2, c: 3 })
@@ -482,7 +476,7 @@ collect({ b: 2, c: 3 })
 // → { a: 1, b: 2, c: 3 }
 ```
 
-For Add to the end, see the [push](#push) method. For Prepend multiple values, see the [unshift](#unshift) method.
+For Add to the end, use [`push`](#push). For Prepend multiple values, use [`unshift`](#unshift).
 
 ---
 
@@ -492,7 +486,7 @@ The `unshift` method is an alias for the `prepend` method, but accepts multiple
 values. It adds one or more items to the beginning of the collection, preserving
 their order. This method mutates the collection.
 
-Prepend multiple values
+To prepend multiple values:
 
 ```typescript
 collect([4, 5, 6])
@@ -500,7 +494,7 @@ collect([4, 5, 6])
 // → [1, 2, 3, 4, 5, 6]
 ```
 
-For Add single item with optional key, see the [prepend](#prepend) method. For Add to the end, see the [push](#push) method.
+For Add single item with optional key, use [`prepend`](#prepend). For Add to the end, use [`push`](#push).
 
 ---
 
@@ -509,7 +503,7 @@ For Add single item with optional key, see the [prepend](#prepend) method. For A
 The `add` method is an alias for the `push` method. It appends a single item
 to the end of the collection. This method mutates the collection.
 
-Add item
+To add an item:
 
 ```typescript
 collect([1, 2, 3])
@@ -517,7 +511,7 @@ collect([1, 2, 3])
 // → [1, 2, 3, 4]
 ```
 
-For Primary method (supports multiple items), see the [push](#push) method.
+For Primary method (supports multiple items), use [`push`](#push).
 
 ---
 
@@ -527,7 +521,7 @@ The `multiply` method creates multiple copies of all items in the collection.
 The resulting collection contains the original items repeated the specified
 number of times.
 
-Double the items
+To double the items:
 
 ```typescript
 collect([1, 2, 3])
@@ -535,7 +529,7 @@ collect([1, 2, 3])
 // → [1, 2, 3, 1, 2, 3]
 ```
 
-Repeat for display
+To repeat for display:
 
 ```typescript
 collect(['*'])
@@ -544,7 +538,7 @@ collect(['*'])
 // → '*****'
 ```
 
-For Pad to a specific size, see the [pad](/collections/transforming#pad) method. For Generate a sequence of numbers, see the [range](/collections/transforming#range) method.
+For Pad to a specific size, use [`pad`](/collections/transforming#pad). For Generate a sequence of numbers, use [`range`](/collections/transforming#range).
 
 ---
 
@@ -554,15 +548,13 @@ The `replace` method behaves similarly to `merge`; however, in addition to
 overwriting matching items that have string keys, the `replace` method will
 also overwrite items in the collection that have matching numeric keys.
 
-Replace by key
-
 ```typescript
 collect({ name: 'Alice', age: 25 })
     .replace({ age: 30, city: 'NYC' })
 // → { name: 'Alice', age: 30, city: 'NYC' }
 ```
 
-Replace array items by index
+To replace array items by index:
 
 ```typescript
 collect(['a', 'b', 'c'])
@@ -570,7 +562,7 @@ collect(['a', 'b', 'c'])
 // → ['a', 'B', 'C']
 ```
 
-For Merge without replacing by numeric key, see the [merge](#merge) method. For Replace nested objects recursively, see the [replaceRecursive](#replacerecursive) method.
+For Merge without replacing by numeric key, use [`merge`](#merge). For Replace nested objects recursively, use [`replaceRecursive`](#replacerecursive).
 
 ---
 
@@ -579,7 +571,7 @@ For Merge without replacing by numeric key, see the [merge](#merge) method. For 
 The `replaceRecursive` method works like `replace`, but it will recurse into
 nested objects and apply the same replacement process to the inner values.
 
-Recursive replacement
+For recursive replacement:
 
 ```typescript
 collect({
@@ -590,7 +582,7 @@ collect({
 // → { user: { name: 'Alice', settings: { theme: 'light', lang: 'en' } } }
 ```
 
-For Shallow replacement, see the [replace](#replace) method. For Similar but merges arrays instead of replacing, see the [mergeRecursive](#mergerecursive) method.
+For Shallow replacement, use [`replace`](#replace). For Similar but merges arrays instead of replacing, use [`mergeRecursive`](#mergerecursive).
 
 ---
 
@@ -600,7 +592,7 @@ The `with` method joins the collection with a related collection, enabling
 operations that correlate items between the two. This is useful for scenarios
 similar to database joins where you need to work with related data sets.
 
-Join users with orders
+To join users with orders:
 
 ```typescript
 const users = collect([
@@ -617,6 +609,6 @@ users.with(orders).map((user, related) => ({
 }))
 ```
 
-For Create cartesian product of two collections, see the [crossJoin](#crossjoin) method. For Pair items by index, see the [zip](#zip) method.
+For Create cartesian product of two collections, use [`crossJoin`](#crossjoin). For Pair items by index, use [`zip`](#zip).
 
 ---

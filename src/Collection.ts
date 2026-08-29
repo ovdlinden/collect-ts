@@ -897,11 +897,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Array, object, or existing collection
 	 * @returns New collection
 	 *
-	 * @example Basic usage
+	 * @example
 	 * Collection.make([1, 2, 3])
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example From an object
+	 * @example From an object:
 	 * Collection.make({ name: 'Taylor', role: 'admin' })
 	 * // → Collection { name: 'Taylor', role: 'admin' }
 	 *
@@ -922,15 +922,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param value - Value to wrap
 	 * @returns Collection containing the value
 	 *
-	 * @example Array
+	 * @example For an array:
 	 * Collection.wrap([1, 2, 3])
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example Single value
+	 * @example For a single value:
 	 * Collection.wrap('hello')
 	 * // → Collection ['hello']
 	 *
-	 * @example Existing collection passes through
+	 * @example An existing collection passes through unchanged:
 	 * Collection.wrap(collect([1, 2]))
 	 * // → Collection [1, 2]
 	 *
@@ -960,11 +960,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param value - Collection or array to unwrap
 	 * @returns Plain array
 	 *
-	 * @example Unwrapping a collection
+	 * @example To unwrap a collection:
 	 * Collection.unwrap(collect([1, 2, 3]))
 	 * // → [1, 2, 3]
 	 *
-	 * @example Already an array
+	 * @example If already an array, it passes through:
 	 * Collection.unwrap([1, 2, 3])
 	 * // → [1, 2, 3]
 	 *
@@ -993,11 +993,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @returns Empty collection
 	 *
-	 * @example Basic usage
+	 * @example
 	 * Collection.empty()
 	 * // → Collection []
 	 *
-	 * @example Typed empty collection
+	 * @example For a typed empty collection:
 	 * Collection.empty<User>()
 	 * // → Collection<User> []
 	 *
@@ -1013,17 +1013,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * The `range` method creates a collection containing numbers within a specified range.
 	 *
-	 * Works in both directions: ascending when from < to, descending otherwise.
+	 * Works in both directions: ascending when `from < to`, descending otherwise.
 	 *
 	 * @param from - Start of range (inclusive)
 	 * @param to - End of range (inclusive)
 	 * @returns Collection of integers
 	 *
-	 * @example Ascending
+	 * @example In ascending order:
 	 * Collection.range(1, 5)
 	 * // → Collection [1, 2, 3, 4, 5]
 	 *
-	 * @example Descending
+	 * @example In descending order:
 	 * Collection.range(5, 1)
 	 * // → Collection [5, 4, 3, 2, 1]
 	 *
@@ -1055,11 +1055,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Function receiving the 1-based index
 	 * @returns Collection of callback results
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * Collection.times(3, i => i * 2)
 	 * // → Collection [2, 4, 6]
 	 *
-	 * @example Without callback
+	 * @example Without a callback, it returns numbers 1 through N:
 	 * Collection.times(3)
 	 * // → Collection [1, 2, 3]
 	 *
@@ -1086,11 +1086,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param json - Valid JSON array or object string
 	 * @returns Collection from parsed JSON
 	 *
-	 * @example From JSON array
+	 * @example From JSON array:
 	 * Collection.fromJson('[1, 2, 3]')
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example From JSON object
+	 * @example From JSON object:
 	 * Collection.fromJson('{"a": 1, "b": 2}')
 	 * // → Collection {a: 1, b: 2}
 	 *
@@ -1109,11 +1109,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @returns The raw items
 	 *
-	 * @example Array collection
+	 * @example For an array collection:
 	 * collect([1, 2, 3]).all()
 	 * // → [1, 2, 3]
 	 *
-	 * @example Associative collection
+	 * @example For an associative collection:
 	 * collect({ name: 'Taylor', role: 'admin' }).all()
 	 * // → { name: 'Taylor', role: 'admin' }
 	 *
@@ -1141,15 +1141,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultValue - Value or factory function to return if key not found
 	 * @returns The item at the key, or the default value
 	 *
-	 * @example Basic usage
+	 * @example
 	 * collect({ name: 'Taylor', role: 'admin' }).get('name')
 	 * // → 'Taylor'
 	 *
-	 * @example With default value
+	 * @example You may pass a default value:
 	 * collect({ name: 'Taylor' }).get('role', 'guest')
 	 * // → 'guest'
 	 *
-	 * @example With default callback
+	 * @example Or pass a callback that returns the default:
 	 * collect({ name: 'Taylor' }).get('role', () => computeDefault())
 	 * // → result of computeDefault()
 	 *
@@ -1182,14 +1182,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param value - Value or factory function to store if key not found
 	 * @returns The existing item or the newly stored default
 	 *
-	 * @example Basic usage
+	 * @example
 	 * const data = collect({ a: 1 })
 	 * data.getOrPut('b', 2)
 	 * // → 2
 	 * data.all()
 	 * // → { a: 1, b: 2 }
 	 *
-	 * @example With factory function
+	 * @example You may also pass a factory function:
 	 * data.getOrPut('expensive', () => computeExpensiveValue())
 	 * // → computed value (only computed if key missing)
 	 *
@@ -1224,12 +1224,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .first()
 	 * // → 1
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([1, 2, 3, 4])
 	 *     .first(n => n > 2)
 	 * // → 3
 	 *
-	 * @example With default
+	 * @example You may also pass a default:
 	 * collect([])
 	 *     .first(null, 'default')
 	 * // → 'default'
@@ -1287,7 +1287,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .last()
 	 * // → 3
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([1, 2, 3, 4])
 	 *     .last(n => n < 3)
 	 * // → 2
@@ -1343,11 +1343,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @returns Collection of keys
 	 *
-	 * @example Associative collection
+	 * @example For an associative collection:
 	 * collect({ a: 1, b: 2 }).keys()
 	 * // → Collection ['a', 'b']
 	 *
-	 * @example Array collection
+	 * @example For an array collection:
 	 * collect([10, 20, 30]).keys()
 	 * // → Collection ['0', '1', '2']
 	 *
@@ -1369,11 +1369,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @returns Collection of values
 	 *
-	 * @example Associative collection
+	 * @example For an associative collection:
 	 * collect({ a: 1, b: 2, c: 3 }).values()
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example Resetting keys after filtering
+	 * @example To reset keys after filtering:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .filter(n => n > 2)
 	 *     .values()
@@ -1404,7 +1404,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .map(n => n * 2)
 	 * // → Collection [2, 4, 6]
 	 *
-	 * @example Extract property
+	 * @example To extract a property:
 	 * collect([
 	 *   { name: 'Taylor' },
 	 *   { name: 'Abigail' },
@@ -1581,7 +1581,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .mapSpread((a, b) => a + b)
 	 * // → [3, 7, 11]
 	 *
-	 * @example With key as final argument
+	 * @example You may also pass a key as the final argument:
 	 * collect([['Taylor', 'Laravel'], ['Caleb', 'Livewire']])
 	 *     .mapSpread((name, project, key) => `${key}: ${name} - ${project}`)
 	 * // → ['0: Taylor - Laravel', '1: Caleb - Livewire']
@@ -1635,24 +1635,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * The `filter` method filters the collection using the given callback, keeping only
 	 * items that pass a given truth test. If no callback is supplied, all falsy values
-	 * (false, null, undefined, 0, '') are removed.
+	 * (`false`, `null`, `undefined`, `0`, `''`) are removed.
 	 *
 	 * @param callback - Function to test each item. Receives value and key. If omitted, removes falsy values.
 	 * @returns New collection containing only items that passed the test
 	 *
-	 * @example Keep items greater than 2
+	 * @example
 	 * collect([1, 2, 3, 4])
 	 *     .filter(n => n > 2)
 	 * // → [3, 4]
 	 *
-	 * @example Remove falsy values
+	 * @example To remove falsy values, call without arguments:
 	 * collect([0, 1, '', 'hello', null])
 	 *     .filter()
 	 * // → [1, 'hello']
 	 *
 	 * @see {@link reject} - the inverse (keeps items that fail)
 	 * @see {@link where} - Filter by key/value instead of callback
-	 * @see {@link whereIn} - Filter where key matches array of values
 	 *
 	 * @category Filtering
 	 */
@@ -1677,17 +1676,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * The `reject` method filters the collection using the given callback, removing
 	 * items that pass the truth test. It is the inverse of the `filter` method.
-	 * You may also pass a value directly to reject items by loose equality.
 	 *
 	 * @param callback - Function to test each item, or a value to reject by loose equality
 	 * @returns New collection with matching items removed
 	 *
-	 * @example Reject items greater than 2
+	 * @example
 	 * collect([1, 2, 3, 4])
 	 *     .reject(n => n > 2)
 	 * // → [1, 2]
 	 *
-	 * @example Reject by value
+	 * @example You may also pass a value directly to reject by loose equality:
 	 * collect([1, null, 3])
 	 *     .reject(null)
 	 * // → [1, 3]
@@ -1720,7 +1718,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .collapse()
 	 * // → [1, 2, 3, 4, 5]
 	 *
-	 * @example With nested Collections
+	 * @example You may also use nested Collections:
 	 * collect([collect([1, 2]), collect([3, 4])])
 	 *     .collapse()
 	 * // → [1, 2, 3, 4]
@@ -1759,7 +1757,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .collapseWithKeys()
 	 * // → { name: 'John', email: 'john@example.com', role: 'admin' }
 	 *
-	 * @example With overlapping keys
+	 * @example With overlapping keys, later values override:
 	 * collect([{ a: 1 }, { a: 2, b: 3 }])
 	 *     .collapseWithKeys()
 	 * // → { a: 2, b: 3 }
@@ -1793,12 +1791,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param depth - Maximum depth to flatten (default: infinite)
 	 * @returns New collection with nested arrays flattened
 	 *
-	 * @example Flatten all levels
+	 * @example To flatten all levels:
 	 * collect([[1, [2, [3]]], [4]])
 	 *     .flatten()
 	 * // → [1, 2, 3, 4]
 	 *
-	 * @example Flatten one level
+	 * @example To flatten just one level:
 	 * collect([[1, [2]], [3]])
 	 *     .flatten(1)
 	 * // → [1, [2], 3]
@@ -1845,7 +1843,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .flip()
 	 * // → { taylor: 'name', laravel: 'framework' }
 	 *
-	 * @example Array to object
+	 * @example For an array, keys become values:
 	 * collect(['a', 'b', 'c'])
 	 *     .flip()
 	 * // → { a: '0', b: '1', c: '2' }
@@ -1926,7 +1924,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * item, its key, and the current chunk being built. A new chunk starts whenever
 	 * the callback returns `false`.
 	 *
-	 * @example Grouping consecutive numbers
+	 * @example To group consecutive numbers:
 	 * collect([1, 2, 3, 5, 6])
 	 *     .chunkWhile((v, k, chunk) => v === chunk.last() + 1)
 	 * // → [
@@ -1970,7 +1968,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * distributing extra items across earlier groups to balance sizes as evenly
 	 * as possible.
 	 *
-	 * @example Splitting into three groups
+	 * @example To split into three groups:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .split(3)
 	 * // → [
@@ -2015,7 +2013,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * the final group. Unlike `split`, which balances group sizes, `splitIn`
 	 * creates full-sized chunks until items run out.
 	 *
-	 * @example Splitting into three groups
+	 * @example To split into three groups:
 	 * collect([1, 2, 3, 4, 5, 6, 7])
 	 *     .splitIn(3)
 	 * // → [
@@ -2043,15 +2041,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param length - Optional maximum number of items to include
 	 * @returns New collection containing the slice
 	 *
-	 * @example Basic usage
+	 * @example
 	 * collect([1, 2, 3, 4, 5]).slice(2)
 	 * // → Collection [3, 4, 5]
 	 *
-	 * @example With length limit
+	 * @example You may also pass a length limit:
 	 * collect([1, 2, 3, 4, 5]).slice(1, 2)
 	 * // → Collection [2, 3]
 	 *
-	 * @example Negative offset
+	 * @example With a negative offset, it counts from the end:
 	 * collect([1, 2, 3, 4, 5]).slice(-2)
 	 * // → Collection [4, 5]
 	 *
@@ -2142,12 +2140,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param value - Value to pad with
 	 * @returns New collection padded to the target size
 	 *
-	 * @example Pad right
+	 * @example To pad to the right:
 	 * collect([1, 2, 3])
 	 *     .pad(5, 0)
 	 * // → [1, 2, 3, 0, 0]
 	 *
-	 * @example Pad left
+	 * @example To pad to the left:
 	 * collect([1, 2, 3])
 	 *     .pad(-5, 0)
 	 * // → [0, 0, 1, 2, 3]
@@ -2181,12 +2179,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param arrays - One or more arrays to zip with this collection
 	 * @returns Collection of collections, where each inner collection contains values from the same index
 	 *
-	 * @example Pair names with scores
+	 * @example To pair names with scores:
 	 * collect(['Alice', 'Bob', 'Charlie'])
 	 *     .zip([85, 92, 78])
 	 * // → [['Alice', 85], ['Bob', 92], ['Charlie', 78]]
 	 *
-	 * @example Multiple arrays
+	 * @example You may pass multiple arrays:
 	 * collect([1, 2, 3])
 	 *     .zip(['a', 'b', 'c'], [true, false, true])
 	 * // → [[1, 'a', true], [2, 'b', false], [3, 'c', true]]
@@ -2215,21 +2213,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * The `contains` method determines whether the collection contains a given item.
 	 *
-	 * You may pass a closure to determine if an element exists matching a given truth test.
-	 * Uses loose equality (==) to match Laravel behavior. JS differs from PHP:
-	 * 0==false, null==undefined, ""==0.
+	 * Uses loose equality (`==`) to match Laravel behavior. Note that JS differs from PHP:
+	 * `0 == false`, `null == undefined`, `"" == 0`.
 	 *
 	 * @param keyOrCallback - Value to find, property key, or callback function
 	 * @param operator - Comparison operator when using key/value syntax
 	 * @param value - Value to compare against when using key/operator/value syntax
-	 * @returns True if item exists, false otherwise
+	 * @returns `true` if item exists, `false` otherwise
 	 *
-	 * @example Check value exists
+	 * @example
 	 * collect([1, 2, 3])
 	 *     .contains(2)
 	 * // → true
 	 *
-	 * @example With callback
+	 * @example You may pass a callback to check for a matching item:
 	 * collect([
 	 *   { name: 'Taylor', active: true },
 	 *   { name: 'Abigail', active: false },
@@ -2237,7 +2234,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .contains(u => u.active)
 	 * // → true
 	 *
-	 * @example Key/value syntax
+	 * @example You may also use key/value syntax:
 	 * collect([
 	 *   { name: 'Taylor', role: 'admin' },
 	 *   { name: 'Abigail', role: 'editor' },
@@ -2245,9 +2242,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .contains('role', 'admin')
 	 * // → true
 	 *
-	 * @see {@link containsStrict} - strict equality (===)
+	 * @see {@link containsStrict} - strict equality (`===`)
 	 * @see {@link doesntContain} - the inverse (true if not found)
-	 * @see {@link some} - contains alias
 	 *
 	 * @category Filtering
 	 */
@@ -2293,12 +2289,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .containsStrict(1)
 	 * // → true
 	 *
-	 * @example Key/value with strict comparison
+	 * @example You may also use key/value with strict comparison:
 	 * collect([{ id: 1 }, { id: '1' }])
 	 *     .containsStrict('id', 1)
 	 * // → true (first item matches, second does not)
 	 *
-	 * @see {@link contains} - loose equality (==)
+	 * @see {@link contains} - loose equality (`==`)
 	 * @see {@link doesntContainStrict} - the inverse (true if not found)
 	 *
 	 * @category Checking
@@ -2331,7 +2327,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .doesntContain(4)
 	 * // → true
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([
 	 *   { name: 'Taylor', role: 'editor' },
 	 *   { name: 'Abigail', role: 'editor' },
@@ -2340,7 +2336,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * // → true
 	 *
 	 * @see {@link contains} - the inverse (true if found)
-	 * @see {@link doesntContainStrict} - strict equality (===)
+	 * @see {@link doesntContainStrict} - strict equality (`===`)
 	 *
 	 * @category Checking
 	 */
@@ -2370,7 +2366,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * // → true (string '1' is not strictly equal to number 1)
 	 *
 	 * @see {@link containsStrict} - the inverse with strict equality
-	 * @see {@link doesntContain} - loose equality (==)
+	 * @see {@link doesntContain} - loose equality (`==`)
 	 *
 	 * @category Checking
 	 */
@@ -2389,12 +2385,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Array or collection to compare against
 	 * @returns New collection containing items not present in the given array
 	 *
-	 * @example Basic difference
+	 * @example
 	 * collect([1, 2, 3, 4, 5])
 	 *     .diff([2, 4, 6])
 	 * // → [1, 3, 5]
 	 *
-	 * @example Find missing items
+	 * @example To find missing items:
 	 * const required = ['name', 'email', 'phone']
 	 * const provided = ['name', 'email']
 	 * collect(required).diff(provided)
@@ -2424,7 +2420,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Comparison function returning 0 for equal values
 	 * @returns New collection containing items not considered equal to any in the given array
 	 *
-	 * @example Case-insensitive comparison
+	 * @example For case-insensitive comparison:
 	 * collect(['Apple', 'Banana'])
 	 *     .diffUsing(['apple', 'cherry'], (a, b) =>
 	 *         a.toLowerCase().localeCompare(b.toLowerCase())
@@ -2449,7 +2445,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection to compare keys against
 	 * @returns New collection containing items whose keys are not in the given object
 	 *
-	 * @example Find extra fields
+	 * @example To find extra fields:
 	 * collect({ name: 'Alice', age: 30, city: 'NYC' })
 	 *     .diffKeys({ name: '', age: 0 })
 	 * // → { city: 'NYC' }
@@ -2484,7 +2480,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Comparison function returning 0 for equal keys
 	 * @returns New collection containing items whose keys don't match via the callback
 	 *
-	 * @example Case-insensitive key comparison
+	 * @example For case-insensitive key comparison:
 	 * collect({ Name: 'Alice', AGE: 30 })
 	 *     .diffKeysUsing({ name: '', age: 0 }, (a, b) =>
 	 *         a.toLowerCase().localeCompare(b.toLowerCase())
@@ -2520,7 +2516,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection to compare against
 	 * @returns New collection containing items whose key/value pairs are not in the given object
 	 *
-	 * @example Compare key-value pairs
+	 * @example To compare key-value pairs:
 	 * collect({ color: 'red', size: 'large', price: 100 })
 	 *     .diffAssoc({ color: 'red', size: 'medium' })
 	 * // → { size: 'large', price: 100 }
@@ -2551,7 +2547,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Comparison function returning 0 for equal keys
 	 * @returns New collection containing items whose key/value pairs don't match
 	 *
-	 * @example Case-insensitive key comparison
+	 * @example For case-insensitive key comparison:
 	 * collect({ Name: 'Alice', Age: 30 })
 	 *     .diffAssocUsing({ name: 'Alice', age: 25 }, (a, b) =>
 	 *         a.toLowerCase().localeCompare(b.toLowerCase())
@@ -2584,12 +2580,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Array or collection to intersect with
 	 * @returns New collection containing only items present in both
 	 *
-	 * @example Find common elements
+	 * @example To find common elements:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .intersect([2, 4, 6, 8])
 	 * // → [2, 4]
 	 *
-	 * @example Check permissions
+	 * @example To check permissions:
 	 * const userPermissions = ['read', 'write', 'delete']
 	 * const required = ['read', 'admin']
 	 * collect(userPermissions).intersect(required)
@@ -2619,7 +2615,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Comparison function returning 0 for equal values
 	 * @returns New collection containing only items that match via the callback
 	 *
-	 * @example Case-insensitive intersection
+	 * @example For case-insensitive intersection:
 	 * collect(['Apple', 'Banana', 'Cherry'])
 	 *     .intersectUsing(['apple', 'cherry'], (a, b) =>
 	 *         a.toLowerCase().localeCompare(b.toLowerCase())
@@ -2643,7 +2639,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection to intersect with
 	 * @returns New collection containing items with matching key/value pairs
 	 *
-	 * @example Find matching key-value pairs
+	 * @example To find matching key-value pairs:
 	 * collect({ name: 'Alice', age: 30, city: 'NYC' })
 	 *     .intersectAssoc({ name: 'Alice', age: 25, city: 'NYC' })
 	 * // → { name: 'Alice', city: 'NYC' }
@@ -2674,7 +2670,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Comparison function returning 0 for equal keys
 	 * @returns New collection containing items with matching key/value pairs via the callback
 	 *
-	 * @example Case-insensitive key matching
+	 * @example For case-insensitive key matching:
 	 * collect({ Name: 'Alice', AGE: 30 })
 	 *     .intersectAssocUsing({ name: 'Alice', age: 30 }, (a, b) =>
 	 *         a.toLowerCase().localeCompare(b.toLowerCase())
@@ -2706,7 +2702,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection whose keys to intersect with
 	 * @returns New collection containing only items whose keys exist in both
 	 *
-	 * @example Filter to allowed fields
+	 * @example To filter to allowed fields:
 	 * collect({ name: 'Alice', age: 30, password: 'secret' })
 	 *     .intersectByKeys({ name: '', age: '' })
 	 * // → { name: 'Alice', age: 30 }
@@ -2734,25 +2730,24 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * The `duplicates` method retrieves and returns duplicate values from the collection.
-	 * By default, the method uses loose comparison. Pass a callback or key to compare
-	 * by a derived value instead of the item itself.
+	 * By default, the method uses loose comparison.
 	 *
 	 * @param callback - Key or callback to derive comparison value
-	 * @param strict - Use strict equality (===) for comparison
+	 * @param strict - Use strict equality (`===`) for comparison
 	 * @returns New collection containing only duplicate items
 	 *
-	 * @example Find duplicates
+	 * @example
 	 * collect([1, 2, 2, 3, 3, 3])
 	 *     .duplicates()
 	 * // → [2, 3, 3]
 	 *
-	 * @example Duplicates by key
+	 * @example You may also pass a key to compare by a derived value:
 	 * collect([{ email: 'a@b.com' }, { email: 'c@d.com' }, { email: 'a@b.com' }])
 	 *     .duplicates('email')
 	 * // → [{ email: 'a@b.com' }]
 	 *
-	 * @see {@link duplicatesStrict} - strict equality
-	 * @see {@link unique} - Get unique items instead
+	 * @see {@link duplicatesStrict} - strict equality (`===`)
+	 * @see {@link unique} - get unique items instead
 	 *
 	 * @category Filtering
 	 */
@@ -2798,12 +2793,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * The `duplicatesStrict` method retrieves duplicate values using strict equality (===).
+	 * The `duplicatesStrict` method retrieves duplicate values using strict equality (`===`).
 	 *
 	 * @param callback - Optional key or callback to derive comparison value
 	 * @returns Collection of duplicate items
 	 *
-	 * @see {@link duplicates} - loose equality
+	 * @see {@link duplicates} - loose equality (`==`)
 	 *
 	 * @category Filtering
 	 */
@@ -2825,12 +2820,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .median()
 	 * // → 6
 	 *
-	 * @example With even count
+	 * @example For an even count, it returns the average of two middle values:
 	 * collect([1, 2, 3, 4])
 	 *     .median()
 	 * // → 2.5
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Desk', price: 200 },
 	 *   { name: 'Chair', price: 100 },
@@ -2896,12 +2891,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .mode()
 	 * // → [1]
 	 *
-	 * @example Multiple modes
+	 * @example For multiple modes, all are returned:
 	 * collect([1, 1, 2, 2, 3])
 	 *     .mode()
 	 * // → [1, 2]
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Desk', category: 'furniture' },
 	 *   { name: 'Chair', category: 'furniture' },
@@ -2972,12 +2967,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * By default it counts by the value itself, but you can pass a callback or
 	 * property key to count by a derived grouping key.
 	 *
-	 * @example Counting values
+	 * @example
 	 * collect([1, 2, 2, 3])
 	 *     .countBy()
 	 * // → {'1': 1, '2': 2, '3': 1}
 	 *
-	 * @example Counting by email domain
+	 * @example To count by email domain:
 	 * collect(['alice@gmail.com', 'bob@yahoo.com', 'carlos@gmail.com'])
 	 *     .countBy(email => email.split('@')[1])
 	 * // → {'gmail.com': 2, 'yahoo.com': 1}
@@ -3007,12 +3002,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param keyOrCallback - Property key or callback returning number to sum
 	 * @returns Sum of values, or 0 if collection is empty
 	 *
-	 * @example Sum numbers
+	 * @example
 	 * collect([1, 2, 3])
 	 *     .sum()
 	 * // → 6
 	 *
-	 * @example Sum property
+	 * @example To sum a property:
 	 * collect([
 	 *   { id: 1, total: 100 },
 	 *   { id: 2, total: 50 },
@@ -3105,7 +3100,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .avg()
 	 * // → 2
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Desk', price: 200 },
 	 *   { name: 'Chair', price: 100 },
@@ -3216,7 +3211,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .min()
 	 * // → 1
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Desk', price: 200 },
 	 *   { name: 'Chair', price: 100 },
@@ -3254,7 +3249,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .max()
 	 * // → 3
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Desk', price: 200 },
 	 *   { name: 'Chair', price: 100 },
@@ -3294,7 +3289,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .percentage(value => value === 1)
 	 * // → 33.33
 	 *
-	 * @example With precision
+	 * @example You may also specify precision:
 	 * collect([
 	 *   { name: 'Desk', available: true },
 	 *   { name: 'Chair', available: true },
@@ -3323,12 +3318,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Array or collection to merge into this collection
 	 * @returns New collection with merged items
 	 *
-	 * @example Merge objects
+	 * @example To merge objects:
 	 * collect({ name: 'Alice', age: 25 })
 	 *     .merge({ age: 30, city: 'NYC' })
 	 * // → { name: 'Alice', age: 30, city: 'NYC' }
 	 *
-	 * @example Merge arrays (appends with numeric keys)
+	 * @example For arrays, items are appended:
 	 * collect([1, 2])
 	 *     .merge([3, 4])
 	 * // → [1, 2, 3, 4]
@@ -3360,7 +3355,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection to merge recursively
 	 * @returns New collection with deeply merged items
 	 *
-	 * @example Recursive merge
+	 * @example For recursive merge:
 	 * collect({ user: { name: 'Alice', settings: { theme: 'dark' } } })
 	 *     .mergeRecursive({ user: { settings: { language: 'en' } } })
 	 * // → { user: { name: 'Alice', settings: { theme: 'dark', language: 'en' } } }
@@ -3407,12 +3402,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection to union with
 	 * @returns New collection with original values preserved for duplicate keys
 	 *
-	 * @example Prefer original values
+	 * @example To prefer original values:
 	 * collect({ a: 1, b: 2 })
 	 *     .union({ b: 3, c: 4 })
 	 * // → { a: 1, b: 2, c: 4 }
 	 *
-	 * @example Fill in defaults
+	 * @example To fill in defaults:
 	 * const userSettings = collect(user.settings)
 	 *     .union(defaultSettings)
 	 * // Original settings preserved, defaults fill gaps
@@ -3439,12 +3434,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param values - Array or collection to use as values
 	 * @returns New associative collection with this collection's values as keys
 	 *
-	 * @example Create key-value mapping
+	 * @example To create key-value mapping:
 	 * collect(['name', 'age', 'city'])
 	 *     .combine(['Alice', 30, 'NYC'])
 	 * // → { name: 'Alice', age: 30, city: 'NYC' }
 	 *
-	 * @example Build form data
+	 * @example To build form data:
 	 * collect(fieldNames)
 	 *     .combine(fieldValues)
 	 * // → { field1: value1, field2: value2, ... }
@@ -3471,7 +3466,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param lists - One or more arrays or collections to cross join with
 	 * @returns Collection of arrays representing all combinations
 	 *
-	 * @example Two-way cross join
+	 * @example For a two-way cross join:
 	 * collect(['S', 'M', 'L'])
 	 *     .crossJoin(['red', 'blue'])
 	 * // → [
@@ -3480,7 +3475,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * //   ['L', 'red'], ['L', 'blue']
 	 * // ]
 	 *
-	 * @example Three-way cross join
+	 * @example For a three-way cross join:
 	 * collect([1, 2])
 	 *     .crossJoin(['a', 'b'], [true, false])
 	 * // → [[1, 'a', true], [1, 'a', false], [1, 'b', true], ...]
@@ -3517,12 +3512,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param source - Array or collection to concatenate
 	 * @returns New collection with values appended
 	 *
-	 * @example Concatenate arrays
+	 * @example
 	 * collect([1, 2, 3])
 	 *     .concat([4, 5, 6])
 	 * // → [1, 2, 3, 4, 5, 6]
 	 *
-	 * @example Chain multiple concatenations
+	 * @example You may chain multiple concatenations:
 	 * collect(['a'])
 	 *     .concat(['b', 'c'])
 	 *     .concat(['d'])
@@ -3554,13 +3549,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param value - The value to assign
 	 * @returns The collection instance for chaining
 	 *
-	 * @example Add or update item
+	 * @example
 	 * collect({ a: 1, b: 2 })
 	 *     .put('c', 3)
 	 *     .put('a', 10)
 	 * // → { a: 10, b: 2, c: 3 }
 	 *
-	 * @example Build object dynamically
+	 * @example To build an object dynamically:
 	 * collect({})
 	 *     .put('name', 'Alice')
 	 *     .put('age', 30)
@@ -3587,14 +3582,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultValue - Optional value to return if key not found
 	 * @returns The removed item, or the default value
 	 *
-	 * @example Basic usage
+	 * @example
 	 * const data = collect({ name: 'Taylor', role: 'admin' })
 	 * data.pull('name')
 	 * // → 'Taylor'
 	 * data.all()
 	 * // → { role: 'admin' }
 	 *
-	 * @example With default value
+	 * @example You may pass a default value:
 	 * collect({ a: 1 }).pull('missing', 'default')
 	 * // → 'default'
 	 *
@@ -3628,12 +3623,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param values - One or more values to append
 	 * @returns The collection instance for chaining
 	 *
-	 * @example Append single item
+	 * @example To append a single item:
 	 * collect([1, 2, 3])
 	 *     .push(4)
 	 * // → [1, 2, 3, 4]
 	 *
-	 * @example Append multiple items
+	 * @example To append multiple items:
 	 * collect(['a', 'b'])
 	 *     .push('c', 'd', 'e')
 	 * // → ['a', 'b', 'c', 'd', 'e']
@@ -3664,12 +3659,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param key - Optional key for the prepended item
 	 * @returns The collection instance for chaining
 	 *
-	 * @example Prepend value
+	 * @example To prepend a value:
 	 * collect([2, 3, 4])
 	 *     .prepend(1)
 	 * // → [1, 2, 3, 4]
 	 *
-	 * @example Prepend with key
+	 * @example To prepend with a key:
 	 * collect({ b: 2, c: 3 })
 	 *     .prepend(1, 'a')
 	 * // → { a: 1, b: 2, c: 3 }
@@ -3699,7 +3694,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param values - One or more values to prepend
 	 * @returns The collection instance for chaining
 	 *
-	 * @example Prepend multiple values
+	 * @example To prepend multiple values:
 	 * collect([4, 5, 6])
 	 *     .unshift(1, 2, 3)
 	 * // → [1, 2, 3, 4, 5, 6]
@@ -3724,18 +3719,18 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param count - Optional number of items to pop (default: 1)
 	 * @returns The popped item(s), or null if empty
 	 *
-	 * @example Single item
+	 * @example For a single item:
 	 * const data = collect([1, 2, 3, 4, 5])
 	 * data.pop()
 	 * // → 5
 	 * data.all()
 	 * // → [1, 2, 3, 4]
 	 *
-	 * @example Multiple items
+	 * @example For multiple items:
 	 * collect([1, 2, 3, 4, 5]).pop(2)
 	 * // → Collection [4, 5]
 	 *
-	 * @example Empty collection
+	 * @example For an empty collection:
 	 * collect([]).pop()
 	 * // → null
 	 *
@@ -3785,19 +3780,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @param count - Optional number of items to shift (default: 1)
 	 * @returns The shifted item(s), or null if empty
+	 * @throws {InvalidArgumentException} If count is negative
 	 *
-	 * @example Single item
+	 * @example For a single item:
 	 * const data = collect([1, 2, 3, 4, 5])
 	 * data.shift()
 	 * // → 1
 	 * data.all()
 	 * // → [2, 3, 4, 5]
 	 *
-	 * @example Multiple items
+	 * @example For multiple items:
 	 * collect([1, 2, 3, 4, 5]).shift(2)
 	 * // → Collection [1, 2]
 	 *
-	 * @example Empty collection
+	 * @example For an empty collection:
 	 * collect([]).shift()
 	 * // → null
 	 *
@@ -3851,7 +3847,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param item - The item to add
 	 * @returns The collection instance for chaining
 	 *
-	 * @example Add item
+	 * @example To add an item:
 	 * collect([1, 2, 3])
 	 *     .add(4)
 	 * // → [1, 2, 3, 4]
@@ -3873,12 +3869,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param keys - Key or keys to remove
 	 * @returns This collection (mutated)
 	 *
-	 * @example Remove single key
+	 * @example To remove a single key:
 	 * collect({ a: 1, b: 2, c: 3 })
 	 *     .forget('b')
 	 * // → Collection { a: 1, c: 3 }
 	 *
-	 * @example Remove multiple keys
+	 * @example To remove multiple keys:
 	 * collect({ a: 1, b: 2, c: 3 })
 	 *     .forget(['a', 'c'])
 	 * // → Collection { b: 2 }
@@ -3975,7 +3971,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param keys - Array or collection of property keys to select
 	 * @returns New collection with only the selected properties
 	 *
-	 * @example Basic usage
+	 * @example
 	 * const users = collect([
 	 *     { id: 1, name: 'Taylor', email: 'taylor@example.com', role: 'admin' },
 	 *     { id: 2, name: 'Abigail', email: 'abigail@example.com', role: 'user' }
@@ -3983,7 +3979,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * users.select(['name', 'email'])
 	 * // → Collection [{ name: 'Taylor', email: '...' }, { name: 'Abigail', email: '...' }]
 	 *
-	 * @example Nested properties
+	 * @example For nested properties:
 	 * collect([{ user: { name: 'Taylor' }, meta: { active: true } }])
 	 *     .select(['user.name'])
 	 * // → Collection [{ 'user.name': 'Taylor' }]
@@ -4022,12 +4018,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param key - Key or array of keys to check
 	 * @returns True if key(s) exist, false otherwise
 	 *
-	 * @example Single key
+	 * @example For a single key:
 	 * collect({ a: 1, b: 2 })
 	 *     .has('a')
 	 * // → true
 	 *
-	 * @example Multiple keys (all must exist)
+	 * @example For multiple keys (all must exist):
 	 * collect({ a: 1, b: 2 })
 	 *     .has(['a', 'c'])
 	 * // → false (c does not exist)
@@ -4059,7 +4055,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .hasAny(['b', 'c', 'd'])
 	 * // → true (b exists)
 	 *
-	 * @example No matches
+	 * @example If no keys match:
 	 * collect({ a: 1, b: 2 })
 	 *     .hasAny(['c', 'd'])
 	 * // → false
@@ -4085,7 +4081,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param preserveKeys - Keep original keys within groups
 	 * @returns Collection of Collections, keyed by group
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Taylor', role: 'admin' },
 	 *   { name: 'Abigail', role: 'editor' },
@@ -4100,7 +4096,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * //     ],
 	 * //   }
 	 *
-	 * @example By callback
+	 * @example You may also pass a callback:
 	 * collect([
 	 *   { id: 1, total: 150 },
 	 *   { id: 2, total: 50 },
@@ -4261,7 +4257,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * // active  → [{ name: 'Taylor', ... }, { name: 'James', ... }]
 	 * // inactive → [{ name: 'Abigail', ... }]
 	 *
-	 * @example With key/value syntax
+	 * @example You may also use key/value syntax:
 	 * const [admins, others] = collect([
 	 *   { name: 'Taylor', role: 'admin' },
 	 *   { name: 'Abigail', role: 'editor' },
@@ -4325,15 +4321,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param strict - Use strict equality comparison (default: false)
 	 * @returns The key of the found item, or false if not found
 	 *
-	 * @example Basic search
+	 * @example
 	 * collect([2, 4, 6, 8]).search(4)
 	 * // → '1'
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([2, 4, 6, 8]).search(item => item > 5)
 	 * // → '2'
 	 *
-	 * @example Strict comparison
+	 * @example For strict comparison:
 	 * collect([2, 4, '6', 8]).search('6', true)
 	 * // → '2'
 	 *
@@ -4414,7 +4410,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .sort()
 	 * // → [1, 2, 3, 4, 5]
 	 *
-	 * @example Custom comparator
+	 * @example You may pass a custom comparator:
 	 * collect([
 	 *   { name: 'Taylor', age: 32 },
 	 *   { name: 'Abigail', age: 28 },
@@ -4485,7 +4481,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param descending - Sort in descending order instead
 	 * @returns New sorted collection
 	 *
-	 * @example By property
+	 * @example
 	 * collect([
 	 *   { name: 'Taylor', age: 32 },
 	 *   { name: 'Abigail', age: 28 },
@@ -4496,7 +4492,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * //     { name: 'Taylor', age: 32 },
 	 * //   ]
 	 *
-	 * @example By callback
+	 * @example You may also pass a callback:
 	 * collect([
 	 *   { name: 'Taylor', age: 32 },
 	 *   { name: 'Abigail', age: 28 },
@@ -4551,7 +4547,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param options - Unused, kept for Laravel API compatibility
 	 * @returns New collection sorted in descending order
 	 *
-	 * @example By property
+	 * @example
 	 * collect([
 	 *   { name: 'Taylor', age: 32 },
 	 *   { name: 'Abigail', age: 28 },
@@ -4562,7 +4558,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * //     { name: 'Abigail', age: 28 },
 	 * //   ]
 	 *
-	 * @example By callback
+	 * @example You may also pass a callback:
 	 * collect([
 	 *   { name: 'Chair', price: 100 },
 	 *   { name: 'Desk', price: 200 },
@@ -4640,7 +4636,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Comparison function receiving two keys to compare
 	 * @returns New collection with keys sorted by callback
 	 *
-	 * @example Natural sort
+	 * @example For natural sorting:
 	 * collect({ 'item2': 'b', 'item10': 'c', 'item1': 'a' })
 	 *     .sortKeysUsing((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 	 * // → { item1: 'a', item2: 'b', item10: 'c' }
@@ -4685,7 +4681,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .skipUntil(number => number >= 3)
 	 * // → [3, 4]
 	 *
-	 * @example With a value
+	 * @example You may also pass a value:
 	 * collect(['a', 'b', 'c', 'd'])
 	 *     .skipUntil('c')
 	 * // → ['c', 'd']
@@ -4775,7 +4771,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .take(3)
 	 * // → [1, 2, 3]
 	 *
-	 * @example Negative values take from the end
+	 * @example With negative values, it takes from the end:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .take(-2)
 	 * // → [4, 5]
@@ -4805,7 +4801,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .takeUntil(number => number >= 3)
 	 * // → [1, 2]
 	 *
-	 * @example With a value
+	 * @example You may also pass a value:
 	 * collect(['a', 'b', 'c', 'd'])
 	 *     .takeUntil('c')
 	 * // → ['a', 'b']
@@ -4879,12 +4875,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param glue - String to join items with (when first arg is key/callback)
 	 * @returns Joined string
 	 *
-	 * @example Simple array
+	 * @example For a simple array:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .implode('-')
 	 * // → '1-2-3-4-5'
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { name: 'Desk' },
 	 *   { name: 'Chair' },
@@ -4893,7 +4889,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .implode('name', ', ')
 	 * // → 'Desk, Chair, Bookcase'
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([
 	 *   { name: 'Desk' },
 	 *   { name: 'Chair' },
@@ -4937,12 +4933,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .join(', ')
 	 * // → 'a, b, c'
 	 *
-	 * @example With final glue
+	 * @example You may specify a final glue:
 	 * collect(['a', 'b', 'c'])
 	 *     .join(', ', ', and ')
 	 * // → 'a, b, and c'
 	 *
-	 * @example Oxford comma style
+	 * @example For Oxford comma style:
 	 * collect(['Taylor', 'Abigail', 'Dayle'])
 	 *     .join(', ', ', and ')
 	 * // → 'Taylor, Abigail, and Dayle'
@@ -4998,7 +4994,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .isEmpty()
 	 * // → true
 	 *
-	 * @example Non-empty collection
+	 * @example For a non-empty collection:
 	 * collect([1, 2, 3])
 	 *     .isEmpty()
 	 * // → false
@@ -5025,7 +5021,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .isNotEmpty()
 	 * // → true
 	 *
-	 * @example Empty collection
+	 * @example For an empty collection:
 	 * collect([])
 	 *     .isNotEmpty()
 	 * // → false
@@ -5052,7 +5048,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .containsOneItem()
 	 * // → true
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .containsOneItem(n => n > 4)
 	 * // → true (only 5 passes)
@@ -5086,7 +5082,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .hasMany()
 	 * // → true
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .hasMany(n => n > 3)
 	 * // → true (4 and 5 pass)
@@ -5137,7 +5133,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .hasSole(n => n > 4)
 	 * // → true (only 5 passes)
 	 *
-	 * @example Multiple matches
+	 * @example For multiple matches:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .hasSole(n => n > 3)
 	 * // → false (4 and 5 both pass)
@@ -5176,7 +5172,21 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * The `sole` method returns the first element in the collection that passes a given truth test,
 	 * but only if the truth test matches exactly one element.
 	 *
-	 * If no elements match or more than one element matches, an exception is thrown.
+	 * @throws {ItemNotFoundException} If no elements match
+	 * @throws {MultipleItemsFoundException} If more than one element matches
+	 *
+	 * @example
+	 * collect([1, 2, 3, 4])
+	 *     .sole(n => n === 2)
+	 * // → 2
+	 *
+	 * @example You may also use key/value syntax:
+	 * collect([{ id: 1, active: true }, { id: 2, active: false }])
+	 *     .sole('active', true)
+	 * // → { id: 1, active: true }
+	 *
+	 * @see {@link first} - Get first matching item without throwing
+	 * @see {@link hasSole} - Check without throwing
 	 *
 	 * @category Finding
 	 */
@@ -5222,7 +5232,22 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * The `firstOrFail` method returns the first element in the collection, or throws an
-	 * ItemNotFoundException if the collection is empty or no matching element is found.
+	 * `ItemNotFoundException` if the collection is empty or no matching element is found.
+	 *
+	 * @throws {ItemNotFoundException} If no matching element is found
+	 *
+	 * @example
+	 * collect([1, 2, 3])
+	 *     .firstOrFail(n => n > 2)
+	 * // → 3
+	 *
+	 * @example You may also use key/value syntax:
+	 * collect([{ id: 1 }, { id: 2 }])
+	 *     .firstOrFail('id', 2)
+	 * // → { id: 2 }
+	 *
+	 * @see {@link first} - Get first matching item without throwing
+	 * @see {@link sole} - Get item only if exactly one matches
 	 *
 	 * @category Finding
 	 */
@@ -5257,7 +5282,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param key - Optional key path to use as keys in result
 	 * @returns Collection of extracted values
 	 *
-	 * @example Extract values
+	 * @example
 	 * collect([
 	 *   { id: 1, name: 'Taylor' },
 	 *   { id: 2, name: 'Abigail' },
@@ -5265,7 +5290,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .pluck('name')
 	 * // → ['Taylor', 'Abigail']
 	 *
-	 * @example With custom keys
+	 * @example You may also specify custom keys:
 	 * collect([
 	 *   { id: 1, name: 'Taylor' },
 	 *   { id: 2, name: 'Abigail' },
@@ -5323,7 +5348,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * collection.all();
 	 * // → [2, 4, 6]
 	 *
-	 * @example Chain after transform
+	 * @example You may chain after transform:
 	 * collect({ price: 100, tax: 10 })
 	 *     .transform((v, k) => k === 'price' ? v * 1.1 : v)
 	 *     .sum()
@@ -5351,7 +5376,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .nth(2)
 	 * // → ['a', 'c', 'e']
 	 *
-	 * @example With offset
+	 * @example You may also pass an offset:
 	 * collect(['a', 'b', 'c', 'd', 'e', 'f'])
 	 *     .nth(2, 1)
 	 * // → ['b', 'd', 'f']
@@ -5388,15 +5413,15 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @returns Random item, or collection of random items if count specified
 	 * @throws {InvalidArgumentException} If collection is empty or count exceeds size
 	 *
-	 * @example Single random item
+	 * @example
 	 * collect([1, 2, 3, 4, 5]).random()
 	 * // → 3 (random)
 	 *
-	 * @example Multiple random items
+	 * @example For multiple random items:
 	 * collect([1, 2, 3, 4, 5]).random(2)
 	 * // → Collection [4, 1] (random)
 	 *
-	 * @example With callback for count
+	 * @example You may also pass a callback for count:
 	 * collect([1, 2, 3, 4, 5]).random(items => items.count() - 2)
 	 * // → Collection of 3 random items
 	 *
@@ -5447,13 +5472,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @param size - Number of items in each window (default: 2)
 	 * @param step - Number of items to advance between windows (default: 1)
+	 * @throws {InvalidArgumentException} If size or step is less than 1
 	 *
-	 * @example Pairs of consecutive items
+	 * @example For pairs of consecutive items:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .sliding(2)
 	 * // → [[1, 2], [2, 3], [3, 4], [4, 5]]
 	 *
-	 * @example Triplets with step of 2
+	 * @example For triplets with a step of 2:
 	 * collect([1, 2, 3, 4, 5, 6])
 	 *     .sliding(3, 2)
 	 * // → [[1, 2, 3], [3, 4, 5]]
@@ -5497,12 +5523,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param multiplier - Number of times to repeat the items
 	 * @returns New collection with items repeated
 	 *
-	 * @example Double the items
+	 * @example To double the items:
 	 * collect([1, 2, 3])
 	 *     .multiply(2)
 	 * // → [1, 2, 3, 1, 2, 3]
 	 *
-	 * @example Repeat for display
+	 * @example To repeat for display:
 	 * collect(['*'])
 	 *     .multiply(5)
 	 *     .join('')
@@ -5530,12 +5556,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection with replacement values
 	 * @returns New collection with replaced values
 	 *
-	 * @example Replace by key
+	 * @example
 	 * collect({ name: 'Alice', age: 25 })
 	 *     .replace({ age: 30, city: 'NYC' })
 	 * // → { name: 'Alice', age: 30, city: 'NYC' }
 	 *
-	 * @example Replace array items by index
+	 * @example To replace array items by index:
 	 * collect(['a', 'b', 'c'])
 	 *     .replace({ 1: 'B', 2: 'C' })
 	 * // → ['a', 'B', 'C']
@@ -5571,7 +5597,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param items - Object or collection with replacement values
 	 * @returns New collection with recursively replaced values
 	 *
-	 * @example Recursive replacement
+	 * @example For recursive replacement:
 	 * collect({
 	 *     user: { name: 'Alice', settings: { theme: 'dark', lang: 'en' } }
 	 * }).replaceRecursive({
@@ -5624,22 +5650,22 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param replacement - Items to insert at the splice point (optional)
 	 * @returns New collection containing the removed items
 	 *
-	 * @example Remove from index
+	 * @example To remove from an index:
 	 * const collection = collect([1, 2, 3, 4, 5]);
 	 * const chunk = collection.splice(2);
-	 * chunk.all();       // → [3, 4, 5]
-	 * collection.all();  // → [1, 2]
+	 * // chunk      → [3, 4, 5]
+	 * // collection → [1, 2]
 	 *
-	 * @example Remove specific length
+	 * @example To remove a specific length:
 	 * const collection = collect([1, 2, 3, 4, 5]);
 	 * const chunk = collection.splice(2, 1);
-	 * chunk.all();       // → [3]
-	 * collection.all();  // → [1, 2, 4, 5]
+	 * // chunk      → [3]
+	 * // collection → [1, 2, 4, 5]
 	 *
-	 * @example Replace items
+	 * @example To replace items:
 	 * const collection = collect([1, 2, 3, 4, 5]);
 	 * collection.splice(2, 1, [10, 11]);
-	 * collection.all();  // → [1, 2, 10, 11, 4, 5]
+	 * // → [1, 2, 10, 11, 4, 5]
 	 *
 	 * @see {@link slice} - Extract without mutation
 	 * @see {@link take} - Take from start or end
@@ -5682,7 +5708,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * }).dot()
 	 * // → { 'user.name': 'John', 'user.address.city': 'NYC' }
 	 *
-	 * @example Flatten configuration
+	 * @example To flatten configuration:
 	 * collect({
 	 *     database: { host: 'localhost', port: 3306 },
 	 *     cache: { driver: 'redis' }
@@ -5725,7 +5751,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * }).undot()
 	 * // → { user: { name: 'John', address: { city: 'NYC' } } }
 	 *
-	 * @example Expand form data
+	 * @example To expand form data:
 	 * collect({
 	 *     'items.0.name': 'Widget',
 	 *     'items.0.price': 100,
@@ -5765,7 +5791,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * When dealing with nested objects, you may specify a key used to determine uniqueness.
 	 *
 	 * @param keyOrCallback - Property key or callback to determine uniqueness
-	 * @param strict - Use strict equality (===) instead of loose equality
+	 * @param strict - Use strict equality (`===`) instead of loose equality
 	 * @returns New collection with duplicates removed
 	 *
 	 * @example
@@ -5773,7 +5799,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .unique()
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example By property
+	 * @example By property:
 	 * collect([
 	 *   { id: 1, email: 'taylor@example.com' },
 	 *   { id: 2, email: 'abigail@example.com' },
@@ -5855,7 +5881,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * The `uniqueStrict` method removes duplicate items using strict equality (===).
+	 * The `uniqueStrict` method removes duplicate items using strict equality (`===`).
 	 * Unlike `unique`, which uses loose comparison, this method distinguishes between
 	 * values like `1` and `'1'`.
 	 *
@@ -5894,7 +5920,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * ]).where('price', 100)
 	 * // → [{ product: 'Chair', price: 100 }]
 	 *
-	 * @example With comparison operator
+	 * @example You may also pass a comparison operator:
 	 * collect([
 	 *   { id: 1, total: 150 },
 	 *   { id: 2, total: 50 },
@@ -5903,7 +5929,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .where('total', '>', 100)
 	 * // → [{ id: 1, total: 150 }, { id: 3, total: 200 }]
 	 *
-	 * @example Filter by nested property
+	 * @example To filter by nested property:
 	 * collect([
 	 *   { name: 'Taylor', address: { city: 'Amsterdam' } },
 	 *   { name: 'Abigail', address: { city: 'London' } },
@@ -5940,7 +5966,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * The `whereStrict` method filters the collection by a given key/value pair using strict
-	 * comparison (===). Unlike `where`, this method distinguishes between values like `1` and `'1'`.
+	 * comparison (`===`). Unlike `where`, this method distinguishes between values like `1` and `'1'`.
 	 *
 	 * @param key - Property key to check
 	 * @param value - Value to match
@@ -5959,7 +5985,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @param key - Property key to check
 	 * @param values - Array of values to match against
-	 * @param strict - Use strict equality (===)
+	 * @param strict - Use strict equality (`===`)
 	 * @returns New collection with matching items
 	 *
 	 * @example
@@ -5989,7 +6015,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * The `whereInStrict` method filters the collection by a given key/value contained
-	 * within the given array using strict comparison (===). Unlike `whereIn`, this
+	 * within the given array using strict comparison (`===`). Unlike `whereIn`, this
 	 * method distinguishes between values like `1` and `'1'`.
 	 *
 	 * @param key - Property key to check
@@ -6015,7 +6041,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *
 	 * @param key - Property key to check
 	 * @param values - Array of values to exclude
-	 * @param strict - Use strict equality (===)
+	 * @param strict - Use strict equality (`===`)
 	 * @returns New collection with non-matching items
 	 *
 	 * @example
@@ -6045,7 +6071,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * The `whereNotInStrict` method filters the collection by a given key/value not
-	 * contained within the given array using strict comparison (===). Unlike `whereNotIn`,
+	 * contained within the given array using strict comparison (`===`). Unlike `whereNotIn`,
 	 * this method distinguishes between values like `1` and `'1'`.
 	 *
 	 * @param key - Property key to check
@@ -6195,7 +6221,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .firstWhere('role', 'admin')
 	 * // → { id: 1, name: 'Taylor', role: 'admin' }
 	 *
-	 * @example With comparison operator
+	 * @example You may also pass a comparison operator:
 	 * collect([
 	 *   { id: 1, total: 50 },
 	 *   { id: 2, total: 150 },
@@ -6236,7 +6262,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .each(n => console.log(n))
 	 * // logs: 1, 2, 3
 	 *
-	 * @example Stop early
+	 * @example To stop early:
 	 * collect([1, 2, 3])
 	 *     .each(n => {
 	 *   if (n === 2) return false
@@ -6280,7 +6306,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * // Logs: "John is 35 years old"
 	 * // Logs: "Jane is 28 years old"
 	 *
-	 * @example With key as final argument
+	 * @example You may also pass a key as the final argument:
 	 * collect([['a', 'b'], ['c', 'd']])
 	 *     .eachSpread((first, second, key) => {
 	 *         console.log(`${key}: ${first}, ${second}`);
@@ -6313,12 +6339,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param initial - Starting value for the accumulator
 	 * @returns Final accumulated value
 	 *
-	 * @example Sum values
+	 * @example
 	 * collect([1, 2, 3])
 	 *     .reduce((carry, item) => carry + item, 0)
 	 * // → 6
 	 *
-	 * @example Build object
+	 * @example To build an object:
 	 * collect([
 	 *   { id: 1, name: 'Taylor' },
 	 *   { id: 2, name: 'Abigail' },
@@ -6360,7 +6386,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param initial - Starting values (spread as separate arguments)
 	 * @returns Array of final accumulated values
 	 *
-	 * @example Track multiple values
+	 * @example To track multiple values:
 	 * collect([1, 2, 3, 4, 5])
 	 *     .reduceSpread((sum, product, item) => [sum + item, product * item], 0, 1)
 	 * // → [15, 120] (sum=15, product=120)
@@ -6388,7 +6414,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param initial - Starting value for the carry
 	 * @returns Final accumulated value
 	 *
-	 * @example Build keyed object
+	 * @example To build a keyed object:
 	 * collect({ a: 1, b: 2, c: 3 })
 	 *     .reduceWithKeys((carry, value, key) => {
 	 *         carry[key] = value * 2
@@ -6414,14 +6440,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Function receiving (carry, value, key) that mutates carry
 	 * @returns The mutated initial object
 	 *
-	 * @example Build object by mutation
+	 * @example To build an object by mutation:
 	 * collect([1, 2, 3])
 	 *     .reduceInto({ total: 0 }, (carry, item) => {
 	 *         carry.total += item
 	 *     })
 	 * // → { total: 6 }
 	 *
-	 * @example Populate existing array
+	 * @example To populate an existing array:
 	 * collect([
 	 *   { name: 'Taylor', active: true },
 	 *   { name: 'Abigail', active: true },
@@ -6455,17 +6481,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param value - Value to compare against
 	 * @returns True if all items pass the test
 	 *
-	 * @example With callback
+	 * @example You may also pass a callback:
 	 * collect([1, 2, 3])
 	 *     .every(n => n < 10)
 	 * // → true
 	 *
-	 * @example With property key
+	 * @example You may also pass a property key:
 	 * collect([{ active: true }, { active: true }])
 	 *     .every('active')
 	 * // → true
 	 *
-	 * @example Key/operator/value syntax
+	 * @example Or use key/operator/value syntax:
 	 * collect([{ qty: 5 }, { qty: 10 }])
 	 *     .every('qty', '>=', 5)
 	 * // → true
@@ -6536,12 +6562,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .toArray()
 	 * // → [1, 2, 3]
 	 *
-	 * @example Associative collection
+	 * @example For an associative collection:
 	 * collect({ a: 1, b: 2 })
 	 *     .toArray()
 	 * // → { a: 1, b: 2 }
 	 *
-	 * @example Nested collections
+	 * @example For nested collections:
 	 * collect([collect([1, 2]), collect([3, 4])])
 	 *     .toArray()
 	 * // → [[1, 2], [3, 4]]
@@ -6674,7 +6700,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .pipe(c => c.sum() * 2)
 	 * // → 12
 	 *
-	 * @example Conditional logic
+	 * @example For conditional logic:
 	 * collect([
 	 *   { name: 'Taylor' },
 	 *   { name: 'Abigail' },
@@ -6738,7 +6764,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     ])
 	 * // → 'Total: 12'
 	 *
-	 * @example Composable transformations
+	 * @example For composable transformations:
 	 * const addTax = (c) => c.map(p => p * 1.1);
 	 * const round = (c) => c.map(p => Math.round(p));
 	 *
@@ -6767,7 +6793,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param callback - Function receiving the collection
 	 * @returns The collection (unchanged)
 	 *
-	 * @example Debug mid-chain
+	 * @example To debug mid-chain:
 	 * collect([1, 2, 3])
 	 *   .map(n => n * 2)
 	 *   .tap(c => console.log(c.all()))
@@ -6794,7 +6820,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param args - Additional arguments to log alongside the collection
 	 * @returns This collection (unchanged)
 	 *
-	 * @example Debug mid-chain
+	 * @example To debug mid-chain:
 	 * collect([1, 2, 3])
 	 *     .map(n => n * 2)
 	 *     .dump()              // Logs: [2, 4, 6]
@@ -6802,7 +6828,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *     .all()
 	 * // → [4, 6]
 	 *
-	 * @example With label
+	 * @example You may also pass a label:
 	 * collection.dump('after filter')
 	 * // Logs: [items...] 'after filter'
 	 *
@@ -6850,17 +6876,17 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @returns This collection (if all items pass)
 	 * @throws UnexpectedValueException if any item fails validation
 	 *
-	 * @example Primitive type
+	 * @example
 	 * collect([1, 2, 3])
 	 *     .ensure('number')
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example Class instance
+	 * @example For class instances:
 	 * collect([new User(), new User()])
 	 *     .ensure(User)
 	 * // → Collection [User, User]
 	 *
-	 * @example Multiple types
+	 * @example For multiple types:
 	 * collect([1, 'two', 3])
 	 *     .ensure(['number', 'string'])
 	 * // → Collection [1, 'two', 3]
@@ -6903,12 +6929,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param perPage - Number of items per page
 	 * @returns New collection containing items for the specified page
 	 *
-	 * @example Paginate results
+	 * @example
 	 * collect([1, 2, 3, 4, 5, 6, 7, 8, 9])
 	 *     .forPage(2, 3)
 	 * // → [4, 5, 6]
 	 *
-	 * @example First page
+	 * @example For the first page:
 	 * collect(['a', 'b', 'c', 'd', 'e'])
 	 *     .forPage(1, 2)
 	 * // → ['a', 'b']
@@ -6933,14 +6959,14 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultValue - Optional value to return if not found
 	 * @returns The value at the key from the first matching item
 	 *
-	 * @example Basic usage
+	 * @example
 	 * collect([
 	 *     { name: 'Taylor', role: 'admin' },
 	 *     { name: 'Abigail', role: 'user' }
 	 * ]).value('name')
 	 * // → 'Taylor'
 	 *
-	 * @example With default
+	 * @example You may pass a default:
 	 * collect([]).value('name', 'Unknown')
 	 * // → 'Unknown'
 	 *
@@ -6968,12 +6994,12 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultCallback - Executed when condition is falsy (optional)
 	 * @returns Result of the executed callback, or this collection if no callback ran
 	 *
-	 * @example Basic condition
+	 * @example
 	 * collect([1, 2, 3])
 	 *     .when(shouldDouble, c => c.map(n => n * 2))
 	 *     .all()
 	 *
-	 * @example With default callback
+	 * @example You may pass a default callback:
 	 * const filterActive = true
 	 * collect([
 	 *   { name: 'Desk', active: true },
@@ -6986,7 +7012,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   )
 	 * // → [{ name: 'Desk', active: true }]
 	 *
-	 * @example Callback condition
+	 * @example You may also pass a callback as the condition:
 	 * collect([1, 2, 3])
 	 *     .when(c => c.count() > 2, c => c.take(2))
 	 *
@@ -7019,7 +7045,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultCallback - Executed when condition is truthy (optional)
 	 * @returns Result of the executed callback, or this collection if no callback ran
 	 *
-	 * @example Skip filtering for admins
+	 * @example To skip filtering for admins:
 	 * const isAdmin = false
 	 * collect([
 	 *   { title: 'Public Post', public: true },
@@ -7028,7 +7054,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .unless(isAdmin, c => c.where('public', true))
 	 * // → [{ title: 'Public Post', public: true }]
 	 *
-	 * @example With default callback
+	 * @example You may pass a default callback:
 	 * const showAll = true
 	 * collect([
 	 *   { title: 'Published', published: true },
@@ -7067,13 +7093,13 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultCallback - Executed when collection is not empty (optional)
 	 * @returns Result of the executed callback, or this collection if no callback ran
 	 *
-	 * @example Provide defaults for empty collection
+	 * @example To provide defaults for an empty collection:
 	 * collect([])
 	 *     .whenEmpty(c => collect(['default']))
 	 *     .all()
 	 * // → ['default']
 	 *
-	 * @example Log empty state
+	 * @example To log empty state:
 	 * collect([])
 	 *   .whenEmpty(() => console.log('No results found'))
 	 * // logs: 'No results found'
@@ -7096,7 +7122,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param defaultCallback - Executed when collection is empty (optional)
 	 * @returns Result of the executed callback, or this collection if no callback ran
 	 *
-	 * @example Process only if items exist
+	 * @example To process only if items exist:
 	 * collect([
 	 *   { id: 1, total: 100 },
 	 *   { id: 2, total: 200 },
@@ -7104,7 +7130,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 *   .whenNotEmpty(c => c.pluck('total'))
 	 * // → [100, 200]
 	 *
-	 * @example With empty fallback
+	 * @example You may pass an empty fallback:
 	 * collect([{ name: 'Taylor' }])
 	 *   .whenNotEmpty(
 	 *     c => c.first(),
@@ -7206,7 +7232,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @param related - The related collection to join with
 	 * @returns A WithCollection that allows map/each operations with access to related items
 	 *
-	 * @example Join users with orders
+	 * @example To join users with orders:
 	 * const users = collect([
 	 *   { id: 1, name: 'Taylor' },
 	 *   { id: 2, name: 'Abigail' },

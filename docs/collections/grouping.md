@@ -17,7 +17,7 @@ collect([1, 2, 3, 4, 5])
 // ]
 ```
 
-For Split into N groups, see the [split](#split) method. For Create overlapping windows, see the [sliding](#sliding) method. For Group by key/callback, see the [groupBy](#groupby) method.
+For Split into N groups, use [`split`](#split). For Create overlapping windows, use [`sliding`](#sliding).
 
 ---
 
@@ -28,7 +28,7 @@ based on the evaluation of the given callback. The callback receives the current
 item, its key, and the current chunk being built. A new chunk starts whenever
 the callback returns `false`.
 
-Grouping consecutive numbers
+To group consecutive numbers:
 
 ```typescript
 collect([1, 2, 3, 5, 6])
@@ -39,7 +39,7 @@ collect([1, 2, 3, 5, 6])
 // ]
 ```
 
-For Split into fixed-size chunks, see the [chunk](#chunk) method. For Split into a specific number of groups, see the [split](#split) method. For Group by a key or callback result, see the [groupBy](#groupby) method.
+For Split into fixed-size chunks, use [`chunk`](#chunk). For Split into a specific number of groups, use [`split`](#split).
 
 ---
 
@@ -49,7 +49,7 @@ The `split` method breaks a collection into the given number of groups,
 distributing extra items across earlier groups to balance sizes as evenly
 as possible.
 
-Splitting into three groups
+To split into three groups:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -61,7 +61,7 @@ collect([1, 2, 3, 4, 5])
 // ]
 ```
 
-For Fill non-terminal groups completely first, see the [splitIn](#splitin) method. For Split into fixed-size chunks instead, see the [chunk](#chunk) method.
+For Fill non-terminal groups completely first, use [`splitIn`](#splitin). For Split into fixed-size chunks instead, use [`chunk`](#chunk).
 
 ---
 
@@ -72,7 +72,7 @@ filling non-terminal groups completely before allocating the remainder to
 the final group. Unlike `split`, which balances group sizes, `splitIn`
 creates full-sized chunks until items run out.
 
-Splitting into three groups
+To split into three groups:
 
 ```typescript
 collect([1, 2, 3, 4, 5, 6, 7])
@@ -84,7 +84,7 @@ collect([1, 2, 3, 4, 5, 6, 7])
 // ]
 ```
 
-For Distribute items evenly across groups, see the [split](#split) method. For Split into fixed-size chunks, see the [chunk](#chunk) method.
+For Distribute items evenly across groups, use [`split`](#split). For Split into fixed-size chunks, use [`chunk`](#chunk).
 
 ---
 
@@ -94,15 +94,13 @@ The `countBy` method counts the occurrences of values in the collection.
 By default it counts by the value itself, but you can pass a callback or
 property key to count by a derived grouping key.
 
-Counting values
-
 ```typescript
 collect([1, 2, 2, 3])
     .countBy()
 // → {'1': 1, '2': 2, '3': 1}
 ```
 
-Counting by email domain
+To count by email domain:
 
 ```typescript
 collect(['alice@gmail.com', 'bob@yahoo.com', 'carlos@gmail.com'])
@@ -110,7 +108,7 @@ collect(['alice@gmail.com', 'bob@yahoo.com', 'carlos@gmail.com'])
 // → {'gmail.com': 2, 'yahoo.com': 1}
 ```
 
-For Group items instead of counting them, see the [groupBy](#groupby) method. For Get total item count, see the [count](/collections/aggregating#count) method.
+For Group items instead of counting them, use [`groupBy`](#groupby). For Get total item count, use [`count`](/collections/aggregating#count).
 
 ---
 
@@ -118,7 +116,7 @@ For Group items instead of counting them, see the [groupBy](#groupby) method. Fo
 
 Group items by a key or callback result.
 
-By property
+By property:
 
 ```typescript
 collect([
@@ -136,7 +134,7 @@ collect([
 //   }
 ```
 
-By callback
+You may also pass a callback:
 
 ```typescript
 collect([
@@ -151,7 +149,7 @@ collect([
 //   }
 ```
 
-For Similar but keeps only the last item per key, see the [keyBy](#keyby) method. For Split into two groups by condition, see the [partition](#partition) method. For Split into groups of fixed size, see the [chunk](#chunk) method. For Count items per group instead of collecting, see the [countBy](#countby) method.
+For Similar but keeps only the last item per key, use [`keyBy`](#keyby). For Split into two groups by condition, use [`partition`](#partition).
 
 ---
 
@@ -173,7 +171,7 @@ collect([
 //   }
 ```
 
-For Similar but keeps all items per key, see the [groupBy](#groupby) method. For Transform and key in one step, see the [mapWithKeys](/collections/transforming#mapwithkeys) method.
+For Similar but keeps all items per key, use [`groupBy`](#groupby). For Transform and key in one step, use [`mapWithKeys`](/collections/transforming#mapwithkeys).
 
 ---
 
@@ -191,7 +189,7 @@ const [active, inactive] = collect([
 // inactive → [{ name: 'Abigail', ... }]
 ```
 
-With key/value syntax
+You may also use key/value syntax:
 
 ```typescript
 const [admins, others] = collect([
@@ -202,7 +200,7 @@ const [admins, others] = collect([
 // others → [{ name: 'Abigail', role: 'editor' }]
 ```
 
-For Split into multiple groups, see the [groupBy](#groupby) method. For Keep only passing items, see the [filter](/collections/filtering#filter) method.
+For Split into multiple groups, use [`groupBy`](#groupby). For Keep only passing items, use [`filter`](/collections/filtering#filter).
 
 ---
 
@@ -212,7 +210,7 @@ The `sliding` method returns a new collection of chunks representing a
 "sliding window" view of the items. Each chunk contains `size` consecutive
 items, and the window advances by `step` items between chunks.
 
-Pairs of consecutive items
+For pairs of consecutive items:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -220,7 +218,7 @@ collect([1, 2, 3, 4, 5])
 // → [[1, 2], [2, 3], [3, 4], [4, 5]]
 ```
 
-Triplets with step of 2
+For triplets with a step of 2:
 
 ```typescript
 collect([1, 2, 3, 4, 5, 6])
@@ -228,6 +226,6 @@ collect([1, 2, 3, 4, 5, 6])
 // → [[1, 2, 3], [3, 4, 5]]
 ```
 
-For Non-overlapping fixed-size chunks, see the [chunk](#chunk) method. For Conditional chunking, see the [chunkWhile](#chunkwhile) method.
+For Non-overlapping fixed-size chunks, use [`chunk`](#chunk). For Conditional chunking, use [`chunkWhile`](#chunkwhile).
 
 ---
