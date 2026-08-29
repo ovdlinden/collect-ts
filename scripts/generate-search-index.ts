@@ -177,7 +177,7 @@ console.log(`Loaded ${methods.length} methods from methods.json`);
 // Build search index entries
 const searchIndex: SearchEntry[] = collect(methods)
 	.map((m) => {
-		const aliases = METHOD_ALIASES[m.name];
+		const aliases = Object.hasOwn(METHOD_ALIASES, m.name) ? METHOD_ALIASES[m.name] : undefined;
 		return {
 			id: `/collections/${m.category}#${m.name.toLowerCase()}`,
 			title: `${m.name}()`,
