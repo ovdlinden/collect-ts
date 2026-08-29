@@ -1,7 +1,14 @@
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import MiniSearch from 'minisearch';
 import { collect } from '../src/Collection';
+
+interface MethodData {
+	name: string;
+	category: string;
+	description: string;
+	signature: string;
+}
 
 interface SearchEntry {
 	id: string;
@@ -147,208 +154,40 @@ const METHOD_ALIASES: Record<string, string[]> = {
 	collect: ['eager', 'materialize'],
 };
 
-interface TitleEntry {
-	level: number;
-	title: string;
-}
+const CATEGORY_TITLES: Record<string, string> = {
+	creating: 'Creating',
+	filtering: 'Filtering',
+	transforming: 'Transforming',
+	grouping: 'Grouping',
+	aggregating: 'Aggregating',
+	finding: 'Finding',
+	sorting: 'Sorting',
+	combining: 'Combining',
+	checking: 'Checking',
+};
 
 const docsDir = join(import.meta.dirname, '../docs');
-const srcDir = join(import.meta.dirname, '../src');
+const methodsPath = join(docsDir, '.vitepress/theme/data/methods.json');
 const outputPath = join(docsDir, '.vitepress/theme/data/search-index.json');
 
-// Strip angle-bracket generics using bracket-depth tracking (no fragile regex)
-function stripGenerics(str: string): string {
-	let result = '';
-	let depth = 0;
-	for (const char of str) {
-		if (char === '<') depth++;
-		else if (char === '>') depth--;
-		else if (depth === 0) result += char;
-	}
-	return result;
-}
+// Load pre-parsed method data from generate-collection-guides.ts
+const methods: MethodData[] = JSON.parse(readFileSync(methodsPath, 'utf-8'));
+console.log(`Loaded ${methods.length} methods from methods.json`);
 
-// Extract method signatures from TypeScript source files
-function extractSignatures(): Map<string, string> {
-	const files = ['Collection.ts', 'LazyCollection.ts'];
-
-	return new Map(
-		collect(files)
-			.flatMap((file) => extractSignaturesFromFile(join(srcDir, file)))
-			.all(),
-	);
-}
-
-function extractSignaturesFromFile(filePath: string): [string, string][] {
-	const content = readFileSync(filePath, 'utf-8');
-
-	return collect(content.split('\n'))
-		.map((line) => {
-			// Match method declarations: methodName(params): ReturnType; or methodName<T>(params): ReturnType {
-			const match = line.match(/^\t(\w+)(?:<[^>]*>)?\(([^)]*)\)(?::\s*([^{;]+))?[{;]/);
-			if (!match) return null;
-
-			const [, name, params, returnType] = match;
-			if (name.startsWith('_')) return null;
-
-			return { name, params, returnType: returnType?.trim() || 'void' };
-		})
-		.filter((m): m is NonNullable<typeof m> => m !== null)
-		.unique('name') // Keep first overload only
-		.map((m) => {
-			const simplifiedParams = simplifyParams(m.params);
-			const simplifiedReturn = stripGenerics(m.returnType).replace(/\s+/g, ' ').trim();
-			return [m.name, `${m.name}(${simplifiedParams}): ${simplifiedReturn}`] as [string, string];
-		})
-		.all();
-}
-
-function simplifyParams(params: string): string {
-	if (!params.trim()) return '';
-
-	return collect(splitTopLevel(params, ','))
-		.map((p) => {
-			// Extract just the parameter name and optional marker
-			const match = p.trim().match(/^(\w+)(\?)?/);
-			return match ? match[1] + (match[2] || '') : p;
-		})
-		.join(', ');
-}
-
-// Split string by delimiter, but only at top level (not inside brackets)
-function splitTopLevel(str: string, delimiter: string): string[] {
-	const parts: string[] = [];
-	let current = '';
-	let depth = 0;
-
-	for (const char of str) {
-		if (char === '<' || char === '(' || char === '[' || char === '{') depth++;
-		else if (char === '>' || char === ')' || char === ']' || char === '}') depth--;
-		else if (char === delimiter && depth === 0) {
-			parts.push(current.trim());
-			current = '';
-			continue;
-		}
-		current += char;
-	}
-	if (current.trim()) parts.push(current.trim());
-
-	return parts;
-}
-
-function extractMarkdownSections(content: string, filePath: string): SearchEntry[] {
-	const entries: SearchEntry[] = [];
-	const lines = content.split('\n');
-	const basePath = filePath.replace(docsDir, '').replace(/\.md$/, '').replace(/\/index$/, '/');
-
-	const titleStack: TitleEntry[] = [];
-	let currentText = '';
-	let currentAnchor = '';
-	let currentTitle = '';
-
-	function getTitlesArray(): string[] {
-		return titleStack.map((t) => t.title);
-	}
-
-	for (const line of lines) {
-		const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
-		if (headingMatch) {
-			// Save previous section
-			if (currentTitle && currentText.trim()) {
-				entries.push({
-					id: `${basePath}#${currentAnchor}`,
-					title: currentTitle,
-					titles: getTitlesArray(),
-					text: currentText.slice(0, 500),
-				});
-			}
-
-			const level = headingMatch[1].length;
-			const title = headingMatch[2].trim();
-			const anchor = title
-				.toLowerCase()
-				.replace(/[^\w\s-]/g, '')
-				.replace(/\s+/g, '-');
-
-			// Pop titles until we find a parent (lower level number)
-			while (titleStack.length > 0 && titleStack[titleStack.length - 1].level >= level) {
-				titleStack.pop();
-			}
-
-			// Push current heading
-			titleStack.push({ level, title });
-			currentTitle = title;
-			currentAnchor = anchor;
-			currentText = '';
-		} else {
-			// Strip code blocks and accumulate text
-			if (!line.startsWith('```') && !line.startsWith(':::')) {
-				const cleanLine = line
-					.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](link) -> text
-					.replace(/\/collections\/\w+#\w+/g, '') // Remove bare internal links
-					.replace(/[*_`\[\]()#]/g, '') // Remove markdown chars
-					.replace(/→|←|↑|↓/g, '') // Remove arrows
-					.replace(/---/g, '') // Remove separators
-					.trim();
-				if (cleanLine) currentText += ' ' + cleanLine;
-			}
-		}
-	}
-
-	// Save last section
-	if (currentTitle && currentText.trim()) {
-		entries.push({
-			id: `${basePath}#${currentAnchor}`,
-			title: currentTitle,
-			titles: getTitlesArray(),
-			text: currentText.slice(0, 500),
-		});
-	}
-
-	return entries;
-}
-
-function findMarkdownFiles(dir: string): string[] {
-	const files: string[] = [];
-	const entries = readdirSync(dir, { withFileTypes: true });
-
-	for (const entry of entries) {
-		const fullPath = join(dir, entry.name);
-		if (entry.isDirectory() && !entry.name.startsWith('.')) {
-			files.push(...findMarkdownFiles(fullPath));
-		} else if (entry.name.endsWith('.md') && !entry.name.startsWith('_')) {
-			files.push(fullPath);
-		}
-	}
-
-	return files;
-}
-
-// Extract signatures from TypeScript source
-const signatures = extractSignatures();
-console.log(`Extracted ${signatures.size} method signatures`);
-
-// Generate index - only collection method pages
-const collectionsDir = join(docsDir, 'collections');
-const mdFiles = findMarkdownFiles(collectionsDir);
-const searchIndex: SearchEntry[] = [];
-
-for (const file of mdFiles) {
-	const content = readFileSync(file, 'utf-8');
-	const sections = extractMarkdownSections(content, file);
-	// Only include method entries (h3 headings), skip category headers
-	for (const section of sections) {
-		if (section.titles.length > 1) {
-			// Add signature and aliases if available (strip () from title to match)
-			const methodName = section.title.replace(/\(\)$/, '');
-			const sig = signatures.get(methodName);
-			const aliases = METHOD_ALIASES[methodName];
-			if (sig) section.signature = sig;
-			if (Array.isArray(aliases)) section.aliases = aliases.join(' ');
-			searchIndex.push(section);
-		}
-	}
-}
+// Build search index entries
+const searchIndex: SearchEntry[] = collect(methods)
+	.map((m) => {
+		const aliases = METHOD_ALIASES[m.name];
+		return {
+			id: `/collections/${m.category}#${m.name.toLowerCase()}`,
+			title: `${m.name}()`,
+			titles: [CATEGORY_TITLES[m.category] || m.category, `${m.name}()`],
+			text: m.description,
+			signature: m.signature,
+			aliases: aliases?.join(' '),
+		};
+	})
+	.all();
 
 // Build MiniSearch index with unique numeric IDs
 const miniSearch = new MiniSearch<SearchEntry & { _id: number }>({
