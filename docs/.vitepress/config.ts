@@ -115,7 +115,7 @@ export default defineConfig({
 			options: {
 				miniSearch: {
 					searchOptions: {
-						boostDocument: (id: string) => (site.boosted.some((p) => id.includes(p)) ? 2 : 1.5),
+						boostDocument: (id: string) => (['/00-quickstart', '/collections/'].some((p) => id.includes(p)) ? 2 : 1.5),
 					},
 				},
 			},
