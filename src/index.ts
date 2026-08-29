@@ -2,8 +2,6 @@
  * @see https://laravel.com/docs/collections
  */
 
-export { VERSION, LARAVEL_COLLECTION_VERSION } from './version.js';
-
 export type {
 	Arrayable,
 	Collapse,
@@ -33,14 +31,12 @@ export {
 	WithCollection,
 	wrapWithProxy,
 } from './Collection.js';
-
 export {
 	InvalidArgumentException,
 	ItemNotFoundException,
 	MultipleItemsFoundException,
 	UnexpectedValueException,
 } from './exceptions/index.js';
-
 export type {
 	AsyncCollectionMacros,
 	GeneratorFactory,
@@ -53,3 +49,4 @@ export {
 	isLazyCollection,
 	LazyCollection,
 } from './LazyCollection.js';
+export { LARAVEL_COLLECTION_VERSION, VERSION } from './version.js';
