@@ -2,7 +2,7 @@ import mediumZoom from 'medium-zoom';
 import type { Theme } from 'vitepress';
 import { useRoute } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
-import { defineAsyncComponent, h, nextTick, onMounted, watch } from 'vue';
+import { defineAsyncComponent, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import 'virtual:group-icons.css';
 import './style.css';
@@ -11,6 +11,10 @@ import './style.css';
 const Benchmarks = defineAsyncComponent(() => import('./components/Benchmarks.vue'));
 const HomepageLazyDemo = defineAsyncComponent(() => import('./components/HomepageLazyDemo.vue'));
 const LazySpotlight = defineAsyncComponent(() => import('./components/LazySpotlight.vue'));
+const FastSearch = defineAsyncComponent(() => import('./components/FastSearch.vue'));
+
+// Global search visibility state
+const searchVisible = ref(false);
 
 // Direct imports for small/common components
 import CallbackTaxDiagram from './components/CallbackTaxDiagram.vue';
@@ -29,9 +33,17 @@ export default {
 		app.component('StatCard', StatCard);
 	},
 	Layout() {
-		return h(DefaultTheme.Layout, null, {
-			'doc-before': () => h('div', { class: 'doc-header-actions' }, [h(CopyAsMarkdown)]),
-		});
+		return h('div', null, [
+			h(DefaultTheme.Layout, null, {
+				'doc-before': () => h('div', { class: 'doc-header-actions' }, [h(CopyAsMarkdown)]),
+			}),
+			h(FastSearch, {
+				visible: searchVisible.value,
+				onClose: () => {
+					searchVisible.value = false;
+				},
+			}),
+		]);
 	},
 	setup() {
 		const route = useRoute();
@@ -84,10 +96,22 @@ export default {
 			});
 		};
 
+		const handleKeydown = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+				e.preventDefault();
+				searchVisible.value = true;
+			}
+		};
+
 		onMounted(() => {
 			initZoom();
 			initCopyFilter();
 			nextTick(collapseSidebarGroups);
+			document.addEventListener('keydown', handleKeydown);
+		});
+
+		onUnmounted(() => {
+			document.removeEventListener('keydown', handleKeydown);
 		});
 		watch(
 			() => route.path,

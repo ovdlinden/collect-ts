@@ -108,20 +108,8 @@ export default defineConfig({
 			copyright: 'TypeScript port of Laravel Collection',
 		},
 
-		search: {
-			provider: 'local',
-			options: {
-				miniSearch: {
-					searchOptions: {
-						fuzzy: false,
-						prefix: true,
-						maxFuzzy: 0,
-						boostDocument: (id: string) => (['/00-quickstart', '/collections/'].some((p) => id.includes(p)) ? 2 : 1.5),
-					},
-				},
-				detailedView: true,
-			},
-		},
+		// Custom search powered by collect-ts - see FastSearch.vue
+		// search: { provider: 'local' },
 	},
 
 	vite: {
