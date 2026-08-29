@@ -43,7 +43,7 @@ const guideSidebar = [
 		text: 'Reference',
 		items: [
 			{ text: 'Collections', link: '/collections/' },
-			{ text: 'Type Signatures', link: '/api/' },
+			{ text: 'API Reference', link: '/api/' },
 		],
 	},
 ] satisfies DefaultTheme.SidebarItem[];
@@ -64,7 +64,7 @@ const collectionsSidebar = [
 			{ text: 'Checking', link: '/collections/checking' },
 		],
 	},
-	{ text: 'Type Signatures', link: '/api/' },
+	{ text: 'API Reference', link: '/api/' },
 ] satisfies DefaultTheme.SidebarItem[];
 
 const sidebar: DefaultTheme.Sidebar = {
@@ -76,6 +76,7 @@ const sidebar: DefaultTheme.Sidebar = {
 const nav = [
 	{ text: 'Quick Start', link: '/00-quickstart' },
 	{ text: 'Collections', link: '/collections/' },
+	{ text: 'API', link: '/api/' },
 	{ text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
 ] satisfies DefaultTheme.NavItem[];
 
