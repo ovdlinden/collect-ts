@@ -20,11 +20,6 @@ const guideSidebar = [
 		items: [
 			{ text: 'Introduction', link: '/' },
 			{ text: 'Quick Start', link: '/00-quickstart' },
-		],
-	},
-	{
-		text: 'Start Here',
-		items: [
 			{ text: 'For Laravel Developers', link: '/for/laravel-developers' },
 			{ text: 'For JavaScript Developers', link: '/for/javascript-developers' },
 			{ text: 'For Lodash Users', link: '/for/lodash-users' },
