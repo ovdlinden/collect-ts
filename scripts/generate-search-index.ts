@@ -8,6 +8,11 @@ interface SearchEntry {
 	text: string;
 }
 
+interface TitleEntry {
+	level: number;
+	title: string;
+}
+
 const docsDir = join(import.meta.dirname, '../docs');
 const outputPath = join(docsDir, '.vitepress/theme/data/search-index.json');
 
@@ -16,20 +21,25 @@ function extractMarkdownSections(content: string, filePath: string): SearchEntry
 	const lines = content.split('\n');
 	const basePath = filePath.replace(docsDir, '').replace(/\.md$/, '').replace(/\/index$/, '/');
 
-	let currentTitles: string[] = [];
+	const titleStack: TitleEntry[] = [];
 	let currentText = '';
 	let currentAnchor = '';
+	let currentTitle = '';
+
+	function getTitlesArray(): string[] {
+		return titleStack.map((t) => t.title);
+	}
 
 	for (const line of lines) {
 		const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
 		if (headingMatch) {
 			// Save previous section
-			if (currentTitles.length > 0 && currentText.trim()) {
+			if (currentTitle && currentText.trim()) {
 				entries.push({
 					id: `${basePath}#${currentAnchor}`,
-					title: currentTitles[currentTitles.length - 1],
-					titles: [...currentTitles],
-					text: currentText.slice(0, 500), // Limit text length
+					title: currentTitle,
+					titles: getTitlesArray(),
+					text: currentText.slice(0, 500),
 				});
 			}
 
@@ -40,9 +50,14 @@ function extractMarkdownSections(content: string, filePath: string): SearchEntry
 				.replace(/[^\w\s-]/g, '')
 				.replace(/\s+/g, '-');
 
-			// Update title stack
-			currentTitles = currentTitles.slice(0, level - 1);
-			currentTitles.push(title);
+			// Pop titles until we find a parent (lower level number)
+			while (titleStack.length > 0 && titleStack[titleStack.length - 1].level >= level) {
+				titleStack.pop();
+			}
+
+			// Push current heading
+			titleStack.push({ level, title });
+			currentTitle = title;
 			currentAnchor = anchor;
 			currentText = '';
 		} else {
@@ -54,11 +69,11 @@ function extractMarkdownSections(content: string, filePath: string): SearchEntry
 	}
 
 	// Save last section
-	if (currentTitles.length > 0 && currentText.trim()) {
+	if (currentTitle && currentText.trim()) {
 		entries.push({
 			id: `${basePath}#${currentAnchor}`,
-			title: currentTitles[currentTitles.length - 1],
-			titles: [...currentTitles],
+			title: currentTitle,
+			titles: getTitlesArray(),
 			text: currentText.slice(0, 500),
 		});
 	}
