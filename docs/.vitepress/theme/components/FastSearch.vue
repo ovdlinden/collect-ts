@@ -44,16 +44,21 @@ onMounted(async () => {
 	isLoading.value = false;
 });
 
-// Focus input and announce when visible
+const searchMode = ref<'name' | 'description'>('name');
+
+// Focus input and announce when visible (keep last search)
 watch(
 	() => props.visible,
 	(visible) => {
 		if (visible) {
 			selectedIndex.value = 0;
-			query.value = '';
+			searchMode.value = 'name';
 			nextTick(() => {
 				inputRef.value?.focus();
-				announceText.value = 'Search dialog opened. Type to search documentation.';
+				inputRef.value?.select();
+				announceText.value = query.value
+					? 'Search dialog opened with previous search.'
+					: 'Search dialog opened. Type to search methods.';
 			});
 		}
 	},
@@ -65,10 +70,15 @@ const results = computed<ProcessedResult[]>(() => {
 	if (!q || q.length < 2) return [];
 
 	// Use collect().lazy() for fast, early-terminating search
-	// Match only on method name, not description
 	return collect(searchIndex.value)
 		.lazy()
-		.filter((item) => item.title.toLowerCase().includes(q))
+		.filter((item) => {
+			if (searchMode.value === 'name') {
+				return item.title.toLowerCase().includes(q);
+			}
+			// Description mode: search title + text
+			return `${item.title} ${item.text}`.toLowerCase().includes(q);
+		})
 		.take(12)
 		.map((item) => ({
 			...item,
@@ -76,6 +86,17 @@ const results = computed<ProcessedResult[]>(() => {
 			breadcrumb: item.titles.slice(0, -1).join(' › '),
 		}))
 		.all();
+});
+
+function searchDescriptions() {
+	searchMode.value = 'description';
+	selectedIndex.value = 0;
+}
+
+// Reset to name search when query changes
+watch(query, () => {
+	searchMode.value = 'name';
+	selectedIndex.value = 0;
 });
 
 // Announce result count for screen readers
@@ -249,7 +270,15 @@ function getResultId(index: number): string {
 					</ul>
 
 					<div v-else-if="query.length >= 2" class="fast-search-empty" role="status">
-						No results for "{{ query }}"
+						<template v-if="searchMode === 'name'">
+							No methods matching "{{ query }}"
+							<button class="fast-search-fallback" @click="searchDescriptions">
+								Search in descriptions
+							</button>
+						</template>
+						<template v-else>
+							No results for "{{ query }}"
+						</template>
 					</div>
 
 					<div v-else class="fast-search-hint" role="status">Type at least 2 characters to search</div>
@@ -421,6 +450,24 @@ function getResultId(index: number): string {
 	padding: 32px;
 	text-align: center;
 	color: var(--vp-c-text-3);
+}
+
+.fast-search-fallback {
+	display: block;
+	margin: 12px auto 0;
+	padding: 8px 16px;
+	background: var(--vp-c-brand-soft);
+	color: var(--vp-c-brand-1);
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	cursor: pointer;
+	transition: background 150ms;
+}
+
+.fast-search-fallback:hover {
+	background: var(--vp-c-brand-2);
+	color: var(--vp-c-white);
 }
 
 .fast-search-footer {
