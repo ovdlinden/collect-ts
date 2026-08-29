@@ -65,4 +65,4 @@ collect(hugeDataset)
 
 - [TypeScript Guide](/01-typescript): How type inference catches bugs before runtime
 - [Common Patterns](/02-patterns): Sorting, grouping, deduplication
-- [Full API Reference](/api/): All 155+ methods
+- [Collections Reference](/collections/): All 155+ methods

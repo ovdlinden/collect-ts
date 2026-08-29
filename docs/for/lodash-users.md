@@ -578,6 +578,6 @@ collect(users)
 
 ## What's next
 
-- [Full API Reference](/api/): All 130+ methods
+- [Collections Reference](/collections/): All 130+ methods
 - [Common Patterns](/02-patterns): Real-world examples
 - [Performance](/05-benchmarks): When to use what

@@ -112,4 +112,4 @@ const errors = lazy(readLines('huge-log.jsonl'))
 
 - [TypeScript Guide](/01-typescript): More on type safety and inference
 - [Common Patterns](/02-patterns): Sorting, grouping, chart data
-- [Full API Reference](/api/): All 130+ methods
+- [Collections Reference](/collections/): All 130+ methods

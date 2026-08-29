@@ -68,4 +68,4 @@ Run all benchmarks, or target a specific file.
 
 - [Quick Start](/00-quickstart): Get started with collect-ts
 - [LazyCollection](/03-lazy): When lazy evaluation wins
-- [Full API Reference](/api/): All 130+ methods
+- [Collections Reference](/collections/): All 130+ methods

@@ -98,4 +98,4 @@ results.first()
 ## What's next
 
 - [Benchmarks](/05-benchmarks)
-- [API Reference](/api/)
+- [Collections Reference](/collections/)
