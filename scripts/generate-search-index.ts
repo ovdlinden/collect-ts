@@ -97,14 +97,16 @@ function findMarkdownFiles(dir: string): string[] {
 	return files;
 }
 
-// Generate index
-const mdFiles = findMarkdownFiles(docsDir);
+// Generate index - only collection method pages
+const collectionsDir = join(docsDir, 'collections');
+const mdFiles = findMarkdownFiles(collectionsDir);
 const searchIndex: SearchEntry[] = [];
 
 for (const file of mdFiles) {
 	const content = readFileSync(file, 'utf-8');
 	const sections = extractMarkdownSections(content, file);
-	searchIndex.push(...sections);
+	// Only include method entries (h3 headings), skip category headers
+	searchIndex.push(...sections.filter((s) => s.titles.length > 1));
 }
 
 writeFileSync(outputPath, JSON.stringify(searchIndex, null, '\t'));
