@@ -12,9 +12,13 @@ import {
 	type WhereOperator,
 } from './Collection.js';
 
+/** @deprecated Use ValueGeneratorFactory for internal sources */
 export type GeneratorFactory<T> = () => Generator<[number, T]>;
 
-type LazySource<T> = GeneratorFactory<T> | T[];
+/** Value-only generator factory - no tuple allocation */
+type ValueGeneratorFactory<T> = () => Generator<T>;
+
+type LazySource<T> = ValueGeneratorFactory<T> | T[];
 
 export type ProxiedLazyCollection<T> = LazyCollection<T> & {
 	[K in keyof Collection<T>]: Collection<T>[K];
@@ -54,27 +58,20 @@ function normalizeSource<T>(source: Iterable<T> | (() => Generator<T>) | undefin
 	}
 
 	if (typeof source === 'function') {
-		return function* () {
-			let index = 0;
-			for (const value of source()) {
-				yield [index++, value] as [number, T];
-			}
-		};
+		return source as ValueGeneratorFactory<T>;
 	}
 
-	// Wrap iterable in a generator factory to defer consumption
 	return function* () {
-		let index = 0;
 		for (const value of source) {
-			yield [index++, value] as [number, T];
+			yield value;
 		}
 	};
 }
 
-function* makeIterator<T>(source: LazySource<T>): Generator<[number, T]> {
+function* iterateValues<T>(source: LazySource<T>): Generator<T> {
 	if (Array.isArray(source)) {
 		for (let i = 0; i < source.length; i++) {
-			yield [i, source[i]];
+			yield source[i];
 		}
 	} else {
 		yield* source();
@@ -82,7 +79,9 @@ function* makeIterator<T>(source: LazySource<T>): Generator<[number, T]> {
 }
 
 function wrap<U>(lc: LazyCollection<U>): ProxiedLazyCollection<U> {
-	return wrapLazyWithProxy(lc);
+	// Skip Proxy during internal chaining - Proxy only needed when
+	// accessing Collection methods not on LazyCollection
+	return lc as ProxiedLazyCollection<U>;
 }
 
 function wrapAsync<U>(alc: AsyncLazyCollection<U>): ProxiedAsyncLazyCollection<U> {
@@ -103,13 +102,14 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 
 	*[Symbol.iterator](): Generator<T> {
-		for (const [, value] of makeIterator(this.source)) {
-			yield value;
-		}
+		yield* iterateValues(this.source);
 	}
 
 	*entries(): Generator<[number, T]> {
-		yield* makeIterator(this.source);
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			yield [index++, value];
+		}
 	}
 
 	static make<U>(source: () => Generator<U>): ProxiedLazyCollection<U> {
@@ -145,8 +145,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [key, value] of makeIterator(source)) {
-					yield callback(value, key);
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					yield callback(value, index++);
 				}
 			}),
 		);
@@ -156,10 +157,12 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [key, value] of makeIterator(source)) {
-					if (callback ? callback(value, key) : Boolean(value)) {
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					if (callback ? callback(value, index) : Boolean(value)) {
 						yield value;
 					}
+					index++;
 				}
 			}),
 		);
@@ -178,7 +181,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		return wrap(
 			new LazyCollection(function* () {
 				let count = 0;
-				for (const [, value] of makeIterator(source)) {
+				for (const value of iterateValues(source)) {
 					yield value;
 					if (++count >= limit) break;
 				}
@@ -191,7 +194,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		return wrap(
 			new LazyCollection(function* () {
 				let skipped = 0;
-				for (const [, value] of makeIterator(source)) {
+				for (const value of iterateValues(source)) {
 					if (skipped++ < count) continue;
 					yield value;
 				}
@@ -203,8 +206,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [key, value] of makeIterator(source)) {
-					if (!callback(value, key)) break;
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					if (!callback(value, index++)) break;
 					yield value;
 				}
 			}),
@@ -215,8 +219,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [key, value] of makeIterator(source)) {
-					if (callback(value, key)) break;
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					if (callback(value, index++)) break;
 					yield value;
 				}
 			}),
@@ -228,8 +233,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		return wrap(
 			new LazyCollection(function* () {
 				let skipping = true;
-				for (const [key, value] of makeIterator(source)) {
-					if (skipping && callback(value, key)) continue;
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					if (skipping && callback(value, index++)) continue;
 					skipping = false;
 					yield value;
 				}
@@ -242,8 +248,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		return wrap(
 			new LazyCollection(function* () {
 				let skipping = true;
-				for (const [key, value] of makeIterator(source)) {
-					if (skipping && !callback(value, key)) continue;
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					if (skipping && !callback(value, index++)) continue;
 					skipping = false;
 					yield value;
 				}
@@ -255,8 +262,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [key, value] of makeIterator(source)) {
-					yield* callback(value, key);
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					yield* callback(value, index++);
 				}
 			}),
 		);
@@ -271,7 +279,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		return wrap(
 			new LazyCollection(function* () {
 				let chunk: T[] = [];
-				for (const [, value] of makeIterator(source)) {
+				for (const value of iterateValues(source)) {
 					chunk.push(value);
 					if (chunk.length === size) {
 						yield chunk;
@@ -286,8 +294,9 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 
 	each(callback: (value: T, key: number) => unknown): this {
-		for (const [key, value] of makeIterator(this.source)) {
-			if (callback(value, key) === false) break;
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			if (callback(value, index++) === false) break;
 		}
 		return this;
 	}
@@ -301,8 +310,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [key, value] of makeIterator(source)) {
-					callback(value, key);
+				let index = 0;
+				for (const value of iterateValues(source)) {
+					callback(value, index++);
 					yield value;
 				}
 			}),
@@ -314,7 +324,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		const source = this.source;
 		return wrap(
 			new LazyCollection(function* () {
-				for (const [, value] of makeIterator(source)) {
+				for (const value of iterateValues(source)) {
 					if (Date.now() >= timeoutMs) break;
 					yield value;
 				}
@@ -324,14 +334,14 @@ export class LazyCollection<T> implements Iterable<T> {
 
 	remember(): ProxiedLazyCollection<T> {
 		const cache: T[] = [];
-		let iteratorInstance: Generator<[number, T]> | null = null;
+		let iteratorInstance: Generator<T> | null = null;
 		let iteratorExhausted = false;
 		const source = this.source;
 
 		return wrap(
 			new LazyCollection(function* () {
 				if (iteratorInstance === null) {
-					iteratorInstance = makeIterator(source);
+					iteratorInstance = iterateValues(source);
 				}
 
 				let index = 0;
@@ -348,7 +358,7 @@ export class LazyCollection<T> implements Iterable<T> {
 						iteratorExhausted = true;
 						break;
 					}
-					const [, value] = result.value;
+					const value = result.value;
 					cache.push(value);
 					yield value;
 				}
@@ -365,7 +375,7 @@ export class LazyCollection<T> implements Iterable<T> {
 			new LazyCollection(function* () {
 				let lastHeartbeat = Date.now();
 
-				for (const [, value] of makeIterator(source)) {
+				for (const value of iterateValues(source)) {
 					const now = Date.now();
 					if (now - lastHeartbeat >= intervalMs) {
 						callback();
@@ -400,8 +410,9 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 
 	first(callback?: (value: T, key: number) => boolean): T | undefined {
-		for (const [key, value] of makeIterator(this.source)) {
-			if (!callback || callback(value, key)) {
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			if (!callback || callback(value, index++)) {
 				return value;
 			}
 		}
@@ -410,8 +421,9 @@ export class LazyCollection<T> implements Iterable<T> {
 
 	last(callback?: (value: T, key: number) => boolean): T | undefined {
 		let lastValue: T | undefined;
-		for (const [key, value] of makeIterator(this.source)) {
-			if (!callback || callback(value, key)) {
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			if (!callback || callback(value, index++)) {
 				lastValue = value;
 			}
 		}
@@ -440,8 +452,9 @@ export class LazyCollection<T> implements Iterable<T> {
 	sum(keyOrCallback?: ValueRetriever<T, number>): number {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let total = 0;
-		for (const [key, value] of makeIterator(this.source)) {
-			const num = retriever(value, key);
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			const num = retriever(value, index++);
 			if (typeof num === 'number' && !Number.isNaN(num)) {
 				total += num;
 			}
@@ -452,8 +465,9 @@ export class LazyCollection<T> implements Iterable<T> {
 	min(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let min: number | null = null;
-		for (const [key, value] of makeIterator(this.source)) {
-			const num = retriever(value, key);
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			const num = retriever(value, index++);
 			if (typeof num === 'number' && !Number.isNaN(num) && (min === null || num < min)) {
 				min = num;
 			}
@@ -464,8 +478,9 @@ export class LazyCollection<T> implements Iterable<T> {
 	max(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let max: number | null = null;
-		for (const [key, value] of makeIterator(this.source)) {
-			const num = retriever(value, key);
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			const num = retriever(value, index++);
 			if (typeof num === 'number' && !Number.isNaN(num) && (max === null || num > max)) {
 				max = num;
 			}
@@ -477,8 +492,9 @@ export class LazyCollection<T> implements Iterable<T> {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let total = 0;
 		let count = 0;
-		for (const [key, value] of makeIterator(this.source)) {
-			const num = retriever(value, key);
+		let index = 0;
+		for (const value of iterateValues(this.source)) {
+			const num = retriever(value, index++);
 			if (typeof num === 'number' && !Number.isNaN(num)) {
 				total += num;
 				count++;
@@ -500,7 +516,7 @@ export class LazyCollection<T> implements Iterable<T> {
 			if (useAsCallable(keyOrCallback)) {
 				return this.first(keyOrCallback as (v: T, k: number) => boolean) !== undefined;
 			}
-			for (const [, val] of makeIterator(this.source)) {
+			for (const val of iterateValues(this.source)) {
 				// biome-ignore lint/suspicious/noDoubleEquals: Laravel uses loose comparison
 				if (val == keyOrCallback) {
 					return true;
@@ -518,7 +534,7 @@ export class LazyCollection<T> implements Iterable<T> {
 		if (useAsCallable(keyOrValue)) {
 			return this.first(keyOrValue as (v: T, k: number) => boolean) !== undefined;
 		}
-		for (const [, item] of makeIterator(this.source)) {
+		for (const item of iterateValues(this.source)) {
 			if (item === keyOrValue) {
 				return true;
 			}
@@ -573,20 +589,19 @@ export class AsyncLazyCollection<T> implements AsyncIterable<T> {
 	}
 
 	static range(from: number, to: number): ProxiedAsyncLazyCollection<number> {
-		const source: GeneratorFactory<number> = function* () {
+		const source: ValueGeneratorFactory<number> = function* () {
 			const step = from <= to ? 1 : -1;
-			let index = 0;
 			for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
-				yield [index++, i];
+				yield i;
 			}
 		};
 		return wrapAsync(new AsyncLazyCollection<number>(source, 0));
 	}
 
 	static times<U>(n: number, callback?: (index: number) => U): ProxiedAsyncLazyCollection<U | number> {
-		const source: GeneratorFactory<U | number> = function* () {
+		const source: ValueGeneratorFactory<U | number> = function* () {
 			for (let i = 1; i <= n; i++) {
-				yield [i - 1, callback ? callback(i) : i];
+				yield callback ? callback(i) : i;
 			}
 		};
 		return wrapAsync(new AsyncLazyCollection<U | number>(source, 0));
@@ -606,7 +621,7 @@ export class AsyncLazyCollection<T> implements AsyncIterable<T> {
 			}
 			return;
 		}
-		for (const [, value] of makeIterator(this.source)) {
+		for (const value of iterateValues(this.source)) {
 			const startTime = performance.now();
 			yield value;
 
@@ -696,11 +711,10 @@ export class AsyncLazyCollection<T> implements AsyncIterable<T> {
 		const source = this.source;
 		const delayMs = this.delayMs;
 
-		const newSource: GeneratorFactory<U> = function* () {
+		const newSource: ValueGeneratorFactory<U> = function* () {
 			let index = 0;
-			for (const [, value] of makeIterator(source)) {
-				yield [index, callback(value, index)];
-				index++;
+			for (const value of iterateValues(source)) {
+				yield callback(value, index++);
 			}
 		};
 
@@ -711,12 +725,11 @@ export class AsyncLazyCollection<T> implements AsyncIterable<T> {
 		const source = this.source;
 		const delayMs = this.delayMs;
 
-		const newSource: GeneratorFactory<T> = function* () {
+		const newSource: ValueGeneratorFactory<T> = function* () {
 			let index = 0;
-			let newIndex = 0;
-			for (const [, value] of makeIterator(source)) {
+			for (const value of iterateValues(source)) {
 				if (callback ? callback(value, index) : Boolean(value)) {
-					yield [newIndex++, value];
+					yield value;
 				}
 				index++;
 			}
@@ -729,12 +742,12 @@ export class AsyncLazyCollection<T> implements AsyncIterable<T> {
 		const source = this.source;
 		const delayMs = this.delayMs;
 
-		const newSource: GeneratorFactory<T> = function* () {
+		const newSource: ValueGeneratorFactory<T> = function* () {
 			if (limit <= 0) return;
 
 			let count = 0;
-			for (const [, value] of makeIterator(source)) {
-				yield [count, value];
+			for (const value of iterateValues(source)) {
+				yield value;
 				if (++count >= limit) break;
 			}
 		};
@@ -746,12 +759,11 @@ export class AsyncLazyCollection<T> implements AsyncIterable<T> {
 		const source = this.source;
 		const delayMs = this.delayMs;
 
-		const newSource: GeneratorFactory<T> = function* () {
+		const newSource: ValueGeneratorFactory<T> = function* () {
 			let skipped = 0;
-			let newIndex = 0;
-			for (const [, value] of makeIterator(source)) {
+			for (const value of iterateValues(source)) {
 				if (skipped++ < count) continue;
-				yield [newIndex++, value];
+				yield value;
 			}
 		};
 
@@ -846,12 +858,11 @@ export function asyncLazy<T>(
 		if (Symbol.asyncIterator in result) {
 			return AsyncLazyCollection.fromAsync(result as AsyncIterable<T>);
 		}
-		// Sync generator — wrap in indexed generator factory
+		// Sync generator — wrap in value-only generator factory
 		const gen = result as Generator<T>;
-		const genSource: GeneratorFactory<T> = function* () {
-			let index = 0;
+		const genSource: ValueGeneratorFactory<T> = function* () {
 			for (const value of gen) {
-				yield [index++, value];
+				yield value;
 			}
 		};
 		return wrapAsync(new AsyncLazyCollection<T>(genSource, 0));

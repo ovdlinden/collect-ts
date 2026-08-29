@@ -49,25 +49,41 @@ interface ParsedGroup {
 	benches: ParsedBench[];
 }
 
-function parseVitestOutput(output: string): ParsedGroup[] {
+function parseVitestOutput(output: string, allowNoSize = false): ParsedGroup[] {
 	const lines = stripAnsi(output).split('\n');
 	const groups: ParsedGroup[] = [];
 
 	let currentGroup: ParsedGroup | null = null;
 
 	for (const line of lines) {
-		// Match describe block header: "✓ benchmarks/... > sum @ 10K"
-		const groupMatch = line.match(/[✓✗]\s+benchmarks\/[^\s>]+\s+>\s+(.+?)\s+@\s+(\d+K?M?)/i);
-		if (groupMatch) {
+		// Match describe block header with size: "✓ benchmarks/... > sum @ 10K"
+		const groupMatchWithSize = line.match(/[✓✗]\s+benchmarks\/[^\s>]+\s+>\s+(.+?)\s+@\s+(\d+K?M?)/i);
+		if (groupMatchWithSize) {
 			if (currentGroup) {
 				groups.push(currentGroup);
 			}
 			currentGroup = {
-				operation: groupMatch[1].trim(),
-				size: groupMatch[2].toUpperCase(),
+				operation: groupMatchWithSize[1].trim(),
+				size: groupMatchWithSize[2].toUpperCase(),
 				benches: [],
 			};
 			continue;
+		}
+
+		// Match describe block header without size (for lazy.bench.ts): "✓ benchmarks/... > Early termination: ..."
+		if (allowNoSize) {
+			const groupMatchNoSize = line.match(/[✓✗]\s+benchmarks\/[^\s>]+\s+>\s+(.+?)(?:\s+\d+ms)?$/i);
+			if (groupMatchNoSize && !line.includes('@')) {
+				if (currentGroup) {
+					groups.push(currentGroup);
+				}
+				currentGroup = {
+					operation: groupMatchNoSize[1].trim(),
+					size: 'N/A',
+					benches: [],
+				};
+				continue;
+			}
 		}
 
 		// Match benchmark row: "· name  hz  min  max  mean  ..."
@@ -130,6 +146,74 @@ const operationMappings = [
 	},
 ];
 
+// Lazy benchmark scenarios
+const lazyScenarios = [
+	{
+		key: 'early-termination',
+		displayName: 'Early exit (take 10 from 1M)',
+		groupPattern: /early termination/i,
+	},
+	{
+		key: 'first-match',
+		displayName: 'First match',
+		groupPattern: /first match/i,
+	},
+	{
+		key: 'chained-transforms',
+		displayName: 'Chained (filter→map→filter→map)',
+		groupPattern: /chained.*filter/i,
+	},
+	{
+		key: 'full-processing',
+		displayName: 'Full processing (no early exit)',
+		groupPattern: /full processing/i,
+	},
+	{
+		key: 'range',
+		displayName: 'Range generation',
+		groupPattern: /range.*sum/i,
+	},
+];
+
+interface LazyBenchmarkResult {
+	name: string;
+	rawLoop: { ops: string; hz: number };
+	nativeArray: { ops: string; hz: number };
+	nativeGenerator: { ops: string; hz: number };
+	collectionEager: { ops: string; hz: number };
+	lazyCollection: { ops: string; hz: number };
+}
+
+function extractLazyBenchmarkData(groups: ParsedGroup[]): LazyBenchmarkResult[] {
+	const results: LazyBenchmarkResult[] = [];
+
+	for (const scenario of lazyScenarios) {
+		const group = groups.find((g) => scenario.groupPattern.test(g.operation));
+		if (!group) continue;
+
+		const rawLoop = group.benches.find((b) => /raw for loop/i.test(b.name));
+		const nativeArray = group.benches.find((b) => /native array/i.test(b.name));
+		const nativeGenerator = group.benches.find((b) => /native generator/i.test(b.name));
+		const collectionEager = group.benches.find((b) => /collection \(eager\)/i.test(b.name));
+		const lazyCollection = group.benches.find((b) => /lazycollection/i.test(b.name));
+
+		if (rawLoop && nativeGenerator && lazyCollection) {
+			results.push({
+				name: scenario.displayName,
+				rawLoop: { ops: formatOps(rawLoop.hz), hz: rawLoop.hz },
+				nativeArray: nativeArray ? { ops: formatOps(nativeArray.hz), hz: nativeArray.hz } : { ops: 'N/A', hz: 0 },
+				nativeGenerator: { ops: formatOps(nativeGenerator.hz), hz: nativeGenerator.hz },
+				collectionEager: collectionEager
+					? { ops: formatOps(collectionEager.hz), hz: collectionEager.hz }
+					: { ops: 'N/A', hz: 0 },
+				lazyCollection: { ops: formatOps(lazyCollection.hz), hz: lazyCollection.hz },
+			});
+		}
+	}
+
+	return results;
+}
+
 function extractBenchmarkData(groups: ParsedGroup[]): Record<string, BenchmarkOps[]> {
 	const sizes = ['10K', '100K', '1M'] as const;
 	const result: Record<string, BenchmarkOps[]> = {};
@@ -164,21 +248,46 @@ function extractBenchmarkData(groups: ParsedGroup[]): Record<string, BenchmarkOp
 	return result;
 }
 
-async function main() {
-	console.log('Running benchmarks... (this may take a few minutes)');
-
+function runBenchmark(benchFile: string): string {
 	try {
-		const output = execSync('pnpm vitest bench benchmarks/collect-vs-native.bench.ts', {
+		return execSync(`pnpm vitest bench ${benchFile}`, {
 			encoding: 'utf-8',
 			cwd: join(__dirname, '../..'),
 			maxBuffer: 50 * 1024 * 1024,
 			stdio: ['inherit', 'pipe', 'pipe'],
 		});
+	} catch (error) {
+		if (error instanceof Error && 'stdout' in error) {
+			const output = (error as { stdout?: string }).stdout;
+			if (output) return output;
+		}
+		throw error;
+	}
+}
 
-		const groups = parseVitestOutput(output);
-		console.log(`\nParsed ${groups.length} benchmark groups`);
+async function main() {
+	console.log('Running benchmarks... (this may take a few minutes)\n');
 
-		const data = extractBenchmarkData(groups);
+	try {
+		// Run eager benchmarks
+		console.log('Running eager benchmarks (collect-vs-native.bench.ts)...');
+		const eagerOutput = runBenchmark('benchmarks/collect-vs-native.bench.ts');
+		const eagerGroups = parseVitestOutput(eagerOutput);
+		console.log(`Parsed ${eagerGroups.length} eager benchmark groups`);
+		const eagerData = extractBenchmarkData(eagerGroups);
+
+		// Run lazy benchmarks
+		console.log('\nRunning lazy benchmarks (lazy.bench.ts)...');
+		const lazyOutput = runBenchmark('benchmarks/lazy.bench.ts');
+		const lazyGroups = parseVitestOutput(lazyOutput, true);
+		console.log(`Parsed ${lazyGroups.length} lazy benchmark groups`);
+		const lazyData = extractLazyBenchmarkData(lazyGroups);
+
+		// Combine results
+		const data = {
+			...eagerData,
+			lazy: lazyData,
+		};
 
 		// Ensure data directory exists
 		const dataDir = join(__dirname, '../.vitepress/theme/data');
@@ -188,28 +297,9 @@ async function main() {
 		writeFileSync(outputPath, JSON.stringify(data, null, 2));
 
 		console.log(`\nBenchmark data written to: ${outputPath}`);
-		console.log('\nResults:');
-		console.log(JSON.stringify(data, null, 2));
+		console.log('\nEager results:', Object.keys(eagerData).length, 'sizes');
+		console.log('Lazy results:', lazyData.length, 'scenarios');
 	} catch (error) {
-		if (error instanceof Error && 'stdout' in error) {
-			// execSync throws on non-zero exit but we might still have output
-			const output = (error as { stdout?: string }).stdout;
-			if (output) {
-				const groups = parseVitestOutput(output);
-				const data = extractBenchmarkData(groups);
-
-				const dataDir = join(__dirname, '../.vitepress/theme/data');
-				mkdirSync(dataDir, { recursive: true });
-
-				const outputPath = join(dataDir, 'benchmark-results.json');
-				writeFileSync(outputPath, JSON.stringify(data, null, 2));
-
-				console.log(`\nBenchmark data written to: ${outputPath}`);
-				console.log('\nResults:');
-				console.log(JSON.stringify(data, null, 2));
-				return;
-			}
-		}
 		console.error('Error running benchmarks:', error);
 		process.exit(1);
 	}

@@ -4,13 +4,67 @@
  * Compares:
  * - Raw for loops (baseline — no abstraction overhead)
  * - Native Array methods (browser built-ins)
+ * - Native Generator pipelines (hand-rolled function* chains)
  * - Collection (eager, fluent API)
  * - LazyCollection (lazy evaluation)
  *
  * Shows both the overhead cost of abstractions AND where lazy evaluation wins.
+ * The Native Generator comparison answers: "What's the overhead vs hand-rolling my own?"
  */
 import { bench, describe } from 'vitest';
 import { collect } from '../src/index.js';
+
+// =============================================================================
+// Native Generator Utilities — fair comparison against LazyCollection
+// These are the hand-rolled equivalents developers might write themselves.
+// =============================================================================
+
+function* nativeGeneratorFilter<T>(source: Iterable<T>, predicate: (item: T) => boolean): Generator<T> {
+	for (const item of source) {
+		if (predicate(item)) yield item;
+	}
+}
+
+function* nativeGeneratorMap<T, U>(source: Iterable<T>, transform: (item: T) => U): Generator<U> {
+	for (const item of source) {
+		yield transform(item);
+	}
+}
+
+function* nativeGeneratorTake<T>(source: Iterable<T>, limit: number): Generator<T> {
+	let count = 0;
+	for (const item of source) {
+		if (count++ >= limit) return;
+		yield item;
+	}
+}
+
+function* nativeGeneratorRange(start: number, end: number): Generator<number> {
+	for (let i = start; i <= end; i++) {
+		yield i;
+	}
+}
+
+function nativeGeneratorFirst<T>(source: Iterable<T>, predicate: (item: T) => boolean): T | undefined {
+	for (const item of source) {
+		if (predicate(item)) return item;
+	}
+	return undefined;
+}
+
+function nativeGeneratorSum(source: Iterable<number>): number {
+	let sum = 0;
+	for (const value of source) {
+		sum += value;
+	}
+	return sum;
+}
+
+function nativeGeneratorToArray<T>(source: Iterable<T>): T[] {
+	return [...source];
+}
+
+// =============================================================================
 
 // Dataset sizes — lazy benefits emerge at scale
 const SIZES = {
@@ -52,6 +106,13 @@ describe('Early termination: take(10) from 1M items', () => {
 			.slice(0, 10);
 	});
 
+	bench('Native Generator', () => {
+		const filtered = nativeGeneratorFilter(large, (x) => x.value > 0.5);
+		const mapped = nativeGeneratorMap(filtered, (x) => x.value * 2);
+		const taken = nativeGeneratorTake(mapped, 10);
+		return nativeGeneratorToArray(taken);
+	});
+
 	bench('Collection (eager)', () => {
 		collect(large)
 			.filter((x) => x.value > 0.5)
@@ -84,6 +145,10 @@ describe('First match: first() with condition on 1M items', () => {
 
 	bench('Native Array.find', () => {
 		large.find((x) => x.id === 500);
+	});
+
+	bench('Native Generator', () => {
+		return nativeGeneratorFirst(large, (x) => x.id === 500);
 	});
 
 	bench('Collection (eager)', () => {
@@ -123,6 +188,14 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 			.reduce((a, b) => a + b, 0);
 	});
 
+	bench('Native Generator', () => {
+		const step1 = nativeGeneratorFilter(small, (x) => x.value > 0.2);
+		const step2 = nativeGeneratorMap(step1, (x) => ({ ...x, doubled: x.value * 2 }));
+		const step3 = nativeGeneratorFilter(step2, (x) => x.doubled > 1);
+		const step4 = nativeGeneratorMap(step3, (x) => x.doubled);
+		return nativeGeneratorSum(step4);
+	});
+
 	bench('Collection (eager)', () => {
 		collect(small)
 			.filter((x) => x.value > 0.2)
@@ -160,6 +233,11 @@ describe('Full processing: map all 100K items (no early exit)', () => {
 		small.map((x) => x.value * 2);
 	});
 
+	bench('Native Generator', () => {
+		const mapped = nativeGeneratorMap(small, (x) => x.value * 2);
+		return nativeGeneratorToArray(mapped);
+	});
+
 	bench('Collection (eager)', () => {
 		collect(small)
 			.map((x) => x.value * 2)
@@ -190,6 +268,12 @@ describe('Range: sum of first 10 from range(1, 1_000_000)', () => {
 		Array.from({ length: 1_000_000 }, (_, i) => i + 1)
 			.slice(0, 10)
 			.reduce((a, b) => a + b, 0);
+	});
+
+	bench('Native Generator', () => {
+		const range = nativeGeneratorRange(1, 1_000_000);
+		const taken = nativeGeneratorTake(range, 10);
+		return nativeGeneratorSum(taken);
 	});
 
 	bench('Collection (eager)', () => {
