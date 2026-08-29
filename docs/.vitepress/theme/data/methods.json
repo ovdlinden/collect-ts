@@ -1,0 +1,1016 @@
+[
+	{
+		"name": "make",
+		"category": "creating",
+		"description": "The `make` method creates a new collection instance from the given items.\nThis is equivalent to calling `new Collection()` or the `collect()` helper.",
+		"signature": "make()"
+	},
+	{
+		"name": "wrap",
+		"category": "creating",
+		"description": "The `wrap` method wraps the given value in a collection when applicable.\nArrays and iterables are converted directly, single values become a\none-element collection, and existing collections pass through unchanged.",
+		"signature": "wrap()"
+	},
+	{
+		"name": "unwrap",
+		"category": "creating",
+		"description": "The `unwrap` method returns the underlying array from the given value\nwhen possible. If the value is already an array, it is returned as-is.\nIf the value is a collection, the underlying array is extracted.",
+		"signature": "unwrap()"
+	},
+	{
+		"name": "empty",
+		"category": "creating",
+		"description": "The `empty` method creates an empty collection. This is useful when you\nneed a typed empty collection as a starting point for building up items.",
+		"signature": "empty(): ProxiedLazyCollection"
+	},
+	{
+		"name": "range",
+		"category": "transforming",
+		"description": "The `range` method creates a collection containing numbers within a specified range.\n\nWorks in both directions: ascending when `from < to`, descending otherwise.",
+		"signature": "range(from, to): ProxiedLazyCollection"
+	},
+	{
+		"name": "times",
+		"category": "transforming",
+		"description": "The `times` method creates a new collection by invoking the given closure a specified number of times.\n\nThe callback receives 1-based indices (1, 2, 3...). Without a callback,\nreturns a collection of numbers 1 through N.",
+		"signature": "times()"
+	},
+	{
+		"name": "fromJson",
+		"category": "creating",
+		"description": "The `fromJson` method creates a collection from a JSON string. The string\nmust be valid JSON representing either an array or an object.",
+		"signature": "fromJson()"
+	},
+	{
+		"name": "all",
+		"category": "finding",
+		"description": "The `all` method returns the underlying array or object represented by\nthe collection. Array-backed collections return an array, while\nassociative collections return a plain object.",
+		"signature": "all(): T[]"
+	},
+	{
+		"name": "get",
+		"category": "finding",
+		"description": "The `get` method returns the item at a given key. If the key does not\nexist, `undefined` is returned. You may optionally pass a default value\nas the second argument, or a callback that returns the default.",
+		"signature": "get()"
+	},
+	{
+		"name": "getOrPut",
+		"category": "finding",
+		"description": "The `getOrPut` method retrieves an item by key. If the key does not exist,\nthe default value is stored in the collection and returned. This is useful\nfor lazily populating collection values.",
+		"signature": "getOrPut()"
+	},
+	{
+		"name": "first",
+		"category": "finding",
+		"description": "The `first` method returns the first element in the collection that passes a given truth test.\n\nYou may also call the method with no arguments to get the first element. If the collection\nis empty, the default value or undefined is returned.",
+		"signature": "first()"
+	},
+	{
+		"name": "last",
+		"category": "finding",
+		"description": "The `last` method returns the last element in the collection that passes a given truth test.\n\nYou may also call the method with no arguments to get the last element. If the collection\nis empty, the default value or undefined is returned.",
+		"signature": "last()"
+	},
+	{
+		"name": "keys",
+		"category": "finding",
+		"description": "The `keys` method returns all of the collection's keys as a new collection.\nFor array-backed collections, this returns the numeric indices as strings.",
+		"signature": "keys(): Collection"
+	},
+	{
+		"name": "values",
+		"category": "finding",
+		"description": "The `values` method returns all of the collection's values as a new\ncollection with reset, sequential integer keys.",
+		"signature": "values(): Collection"
+	},
+	{
+		"name": "map",
+		"category": "transforming",
+		"description": "The `map` method iterates over the collection and passes each value to the given callback.\nThe callback is free to modify the item and return it, thus forming a new collection of\nmodified items.",
+		"signature": "map()"
+	},
+	{
+		"name": "mapWithKeys",
+		"category": "transforming",
+		"description": "The `mapWithKeys` method iterates through the collection and passes each value to the given\ncallback. The callback should return an associative array containing a single key/value pair.",
+		"signature": "mapWithKeys()"
+	},
+	{
+		"name": "mapToDictionary",
+		"category": "transforming",
+		"description": "The `mapToDictionary` method runs the given callback over each item and groups the returned\nvalues by their keys. Unlike `groupBy`, this method allows complete control over the grouped\nvalues through the callback's return tuple.",
+		"signature": "mapToDictionary()"
+	},
+	{
+		"name": "mapToGroups",
+		"category": "transforming",
+		"description": "The `mapToGroups` method groups the collection's items by the given callback. The callback\nshould return an associative array containing a single key/value pair, allowing you to\ncustomize both the group key and the value placed in each group.",
+		"signature": "mapToGroups()"
+	},
+	{
+		"name": "mapInto",
+		"category": "transforming",
+		"description": "The `mapInto` method iterates over the collection and creates a new instance of the given\nclass for each item, passing the item value and key to the constructor.",
+		"signature": "mapInto()"
+	},
+	{
+		"name": "mapSpread",
+		"category": "transforming",
+		"description": "The `mapSpread` method iterates over the collection's items, passing each nested item value\ninto the given callback as separate arguments. This is useful when working with nested arrays\nwhere each sub-array's elements should be passed as individual arguments.",
+		"signature": "mapSpread()"
+	},
+	{
+		"name": "flatMap",
+		"category": "transforming",
+		"description": "Map each item then flatten the results by one level.",
+		"signature": "flatMap()"
+	},
+	{
+		"name": "filter",
+		"category": "filtering",
+		"description": "The `filter` method filters the collection using the given callback, keeping only\nitems that pass a given truth test. If no callback is supplied, all falsy values\n(`false`, `null`, `undefined`, `0`, `''`) are removed.",
+		"signature": "filter()"
+	},
+	{
+		"name": "reject",
+		"category": "filtering",
+		"description": "The `reject` method filters the collection using the given callback, removing\nitems that pass the truth test. It is the inverse of the `filter` method.",
+		"signature": "reject()"
+	},
+	{
+		"name": "collapse",
+		"category": "transforming",
+		"description": "The `collapse` method collapses a collection of arrays into a single, flat collection.\nIt merges the elements of nested arrays or Collections into one level.",
+		"signature": "collapse(): Collection"
+	},
+	{
+		"name": "collapseWithKeys",
+		"category": "transforming",
+		"description": "The `collapseWithKeys` method collapses a collection of objects into a single object,\npreserving the keys from each nested object. Later objects override earlier ones when\nkeys conflict.",
+		"signature": "collapseWithKeys(): Collection"
+	},
+	{
+		"name": "flatten",
+		"category": "transforming",
+		"description": "The `flatten` method flattens a multi-dimensional collection into a single dimension.\nYou may optionally pass a depth argument to limit how many levels deep the flattening\nshould go.",
+		"signature": "flatten(): Collection"
+	},
+	{
+		"name": "flip",
+		"category": "transforming",
+		"description": "The `flip` method swaps the collection's keys with their corresponding values. Values\nare converted to strings since object keys must be strings.",
+		"signature": "flip(): Collection"
+	},
+	{
+		"name": "chunk",
+		"category": "grouping",
+		"description": "Split the collection into chunks of the given size.",
+		"signature": "chunk(size): ProxiedLazyCollection"
+	},
+	{
+		"name": "chunkWhile",
+		"category": "grouping",
+		"description": "The `chunkWhile` method breaks the collection into multiple, smaller collections\nbased on the evaluation of the given callback. The callback receives the current\nitem, its key, and the current chunk being built. A new chunk starts whenever\nthe callback returns `false`.",
+		"signature": "chunkWhile()"
+	},
+	{
+		"name": "split",
+		"category": "grouping",
+		"description": "The `split` method breaks a collection into the given number of groups,\ndistributing extra items across earlier groups to balance sizes as evenly\nas possible.",
+		"signature": "split(numberOfGroups): Collection"
+	},
+	{
+		"name": "splitIn",
+		"category": "grouping",
+		"description": "The `splitIn` method breaks a collection into the given number of groups,\nfilling non-terminal groups completely before allocating the remainder to\nthe final group. Unlike `split`, which balances group sizes, `splitIn`\ncreates full-sized chunks until items run out.",
+		"signature": "splitIn(numberOfGroups): Collection"
+	},
+	{
+		"name": "slice",
+		"category": "finding",
+		"description": "The `slice` method returns a slice of the collection starting at the\ngiven index. You may pass a second argument to limit the size of the\nreturned slice.",
+		"signature": "slice(offset, length?): Collection"
+	},
+	{
+		"name": "reverse",
+		"category": "sorting",
+		"description": "The `reverse` method reverses the order of the collection's items, preserving the\noriginal keys.",
+		"signature": "reverse(): Collection"
+	},
+	{
+		"name": "shuffle",
+		"category": "sorting",
+		"description": "The `shuffle` method randomly shuffles the items in the collection.\n\nUses the Fisher-Yates algorithm for unbiased shuffling.",
+		"signature": "shuffle(): Collection"
+	},
+	{
+		"name": "pad",
+		"category": "transforming",
+		"description": "The `pad` method fills the array with the given value until the array reaches the\nspecified size. This method behaves like PHP's `array_pad` function. To pad to the\nleft, specify a negative size. No padding occurs if the absolute value of the given\nsize is less than or equal to the length of the array.",
+		"signature": "pad(size, value): Collection"
+	},
+	{
+		"name": "zip",
+		"category": "combining",
+		"description": "The `zip` method merges together the values of the given array with the values of\nthe original collection at their corresponding index. This is useful for pairing\nrelated data from multiple sources, such as names with scores or dates with values.",
+		"signature": "zip(...arrays: U[][]): Collection"
+	},
+	{
+		"name": "contains",
+		"category": "filtering",
+		"description": "The `contains` method determines whether the collection contains a given item.\n\nUses loose equality (`==`) to match Laravel behavior. Note that JS differs from PHP:\n`0 == false`, `null == undefined`, `\"\" == 0`.",
+		"signature": "contains()"
+	},
+	{
+		"name": "containsStrict",
+		"category": "checking",
+		"description": "The `containsStrict` method determines whether the collection contains a given item\nusing strict comparison (`===`).\n\nUnlike `contains` which uses loose equality, this method distinguishes between types.\nFor example, `1` and `'1'` are not equal under strict comparison.",
+		"signature": "containsStrict()"
+	},
+	{
+		"name": "doesntContain",
+		"category": "checking",
+		"description": "The `doesntContain` method determines whether the collection does not contain a given item.\n\nThis method is the inverse of `contains` and uses loose equality (`==`) for comparison.\nIt returns `true` when the item is NOT found in the collection.",
+		"signature": "doesntContain()"
+	},
+	{
+		"name": "doesntContainStrict",
+		"category": "checking",
+		"description": "The `doesntContainStrict` method determines whether the collection does not contain a given\nitem using strict comparison (`===`).\n\nThis method is the inverse of `containsStrict` and returns `true` when the item is NOT found.",
+		"signature": "doesntContainStrict()"
+	},
+	{
+		"name": "diff",
+		"category": "combining",
+		"description": "The `diff` method compares the collection against another array or collection\nbased on its values. This method returns the values in the original collection\nthat are not present in the given collection.",
+		"signature": "diff(items): Collection"
+	},
+	{
+		"name": "diffUsing",
+		"category": "combining",
+		"description": "The `diffUsing` method compares the collection against another array or collection\nusing a callback. The callback should return 0 when two values are considered equal,\na negative number when the first is less than the second, or a positive number otherwise.",
+		"signature": "diffUsing()"
+	},
+	{
+		"name": "diffKeys",
+		"category": "combining",
+		"description": "The `diffKeys` method compares the collection against another array or collection\nbased on its keys. This method returns the key/value pairs in the original\ncollection whose keys are not present in the given collection.",
+		"signature": "diffKeys(items): Collection"
+	},
+	{
+		"name": "diffKeysUsing",
+		"category": "combining",
+		"description": "The `diffKeysUsing` method compares the collection against another array or collection\nbased on its keys using a callback. The callback should return 0 when two keys are\nconsidered equal.",
+		"signature": "diffKeysUsing()"
+	},
+	{
+		"name": "diffAssoc",
+		"category": "combining",
+		"description": "The `diffAssoc` method compares the collection against another array or collection\nbased on both its keys and values. This method returns the key/value pairs in the\noriginal collection that are not present in the given collection.",
+		"signature": "diffAssoc(items): Collection"
+	},
+	{
+		"name": "diffAssocUsing",
+		"category": "combining",
+		"description": "The `diffAssocUsing` method compares the collection against another array or collection\nbased on its keys and values, using a callback for key comparison. The callback should\nreturn 0 when two keys are considered equal.",
+		"signature": "diffAssocUsing()"
+	},
+	{
+		"name": "intersect",
+		"category": "combining",
+		"description": "The `intersect` method removes any values from the original collection that are\nnot present in the given array or collection. The resulting collection will\npreserve the original collection's keys.",
+		"signature": "intersect(items): Collection"
+	},
+	{
+		"name": "intersectUsing",
+		"category": "combining",
+		"description": "The `intersectUsing` method removes values not present in the given array or collection,\nusing a callback for comparison. The callback should return 0 when two values are\nconsidered equal.",
+		"signature": "intersectUsing()"
+	},
+	{
+		"name": "intersectAssoc",
+		"category": "combining",
+		"description": "The `intersectAssoc` method compares the collection against another array or collection,\nreturning key/value pairs that are present in both. Unlike `intersect`, this method\nconsiders both keys and values when determining matches.",
+		"signature": "intersectAssoc(items): Collection"
+	},
+	{
+		"name": "intersectAssocUsing",
+		"category": "combining",
+		"description": "The `intersectAssocUsing` method compares the collection against another array or collection\nbased on both keys and values, using a callback for key comparison. The callback should\nreturn 0 when two keys are considered equal.",
+		"signature": "intersectAssocUsing()"
+	},
+	{
+		"name": "intersectByKeys",
+		"category": "combining",
+		"description": "The `intersectByKeys` method removes any keys from the original collection that are\nnot present in the given array or collection. This is useful for filtering an object\nto only include specific fields.",
+		"signature": "intersectByKeys(items): Collection"
+	},
+	{
+		"name": "duplicates",
+		"category": "filtering",
+		"description": "The `duplicates` method retrieves and returns duplicate values from the collection.\nBy default, the method uses loose comparison.",
+		"signature": "duplicates(callback?, strict): Collection"
+	},
+	{
+		"name": "duplicatesStrict",
+		"category": "filtering",
+		"description": "The `duplicatesStrict` method retrieves duplicate values using strict equality (`===`).",
+		"signature": "duplicatesStrict(callback?): Collection"
+	},
+	{
+		"name": "median",
+		"category": "aggregating",
+		"description": "The `median` method returns the median value of a given key.\n\nThe median is the middle value when all values are sorted in order. For collections with\nan even number of items, it returns the average of the two middle values.",
+		"signature": "median(key?): number | null"
+	},
+	{
+		"name": "mode",
+		"category": "aggregating",
+		"description": "The `mode` method returns the mode value of a given key, which is the value that appears\nmost frequently in the collection.\n\nIf multiple values share the highest frequency, all of them are returned. Returns null\nif the collection is empty.",
+		"signature": "mode(key?): T[] | null"
+	},
+	{
+		"name": "count",
+		"category": "aggregating",
+		"description": "The `count` method returns the total number of items in the collection.",
+		"signature": "count(): number"
+	},
+	{
+		"name": "countBy",
+		"category": "grouping",
+		"description": "The `countBy` method counts the occurrences of values in the collection.\nBy default it counts by the value itself, but you can pass a callback or\nproperty key to count by a derived grouping key.",
+		"signature": "countBy(countBy?): Collection"
+	},
+	{
+		"name": "sum",
+		"category": "aggregating",
+		"description": "Sum all items, or a specific key/callback result.",
+		"signature": "sum(keyOrCallback?): number"
+	},
+	{
+		"name": "avg",
+		"category": "aggregating",
+		"description": "The `avg` method returns the average value of a given key.",
+		"signature": "avg(keyOrCallback?): number | null"
+	},
+	{
+		"name": "average",
+		"category": "aggregating",
+		"description": "The `average` method is an alias for the `avg` method.",
+		"signature": "average(keyOrCallback?): number | null"
+	},
+	{
+		"name": "min",
+		"category": "aggregating",
+		"description": "The `min` method returns the minimum value of a given key.",
+		"signature": "min(keyOrCallback?): number | null"
+	},
+	{
+		"name": "max",
+		"category": "aggregating",
+		"description": "The `max` method returns the maximum value of a given key.",
+		"signature": "max(keyOrCallback?): number | null"
+	},
+	{
+		"name": "percentage",
+		"category": "aggregating",
+		"description": "The `percentage` method may be used to quickly determine the percentage of items in the\ncollection that pass a given truth test.",
+		"signature": "percentage()"
+	},
+	{
+		"name": "merge",
+		"category": "combining",
+		"description": "The `merge` method merges the given array or collection with the original collection.\nIf a string key in the given items matches a string key in the original collection,\nthe given item's value will overwrite the value in the original collection.",
+		"signature": "merge(items): Collection"
+	},
+	{
+		"name": "mergeRecursive",
+		"category": "combining",
+		"description": "The `mergeRecursive` method merges the given array or collection recursively with\nthe original collection. If a string key in the given items matches a string key\nin the original collection, the values for these keys are merged together into an\nobject, and this is done recursively for nested structures.",
+		"signature": "mergeRecursive(items): Collection"
+	},
+	{
+		"name": "union",
+		"category": "combining",
+		"description": "The `union` method adds the given array to the collection. If the given array\ncontains keys that are already in the original collection, the original collection's\nvalues will be preferred. This is the opposite of `merge` which prefers new values.",
+		"signature": "union(items): Collection"
+	},
+	{
+		"name": "combine",
+		"category": "combining",
+		"description": "The `combine` method combines the values of the collection, as keys, with the\nvalues of another array or collection. This is useful for creating key-value\npairs from two separate lists.",
+		"signature": "combine(values): Collection"
+	},
+	{
+		"name": "crossJoin",
+		"category": "combining",
+		"description": "The `crossJoin` method cross joins the collection's values among the given arrays\nor collections, returning a Cartesian product with all possible permutations.",
+		"signature": "crossJoin(...lists: Arrayable<U>[]): Collection"
+	},
+	{
+		"name": "concat",
+		"category": "combining",
+		"description": "The `concat` method appends the given array or collection's values onto the end\nof another collection. Unlike `merge`, this method does not consider keys and\nsimply appends all values to the end.",
+		"signature": "concat(source): Collection"
+	},
+	{
+		"name": "put",
+		"category": "combining",
+		"description": "The `put` method sets the given key and value in the collection. If the key\nalready exists, its value will be overwritten. This method mutates the collection.",
+		"signature": "put(key, value): this"
+	},
+	{
+		"name": "pull",
+		"category": "finding",
+		"description": "The `pull` method removes and returns an item from the collection by its\nkey. If the key does not exist, the default value is returned. This method\nmutates the collection.",
+		"signature": "pull(key): T | undefined"
+	},
+	{
+		"name": "push",
+		"category": "combining",
+		"description": "The `push` method appends one or more items to the end of the collection.\nThis method mutates the collection and returns it for chaining.",
+		"signature": "push(...values: T[]): this"
+	},
+	{
+		"name": "prepend",
+		"category": "combining",
+		"description": "The `prepend` method adds an item to the beginning of the collection.\nYou may optionally pass a second argument to set the key of the prepended item.\nThis method mutates the collection.",
+		"signature": "prepend(value, key?): this"
+	},
+	{
+		"name": "unshift",
+		"category": "combining",
+		"description": "The `unshift` method is an alias for the `prepend` method, but accepts multiple\nvalues. It adds one or more items to the beginning of the collection, preserving\ntheir order. This method mutates the collection.",
+		"signature": "unshift(...values: T[]): this"
+	},
+	{
+		"name": "pop",
+		"category": "finding",
+		"description": "The `pop` method removes and returns the last item from the collection.\nYou may pass a count to remove and return multiple items from the end.\nIf the collection is empty, `null` is returned.",
+		"signature": "pop(): T | null"
+	},
+	{
+		"name": "shift",
+		"category": "finding",
+		"description": "The `shift` method removes and returns the first item from the collection.\nYou may pass a count to remove and return multiple items from the beginning.\nIf the collection is empty, `null` is returned.",
+		"signature": "shift(): T | null"
+	},
+	{
+		"name": "add",
+		"category": "combining",
+		"description": "The `add` method is an alias for the `push` method. It appends a single item\nto the end of the collection. This method mutates the collection.",
+		"signature": "add(item): this"
+	},
+	{
+		"name": "forget",
+		"category": "transforming",
+		"description": "The `forget` method removes an item from the collection by its key.\n\nUnlike `except`, this method modifies the collection in place. For numeric keys,\nthe collection does not re-index the remaining items.",
+		"signature": "forget()"
+	},
+	{
+		"name": "except",
+		"category": "filtering",
+		"description": "The `except` method returns all items in the collection except for those with the specified keys.",
+		"signature": "except()"
+	},
+	{
+		"name": "only",
+		"category": "filtering",
+		"description": "The `only` method returns the items in the collection with the specified keys.",
+		"signature": "only()"
+	},
+	{
+		"name": "select",
+		"category": "finding",
+		"description": "The `select` method selects the given keys from each item in the\ncollection, similar to a SQL SELECT statement. This is useful for\nextracting only the properties you need from complex objects.",
+		"signature": "select()"
+	},
+	{
+		"name": "has",
+		"category": "checking",
+		"description": "The `has` method determines if a given key exists in the collection.\n\nWhen an array of keys is passed, returns `true` only if ALL keys exist.",
+		"signature": "has()"
+	},
+	{
+		"name": "hasAny",
+		"category": "checking",
+		"description": "The `hasAny` method determines if any of the given keys exist in the collection.\n\nReturns `true` if at least one of the provided keys exists. Returns `false` for\nempty collections regardless of the keys provided.",
+		"signature": "hasAny()"
+	},
+	{
+		"name": "groupBy",
+		"category": "grouping",
+		"description": "Group items by a key or callback result.",
+		"signature": "groupBy(groupBy, preserveKeys): Collection"
+	},
+	{
+		"name": "keyBy",
+		"category": "grouping",
+		"description": "Key the collection by a field or callback result.\n\nIf multiple items have the same key, only the last one is kept.",
+		"signature": "keyBy(keyBy): Collection"
+	},
+	{
+		"name": "partition",
+		"category": "grouping",
+		"description": "Split the collection into two groups: items passing the test and items failing.",
+		"signature": "partition()"
+	},
+	{
+		"name": "search",
+		"category": "finding",
+		"description": "The `search` method searches the collection for the given value and\nreturns its key if found. If the item is not found, `false` is returned.\nBy default, comparison uses loose equality. Pass `true` as the second\nargument for strict comparison.",
+		"signature": "search()"
+	},
+	{
+		"name": "sort",
+		"category": "sorting",
+		"description": "The `sort` method sorts the collection.\n\nThe sorted collection keeps the original keys, but the order of items changes. You may\npass a custom comparison callback for more control over sorting behavior.",
+		"signature": "sort()"
+	},
+	{
+		"name": "sortDesc",
+		"category": "sorting",
+		"description": "The `sortDesc` method sorts the collection in the opposite order as the `sort` method.",
+		"signature": "sortDesc(_options?): Collection"
+	},
+	{
+		"name": "sortBy",
+		"category": "sorting",
+		"description": "The `sortBy` method sorts the collection by the given key.\n\nThe sorted collection keeps the original array keys, so in the following example\nwe will use the `values` method to reset the keys to consecutively numbered indexes.",
+		"signature": "sortBy(callback, _options?, descending): Collection"
+	},
+	{
+		"name": "sortByDesc",
+		"category": "sorting",
+		"description": "The `sortByDesc` method sorts the collection in the opposite order as the `sortBy` method.\n\nThis method has the same signature as `sortBy`, but will sort in descending order.",
+		"signature": "sortByDesc(callback, options?): Collection"
+	},
+	{
+		"name": "sortKeys",
+		"category": "sorting",
+		"description": "The `sortKeys` method sorts the collection by the keys of the underlying associative array.\n\nUses locale-aware string comparison for key ordering.",
+		"signature": "sortKeys(_options?, descending): Collection"
+	},
+	{
+		"name": "sortKeysDesc",
+		"category": "sorting",
+		"description": "The `sortKeysDesc` method sorts the collection by the keys in descending order.",
+		"signature": "sortKeysDesc(options?): Collection"
+	},
+	{
+		"name": "sortKeysUsing",
+		"category": "sorting",
+		"description": "The `sortKeysUsing` method sorts the collection by its keys using a callback.\n\nThe callback must be a comparison function returning a negative integer, zero, or\na positive integer to indicate sort order.",
+		"signature": "sortKeysUsing()"
+	},
+	{
+		"name": "skip",
+		"category": "filtering",
+		"description": "The `skip` method returns a new collection without the first N items.",
+		"signature": "skip(count): ProxiedLazyCollection"
+	},
+	{
+		"name": "skipUntil",
+		"category": "filtering",
+		"description": "The `skipUntil` method skips items until the given callback returns true.\nThe matching item and all remaining items are returned as a new collection.\nYou may also pass a value instead of a callback.",
+		"signature": "skipUntil()"
+	},
+	{
+		"name": "skipWhile",
+		"category": "filtering",
+		"description": "The `skipWhile` method skips items while the given callback returns true.\nOnce the callback returns false, all remaining items are returned as a\nnew collection.",
+		"signature": "skipWhile()"
+	},
+	{
+		"name": "take",
+		"category": "filtering",
+		"description": "The `take` method returns a new collection with the specified number of\nitems. You may pass a negative integer to take that many items from the\nend of the collection.",
+		"signature": "take(limit): ProxiedLazyCollection"
+	},
+	{
+		"name": "takeUntil",
+		"category": "filtering",
+		"description": "The `takeUntil` method returns items until the given callback returns true.\nThe item that matches is not included in the result. You may also pass a\nvalue instead of a callback.",
+		"signature": "takeUntil()"
+	},
+	{
+		"name": "takeWhile",
+		"category": "filtering",
+		"description": "The `takeWhile` method returns items while the given callback returns true.\nOnce the callback returns false, the method stops and returns what it\ncollected so far.",
+		"signature": "takeWhile()"
+	},
+	{
+		"name": "implode",
+		"category": "aggregating",
+		"description": "The `implode` method joins items in a collection.\n\nIts arguments depend on the type of items in the collection. If the collection contains\narrays or objects, pass the key of the attribute you wish to join, and the \"glue\" string.\nFor simple values, pass just the glue string.",
+		"signature": "implode()"
+	},
+	{
+		"name": "join",
+		"category": "aggregating",
+		"description": "The `join` method joins the collection's values with a string.\n\nUsing its second argument, you may also specify how the final element should be appended,\nwhich is useful for natural-language formatting like \"and\" or \"or\".",
+		"signature": "join(glue, finalGlue): string"
+	},
+	{
+		"name": "toString",
+		"category": "aggregating",
+		"description": "The `toString` method returns the collection as a comma-separated string.\n\nThis method is automatically called when the collection is coerced to a string.",
+		"signature": "toString(): string"
+	},
+	{
+		"name": "isEmpty",
+		"category": "checking",
+		"description": "The `isEmpty` method returns `true` if the collection is empty.",
+		"signature": "isEmpty(): boolean"
+	},
+	{
+		"name": "isNotEmpty",
+		"category": "checking",
+		"description": "The `isNotEmpty` method returns `true` if the collection is not empty.",
+		"signature": "isNotEmpty(): boolean"
+	},
+	{
+		"name": "containsOneItem",
+		"category": "checking",
+		"description": "The `containsOneItem` method returns `true` if the collection contains exactly one item.\n\nWhen a callback is provided, returns `true` only if exactly one item passes the test.",
+		"signature": "containsOneItem()"
+	},
+	{
+		"name": "hasMany",
+		"category": "checking",
+		"description": "The `hasMany` method returns `true` if the collection contains more than one item.\n\nWhen a callback or key/value pair is provided, returns `true` only if more than one\nitem passes the test.",
+		"signature": "hasMany()"
+	},
+	{
+		"name": "hasSole",
+		"category": "checking",
+		"description": "The `hasSole` method returns `true` if the collection contains exactly one item\nthat passes the given truth test.\n\nUnlike `sole`, this method returns a boolean instead of throwing an exception\nwhen zero or multiple items match.",
+		"signature": "hasSole()"
+	},
+	{
+		"name": "sole",
+		"category": "finding",
+		"description": "The `sole` method returns the first element in the collection that passes a given truth test,\nbut only if the truth test matches exactly one element.",
+		"signature": "sole()"
+	},
+	{
+		"name": "firstOrFail",
+		"category": "finding",
+		"description": "The `firstOrFail` method returns the first element in the collection, or throws an\n`ItemNotFoundException` if the collection is empty or no matching element is found.",
+		"signature": "firstOrFail()"
+	},
+	{
+		"name": "pluck",
+		"category": "transforming",
+		"description": "Extract values at a given path from each item.",
+		"signature": "pluck()"
+	},
+	{
+		"name": "transform",
+		"category": "transforming",
+		"description": "The `transform` method iterates over the collection and calls the given callback with each\nitem in the collection. The items in the collection will be replaced by the values returned\nby the callback. Unlike `map`, this method modifies the collection in place.",
+		"signature": "transform()"
+	},
+	{
+		"name": "nth",
+		"category": "filtering",
+		"description": "The `nth` method creates a new collection containing every n-th element.\nYou may optionally pass an offset as the second argument.",
+		"signature": "nth(step, offset): Collection"
+	},
+	{
+		"name": "random",
+		"category": "finding",
+		"description": "The `random` method returns a random item from the collection. You may\noptionally pass an integer to specify how many items you would like to\nretrieve. If the collection is empty, an exception is thrown.",
+		"signature": "random()"
+	},
+	{
+		"name": "sliding",
+		"category": "grouping",
+		"description": "The `sliding` method returns a new collection of chunks representing a\n\"sliding window\" view of the items. Each chunk contains `size` consecutive\nitems, and the window advances by `step` items between chunks.",
+		"signature": "sliding(size, step): Collection"
+	},
+	{
+		"name": "multiply",
+		"category": "combining",
+		"description": "The `multiply` method creates multiple copies of all items in the collection.\nThe resulting collection contains the original items repeated the specified\nnumber of times.",
+		"signature": "multiply(multiplier): Collection"
+	},
+	{
+		"name": "replace",
+		"category": "combining",
+		"description": "The `replace` method behaves similarly to `merge`; however, in addition to\noverwriting matching items that have string keys, the `replace` method will\nalso overwrite items in the collection that have matching numeric keys.",
+		"signature": "replace(items): Collection"
+	},
+	{
+		"name": "replaceRecursive",
+		"category": "combining",
+		"description": "The `replaceRecursive` method works like `replace`, but it will recurse into\nnested objects and apply the same replacement process to the inner values.",
+		"signature": "replaceRecursive(items): Collection"
+	},
+	{
+		"name": "splice",
+		"category": "transforming",
+		"description": "The `splice` method removes and returns a slice of items starting at the specified index.\nYou may pass a second argument to limit the size of the removed slice, and a third argument\ncontaining replacement items to insert at the splice point. This method modifies the\noriginal collection.",
+		"signature": "splice(offset, length?, replacement): Collection"
+	},
+	{
+		"name": "dot",
+		"category": "transforming",
+		"description": "The `dot` method flattens a multi-dimensional collection into a single level collection\nthat uses \"dot\" notation to indicate depth. This is useful for working with nested\nconfiguration or form data.",
+		"signature": "dot(): Collection"
+	},
+	{
+		"name": "undot",
+		"category": "transforming",
+		"description": "The `undot` method expands a single-level collection that uses \"dot\" notation into a\nmulti-dimensional collection. This is the inverse of the `dot` method.",
+		"signature": "undot(): Collection"
+	},
+	{
+		"name": "unique",
+		"category": "filtering",
+		"description": "The `unique` method returns all of the unique items in the collection.\n\nWhen dealing with nested objects, you may specify a key used to determine uniqueness.",
+		"signature": "unique(keyOrCallback?, strict): Collection"
+	},
+	{
+		"name": "uniqueStrict",
+		"category": "filtering",
+		"description": "The `uniqueStrict` method removes duplicate items using strict equality (`===`).\nUnlike `unique`, which uses loose comparison, this method distinguishes between\nvalues like `1` and `'1'`.",
+		"signature": "uniqueStrict(keyOrCallback?): Collection"
+	},
+	{
+		"name": "where",
+		"category": "filtering",
+		"description": "The `where` method filters the collection by a given key/value pair.\n\nThe method uses \"loose\" comparisons when checking item values, meaning\na string with an integer value will be considered equal to an integer\nof the same value. Use the `whereStrict` method for strict comparisons.\n\nYou may optionally pass a comparison operator as the second argument.\nSupported operators: `=`, `==`, `!=`, `<>`, `<`, `>`, `<=`, `>=`.",
+		"signature": "where(key, operatorOrValue?, value?): Collection"
+	},
+	{
+		"name": "whereStrict",
+		"category": "filtering",
+		"description": "The `whereStrict` method filters the collection by a given key/value pair using strict\ncomparison (`===`). Unlike `where`, this method distinguishes between values like `1` and `'1'`.",
+		"signature": "whereStrict(key, value): Collection"
+	},
+	{
+		"name": "whereIn",
+		"category": "filtering",
+		"description": "The `whereIn` method filters the collection by a given key/value contained within the given array.",
+		"signature": "whereIn(key, values, strict): Collection"
+	},
+	{
+		"name": "whereInStrict",
+		"category": "filtering",
+		"description": "The `whereInStrict` method filters the collection by a given key/value contained\nwithin the given array using strict comparison (`===`). Unlike `whereIn`, this\nmethod distinguishes between values like `1` and `'1'`.",
+		"signature": "whereInStrict(key, values): Collection"
+	},
+	{
+		"name": "whereNotIn",
+		"category": "filtering",
+		"description": "The `whereNotIn` method filters the collection by a given key/value not contained within the given array.",
+		"signature": "whereNotIn(key, values, strict): Collection"
+	},
+	{
+		"name": "whereNotInStrict",
+		"category": "filtering",
+		"description": "The `whereNotInStrict` method filters the collection by a given key/value not\ncontained within the given array using strict comparison (`===`). Unlike `whereNotIn`,\nthis method distinguishes between values like `1` and `'1'`.",
+		"signature": "whereNotInStrict(key, values): Collection"
+	},
+	{
+		"name": "whereBetween",
+		"category": "filtering",
+		"description": "The `whereBetween` method filters the collection by determining if a specified item value is within a given range.",
+		"signature": "whereBetween(key, values): Collection"
+	},
+	{
+		"name": "whereNotBetween",
+		"category": "filtering",
+		"description": "The `whereNotBetween` method filters the collection by determining if a specified item value\nis outside of a given range.",
+		"signature": "whereNotBetween(key, values): Collection"
+	},
+	{
+		"name": "whereNull",
+		"category": "filtering",
+		"description": "The `whereNull` method filters the collection by determining if a specified item value is null or undefined.",
+		"signature": "whereNull(key?): Collection"
+	},
+	{
+		"name": "whereNotNull",
+		"category": "filtering",
+		"description": "The `whereNotNull` method filters the collection by determining if a specified item value\nis not null or undefined.",
+		"signature": "whereNotNull(key?): Collection"
+	},
+	{
+		"name": "whereInstanceOf",
+		"category": "filtering",
+		"description": "The `whereInstanceOf` method filters the collection by a given class type,\nkeeping only items that are instances of the specified class. This is useful\nfor filtering mixed collections to a specific type.",
+		"signature": "whereInstanceOf()"
+	},
+	{
+		"name": "firstWhere",
+		"category": "finding",
+		"description": "The `firstWhere` method returns the first element in the collection with the given key/value pair.",
+		"signature": "firstWhere(key, operatorOrValue?, value?): T | undefined"
+	},
+	{
+		"name": "each",
+		"category": "transforming",
+		"description": "The `each` method iterates over the items in the collection and passes each item to a closure.\n\nIf you would like to stop iterating through the items, you may return false from your closure.",
+		"signature": "each()"
+	},
+	{
+		"name": "eachSpread",
+		"category": "transforming",
+		"description": "The `eachSpread` method iterates over the collection's items, passing each nested item value\ninto the given callback as separate arguments. This is useful when working with nested arrays\nwhere each sub-array should be destructured into callback parameters.",
+		"signature": "eachSpread()"
+	},
+	{
+		"name": "reduce",
+		"category": "aggregating",
+		"description": "The `reduce` method reduces the collection to a single value, passing the result of each\niteration into the subsequent iteration.\n\nThe value for the accumulator on the first iteration is the initial value; on subsequent\niterations, it is the value returned by the previous callback.",
+		"signature": "reduce()"
+	},
+	{
+		"name": "reduceSpread",
+		"category": "aggregating",
+		"description": "The `reduceSpread` method reduces the collection to multiple values using spread arguments.\n\nThe callback receives the accumulated values spread as individual arguments, followed by\nthe current item and key. It must return an array of the same shape as the initial values.",
+		"signature": "reduceSpread()"
+	},
+	{
+		"name": "reduceWithKeys",
+		"category": "aggregating",
+		"description": "The `reduceWithKeys` method reduces the collection with access to both value and key.\n\nThis method works identically to `reduce` since the key is always provided as the third\nargument. It exists for API compatibility with Laravel.",
+		"signature": "reduceWithKeys()"
+	},
+	{
+		"name": "reduceInto",
+		"category": "aggregating",
+		"description": "The `reduceInto` method reduces the collection into an existing object, mutating it.\n\nUnlike `reduce`, the callback does not return a value. Instead, it modifies the carry\nobject directly. The same object is returned at the end.",
+		"signature": "reduceInto()"
+	},
+	{
+		"name": "every",
+		"category": "checking",
+		"description": "The `every` method verifies that all elements of the collection pass a given truth test.\n\nReturns `true` if the callback returns truthy for every item. If the collection is\nempty, `every` returns `true` (vacuous truth).",
+		"signature": "every()"
+	},
+	{
+		"name": "some",
+		"category": "checking",
+		"description": "The `some` method is an alias for the `contains` method.\n\nIt determines whether the collection contains any items that pass the given truth test.\nThis method is useful for developers coming from JavaScript's Array.some() convention.",
+		"signature": "some()"
+	},
+	{
+		"name": "toArray",
+		"category": "aggregating",
+		"description": "The `toArray` method converts the collection into a plain array.\n\nFor associative collections (keyed objects), it returns a record instead. Nested\ncollections are also recursively converted to arrays/records.",
+		"signature": "toArray(): T[]"
+	},
+	{
+		"name": "toJson",
+		"category": "aggregating",
+		"description": "The `toJson` method converts the collection into a JSON serialized string.",
+		"signature": "toJson(_options?): string"
+	},
+	{
+		"name": "toPrettyJson",
+		"category": "aggregating",
+		"description": "The `toPrettyJson` method converts the collection into a pretty-printed JSON string.\n\nUses 2-space indentation for readability.",
+		"signature": "toPrettyJson(): string"
+	},
+	{
+		"name": "collect",
+		"category": "transforming",
+		"description": "The `collect` method returns a new Collection instance with the current items. This is useful\nwhen you want to break the chain and get a fresh collection, or convert a subclass back to a\nbase Collection.",
+		"signature": "collect(): Collection"
+	},
+	{
+		"name": "toBase",
+		"category": "transforming",
+		"description": "The `toBase` method returns a base Collection instance from the current collection. This is\nuseful when working with collection subclasses and you need to ensure you have a standard\nCollection instance.",
+		"signature": "toBase(): Collection"
+	},
+	{
+		"name": "pipe",
+		"category": "transforming",
+		"description": "The `pipe` method passes the collection to the given closure and returns the result of the\nexecuted closure. This is useful for wrapping the collection in custom logic or breaking\nout of the method chain when needed.",
+		"signature": "pipe()"
+	},
+	{
+		"name": "pipeInto",
+		"category": "transforming",
+		"description": "The `pipeInto` method creates a new instance of the given class and passes the collection\ninto the constructor. This is useful for wrapping the collection in domain-specific\nobjects or adapters.",
+		"signature": "pipeInto()"
+	},
+	{
+		"name": "pipeThrough",
+		"category": "transforming",
+		"description": "The `pipeThrough` method passes the collection through a series of callbacks and returns\nthe final result. Each callback receives the result of the previous callback, creating\na pipeline of transformations.",
+		"signature": "pipeThrough()"
+	},
+	{
+		"name": "tap",
+		"category": "transforming",
+		"description": "Pass the collection to the given callback and return it unchanged.\n\nUseful for debugging or side effects mid-chain.",
+		"signature": "tap()"
+	},
+	{
+		"name": "dump",
+		"category": "transforming",
+		"description": "The `dump` method outputs the collection's items to the console and returns the collection,\nallowing you to inspect the contents at any point in a method chain without interrupting\nthe flow.",
+		"signature": "dump(...args: unknown[]): this"
+	},
+	{
+		"name": "dd",
+		"category": "transforming",
+		"description": "The `dd` method outputs the collection's items to the console and then throws an error\nto halt script execution. This is useful for debugging when you want to inspect the\ncollection and stop processing. The name comes from \"dump and die.\"",
+		"signature": "dd(...args: unknown[]): never"
+	},
+	{
+		"name": "forPage",
+		"category": "filtering",
+		"description": "The `forPage` method returns a new collection containing the items that would\nbe present on a given page number. The method accepts the page number as its\nfirst argument and the number of items to show per page as its second argument.",
+		"signature": "forPage(page, perPage): Collection"
+	},
+	{
+		"name": "value",
+		"category": "finding",
+		"description": "The `value` method retrieves a given value from the first element of the\ncollection. This is useful for quickly extracting a single property from\nthe first item without having to call `first()` separately.",
+		"signature": "value()"
+	},
+	{
+		"name": "when",
+		"category": "transforming",
+		"description": "The `when` method will execute the given callback when the first argument given to the\nmethod evaluates to true. The collection instance and the resolved value are passed to\nthe closure. An optional second callback is executed when the condition is falsy.",
+		"signature": "when()"
+	},
+	{
+		"name": "unless",
+		"category": "transforming",
+		"description": "The `unless` method will execute the given callback when the first argument given to the\nmethod evaluates to false. This is the inverse of the `when` method. An optional second\ncallback is executed when the condition is truthy.",
+		"signature": "unless()"
+	},
+	{
+		"name": "whenEmpty",
+		"category": "transforming",
+		"description": "The `whenEmpty` method will execute the given callback when the collection is empty.\nAn optional second callback is executed when the collection is not empty.",
+		"signature": "whenEmpty()"
+	},
+	{
+		"name": "whenNotEmpty",
+		"category": "transforming",
+		"description": "The `whenNotEmpty` method will execute the given callback when the collection is not empty.\nAn optional second callback is executed when the collection is empty.",
+		"signature": "whenNotEmpty()"
+	},
+	{
+		"name": "unlessEmpty",
+		"category": "transforming",
+		"description": "Alias for whenNotEmpty.",
+		"signature": "unlessEmpty()"
+	},
+	{
+		"name": "unlessNotEmpty",
+		"category": "transforming",
+		"description": "Alias for whenEmpty.",
+		"signature": "unlessNotEmpty()"
+	},
+	{
+		"name": "offsetExists",
+		"category": "checking",
+		"description": "The `offsetExists` method determines if a key exists at the given offset.\n\nThis method implements the ArrayAccess interface pattern, allowing bracket-style\nkey existence checks. It is used internally for array-like access.",
+		"signature": "offsetExists(key): boolean"
+	},
+	{
+		"name": "offsetGet",
+		"category": "finding",
+		"description": "Get the value at a given offset.\n\nPart of the ArrayAccess interface for bracket-style access. Unlike\n`get()`, this method does not support default values and returns\n`undefined` for missing keys.",
+		"signature": "offsetGet(key): T"
+	},
+	{
+		"name": "offsetSet",
+		"category": "transforming",
+		"description": "Set the value at a given offset.",
+		"signature": "offsetSet(key, value): void"
+	},
+	{
+		"name": "offsetUnset",
+		"category": "transforming",
+		"description": "Remove the value at a given offset.",
+		"signature": "offsetUnset(key): void"
+	},
+	{
+		"name": "with",
+		"category": "combining",
+		"description": "The `with` method joins the collection with a related collection, enabling\noperations that correlate items between the two. This is useful for scenarios\nsimilar to database joins where you need to work with related data sets.",
+		"signature": "with(related): WithCollection"
+	},
+	{
+		"name": "lazy",
+		"category": "transforming",
+		"description": "The `lazy` method returns a new LazyCollection instance from the underlying items.\n\nThis is particularly useful when you need to perform transformations on a large collection\nand want to defer processing until the items are actually needed.",
+		"signature": "lazy(): ProxiedLazyCollection"
+	},
+	{
+		"name": "lazyFirst",
+		"category": "other",
+		"description": "Find the first item matching a predicate without creating LazyCollection.\nFaster than `.lazy().first()` for simple lookups.",
+		"signature": "lazyFirst()"
+	}
+]
