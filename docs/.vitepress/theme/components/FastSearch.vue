@@ -64,19 +64,15 @@ const results = computed<ProcessedResult[]>(() => {
 	const q = query.value.toLowerCase().trim();
 	if (!q || q.length < 2) return [];
 
-	const terms = q.split(/\s+/);
-
 	// Use collect().lazy() for fast, early-terminating search
+	// Match only on method name, not description
 	return collect(searchIndex.value)
 		.lazy()
-		.filter((item) => {
-			const searchText = `${item.title} ${item.titles.join(' ')} ${item.text}`.toLowerCase();
-			return terms.every((term) => searchText.includes(term));
-		})
+		.filter((item) => item.title.toLowerCase().includes(q))
 		.take(12)
 		.map((item) => ({
 			...item,
-			highlightedTitle: highlightTerms(item.title, terms),
+			highlightedTitle: highlightTerms(item.title, [q]),
 			breadcrumb: item.titles.slice(0, -1).join(' › '),
 		}))
 		.all();
