@@ -9,7 +9,6 @@ import './style.css';
 
 // Lazy load heavy, page-specific components
 const Benchmarks = defineAsyncComponent(() => import('./components/Benchmarks.vue'));
-const D2Diagram = defineAsyncComponent(() => import('./components/D2Diagram.vue'));
 const HomepageLazyDemo = defineAsyncComponent(() => import('./components/HomepageLazyDemo.vue'));
 const LazySpotlight = defineAsyncComponent(() => import('./components/LazySpotlight.vue'));
 
@@ -24,7 +23,6 @@ export default {
 	enhanceApp({ app }) {
 		app.component('Benchmarks', Benchmarks);
 		app.component('CallbackTaxDiagram', CallbackTaxDiagram);
-		app.component('D2Diagram', D2Diagram);
 		app.component('HomepageLazyDemo', HomepageLazyDemo);
 		app.component('LazySpotlight', LazySpotlight);
 		app.component('SpeedupBar', SpeedupBar);

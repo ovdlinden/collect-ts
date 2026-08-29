@@ -1,7 +1,6 @@
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';
-import { d2FencePlugin } from './plugins/markdown-d2.ts';
 import { outputContainerPlugin } from './plugins/markdown-output.ts';
 import { outputPreprocessPlugin } from './plugins/markdown-output-preprocess.ts';
 import { transformerOutputLines } from './plugins/shiki-output.ts';
@@ -83,7 +82,6 @@ export default defineConfig({
 	markdown: {
 		config: (md) => {
 			md.use(groupIconMdPlugin);
-			md.use(d2FencePlugin);
 			md.use(outputContainerPlugin);
 			// Note: outputPreprocessPlugin removed - using Shiki transformer instead
 		},
@@ -115,9 +113,13 @@ export default defineConfig({
 			options: {
 				miniSearch: {
 					searchOptions: {
+						fuzzy: false,
+						prefix: true,
+						maxFuzzy: 0,
 						boostDocument: (id: string) => (['/00-quickstart', '/collections/'].some((p) => id.includes(p)) ? 2 : 1.5),
 					},
 				},
+				detailedView: true,
 			},
 		},
 	},
