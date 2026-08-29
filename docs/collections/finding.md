@@ -496,4 +496,16 @@ For Get the first item, use [`first`](#first). For Extract a property from all i
 
 Get the value at a given offset.
 
+Part of the ArrayAccess interface for bracket-style access. Unlike
+`get()`, this method does not support default values and returns
+`undefined` for missing keys.
+
+```typescript
+collect({ name: 'Taylor', role: 'Developer' })
+    .offsetGet('name')
+// → 'Taylor'
+```
+
+For Primary method with default value support, use [`get`](#get). For Check if key exists, use [`offsetExists`](/collections/checking#offsetexists).
+
 ---

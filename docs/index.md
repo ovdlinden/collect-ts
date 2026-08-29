@@ -10,8 +10,8 @@ hero:
       text: Get Started
       link: /00-quickstart
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/ovdlinden/collect-ts
+      text: View Docs
+      link: /collections/
 ---
 
 <div class="showcase">
@@ -59,16 +59,7 @@ collect(users)
   </div>
 </div>
 
-<LazySpotlight
-  title="Early exit with .lazy()"
-  collect-prefix="collect(items)"
-  collect-suffix=".where('active', true).take(10)"
-  eager-items="1,000,000 items processed"
-  lazy-items="~10 items processed"
-  eager-time="~17ms"
-  lazy-time="~1μs"
-  :speedup="33000"
-/>
+<HomepageLazyDemo />
 
 <div class="quick-links">
   <a href="/00-quickstart" class="quick-link">
@@ -177,13 +168,18 @@ collect(users)
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   background: var(--vp-c-bg-soft);
-  text-decoration: none;
+  text-decoration: none !important;
   transition: border-color 0.15s, transform 0.15s;
 }
 
 .quick-link:hover {
   border-color: var(--vp-c-brand-1);
   transform: translateY(-2px);
+  text-decoration: none !important;
+}
+
+.quick-link * {
+  text-decoration: none !important;
 }
 
 .link-title {
@@ -195,11 +191,6 @@ collect(users)
 .link-desc {
   font-size: 0.8rem;
   color: var(--vp-c-text-3);
-  text-decoration: none !important;
-}
-
-.quick-link:hover .link-desc {
-  text-decoration: none !important;
 }
 
 @media (max-width: 768px) {

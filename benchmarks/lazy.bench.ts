@@ -158,6 +158,14 @@ describe('First match: first() with condition on 1M items', () => {
 	bench('LazyCollection', () => {
 		collect(large).lazy().first((x) => x.id === 500);
 	});
+
+	bench('Collection.lazyFirst', () => {
+		collect(large).lazyFirst((x) => x.id === 500);
+	});
+
+	bench('collect.first (static)', () => {
+		collect.first(large, (x) => x.id === 500);
+	});
 });
 
 // =============================================================================
@@ -249,6 +257,10 @@ describe('Full processing: map all 100K items (no early exit)', () => {
 			.lazy()
 			.map((x) => x.value * 2)
 			.all();
+	});
+
+	bench('collect.map (static)', () => {
+		collect.map(small, (x) => x.value * 2);
 	});
 });
 

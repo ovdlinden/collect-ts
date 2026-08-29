@@ -11,16 +11,7 @@ pnpm vitest bench
 Results vary by machine and Node version.
 :::
 
-## Which API to use
-
-| Approach | When to use |
-| --- | --- |
-| `collect()` | General use |
-| `LazyCollection` | Early termination, large datasets, memory efficiency |
-| Native Array | One-off transforms where you'd write a callback anyway |
-| Raw `for` loop | Hot paths where every microsecond matters |
-
-## Benchmarks
+## The Callback Tax
 
 Native array methods call your callback once per element. Each call has overhead: function invocation, closure capture, stack manipulation. collect-ts avoids this with `for` loops and direct property access.
 
@@ -48,7 +39,7 @@ Native allocates 1M elements, then slices:
 Array.from({ length: 1_000_000 }, (_, i) => i + 1).slice(0, 10)
 ```
 
-The lazy version wins because it avoids allocating the full array, not because generators are intrinsically faster. A hand-written `for` loop that also exits early is ~138x faster than LazyCollection, but generators give you a composable API without manual loop management.
+The lazy version wins because it avoids allocating the full array, not because generators are intrinsically faster. A hand-written `for` loop that also exits early is faster than LazyCollection, but LazyCollection matches or beats hand-rolled generators for chained operations while providing a fluent, composable API.
 
 ## Methodology
 

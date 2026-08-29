@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import benchmarkResults from '../data/benchmark-results.json'
+import CallbackTaxDiagram from './CallbackTaxDiagram.vue'
+import LazySpotlight from './LazySpotlight.vue'
+import SpeedupBar from './SpeedupBar.vue'
+import StatCard from './StatCard.vue'
 
 const sizes = ['10K', '100K', '1M'] as const
 type Size = typeof sizes[number]
@@ -61,22 +65,48 @@ const codeExamples: Record<string, { native: string; collectTs: string }> = {
 
 const results = benchmarkResults as Record<Size, BenchmarkOps[]> & { lazy?: LazyBenchmarkResult[] }
 
-const lazyBenchmarks = computed(() => {
-  return (results.lazy || []).map((item) => {
-    const speedupNum = item.lazyCollection.hz / item.nativeGenerator.hz
-    const isFaster = speedupNum >= 1
-    const logValue = Math.log2(speedupNum || 1)
-    const clampedLog = Math.max(-2, Math.min(2, logValue))
-    const barWidth = Math.abs(clampedLog) / 2 * 50
+// Format hz (ops/s) to human-readable time per operation
+function formatTime(hz: number): string {
+  const ms = 1000 / hz
+  if (ms >= 1) return `~${ms.toFixed(0)}ms`
+  if (ms >= 0.001) return `~${(ms * 1000).toFixed(0)}μs`
+  return `~${(ms * 1000000).toFixed(0)}ns`
+}
 
+// Hero metrics from selected array size
+const heroMetrics = computed(() => {
+  const data = results[selectedSize.value] || []
+  const heroOps = ['sum', 'filter → map → reduce', 'pluck']
+  return heroOps.map(name => {
+    const bench = data.find(b => b.name === name)
+    if (!bench) return null
+    const speedup = parseFloat(bench.speedup) || 1
     return {
-      ...item,
-      speedupNum,
-      speedup: speedupNum.toFixed(1) + 'x',
-      isFaster,
-      barWidth,
+      operation: name === 'filter → map → reduce' ? 'chained ops' : `${name}('key')`,
+      speedup,
+      context: `faster at ${selectedSize.value} items`
     }
-  })
+  }).filter(Boolean) as { operation: string; speedup: number; context: string }[]
+})
+
+// Early exit spotlight data
+const earlyExitData = computed(() => {
+  const lazy = results.lazy || []
+  const earlyExit = lazy.find(l => l.name.includes('Early exit'))
+  if (!earlyExit) return null
+
+  const speedup = Math.round(earlyExit.lazyCollection.hz / earlyExit.collectionEager.hz)
+
+  return {
+    title: 'Taking 10 active items from 1 million',
+    collectPrefix: 'collect(items)',
+    collectSuffix: ".where('active', true).take(10)",
+    eagerItems: '1,000,000 items',
+    lazyItems: '~10 items',
+    eagerTime: formatTime(earlyExit.collectionEager.hz),
+    lazyTime: formatTime(earlyExit.lazyCollection.hz),
+    speedup,
+  }
 })
 
 const benchmarks = computed(() => {
@@ -84,15 +114,11 @@ const benchmarks = computed(() => {
   return sizeData.map((item) => {
     const speedupNum = parseFloat(item.speedup) || 0
     const isFaster = speedupNum >= 1
-    const logValue = Math.log2(speedupNum || 1)
-    const clampedLog = Math.max(-2, Math.min(2, logValue))
-    const barWidth = Math.abs(clampedLog) / 2 * 50
 
     return {
       ...item,
       speedupNum,
       isFaster,
-      barWidth,
       code: codeExamples[item.name] || { native: '', collectTs: '' },
     }
   })
@@ -101,120 +127,208 @@ const benchmarks = computed(() => {
 function toggleExpand(name: string) {
   expandedOp.value = expandedOp.value === name ? null : name
 }
+
+const decisionMatrix = [
+  { scenario: 'Aggregations (sum, avg, max)', choice: 'collect()', reason: 'String keys skip callback overhead' },
+  { scenario: 'First N from large dataset', choice: '.lazy()', reason: 'Stops after N items' },
+  { scenario: 'Chained transforms', choice: 'Either', reason: 'No intermediate arrays' },
+  { scenario: 'One-off filter or map', choice: 'Native', reason: 'No wrapper' },
+  { scenario: 'Hot loop', choice: 'for', reason: 'Zero abstraction' },
+]
 </script>
 
 <template>
-  <div class="benchmarks">
-    <div class="controls">
-      <span class="label">Array size</span>
-      <div class="size-toggle">
-        <button
-          v-for="size in sizes"
-          :key="size"
-          :class="['size-btn', { active: selectedSize === size }]"
-          @click="selectedSize = size"
-        >{{ size }}</button>
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Operation</th>
-          <th>Native</th>
-          <th>collect-ts</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <template v-for="bench in benchmarks" :key="bench.name">
-          <tr class="data-row" @click="toggleExpand(bench.name)">
-            <td class="op">{{ bench.name }}</td>
-            <td class="ops">{{ bench.native.ops }}</td>
-            <td class="ops">{{ bench.collectTs.ops }}</td>
-            <td class="speedup-cell">
-              <span :class="['speedup', bench.isFaster ? 'win' : 'lose']">
-                <span class="bar">
-                  <span
-                    :class="['bar-fill', bench.isFaster ? 'win' : 'lose']"
-                    :style="{ width: bench.barWidth + '%' }"
-                  ></span>
-                </span>
-                <span class="speedup-num">{{ bench.speedup }}</span>
-              </span>
-            </td>
-          </tr>
-          <tr v-if="expandedOp === bench.name" class="code-row">
-            <td colspan="4">
-              <div class="code-grid">
-                <div class="code-block">
-                  <div class="code-label">Native</div>
-                  <code>{{ bench.code.native }}</code>
-                </div>
-                <div class="code-block">
-                  <div class="code-label">collect-ts</div>
-                  <code>{{ bench.code.collectTs }}</code>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
-
-    <div class="footer">
-      <span>Click row for code</span>
-      <span>Vitest · Node v22 · <code>pnpm bench:docs</code></span>
-    </div>
-
-    <!-- Lazy Benchmarks Section -->
-    <div v-if="lazyBenchmarks.length > 0" class="lazy-section">
-      <h3>LazyCollection vs Native Generators</h3>
-      <p class="lazy-intro">
-        When should you use <code>.lazy()</code>? Compare against hand-rolled <code>function*</code> pipelines.
+  <div class="performance-story">
+    <!-- Act I: The Callback Tax -->
+    <section class="story-section callback-tax">
+      <p class="intro-text">
+        Every time you write <code>.reduce((acc, x) => ...)</code>, you pay a toll. V8 can't inline
+        that arrow function — it builds a stack frame, captures closure variables, and invokes your
+        callback for every single element.
       </p>
+      <CallbackTaxDiagram />
+      <p class="insight-text">
+        <code>sum('value')</code> avoids 10,000 function calls. That's the entire speedup.
+      </p>
+    </section>
 
+    <!-- Act II: String Keys Beat Callbacks -->
+    <section class="story-section eager-benchmarks">
+      <h3>String Keys Beat Callbacks</h3>
+
+      <!-- Hero Stats -->
+      <div v-if="heroMetrics.length" class="hero-stats">
+        <StatCard
+          v-for="metric in heroMetrics"
+          :key="metric.operation"
+          :operation="metric.operation"
+          :speedup="metric.speedup"
+          :context="metric.context"
+        />
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <span class="label">Array size</span>
+        <div class="size-toggle">
+          <button
+            v-for="size in sizes"
+            :key="size"
+            :class="['size-btn', { active: selectedSize === size }]"
+            @click="selectedSize = size"
+          >{{ size }}</button>
+        </div>
+      </div>
+
+      <!-- Full Comparison Table -->
       <table>
         <thead>
           <tr>
-            <th>Scenario</th>
-            <th>Generator</th>
-            <th>LazyCollection</th>
+            <th>Operation</th>
+            <th>Native</th>
+            <th>collect-ts</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="bench in lazyBenchmarks" :key="bench.name">
-            <td class="op">{{ bench.name }}</td>
-            <td class="ops">{{ bench.nativeGenerator.ops }}</td>
-            <td class="ops">{{ bench.lazyCollection.ops }}</td>
-            <td class="speedup-cell">
-              <span :class="['speedup', bench.isFaster ? 'win' : 'lose']">
-                <span class="bar">
-                  <span
-                    :class="['bar-fill', bench.isFaster ? 'win' : 'lose']"
-                    :style="{ width: bench.barWidth + '%' }"
-                  ></span>
+          <template v-for="bench in benchmarks" :key="bench.name">
+            <tr class="data-row" @click="toggleExpand(bench.name)">
+              <td class="op">{{ bench.name }}</td>
+              <td class="ops">{{ bench.native.ops }}</td>
+              <td class="ops">{{ bench.collectTs.ops }}</td>
+              <td class="speedup-cell">
+                <span :class="['speedup', bench.isFaster ? 'win' : 'lose']">
+                  <SpeedupBar :speedup="bench.speedupNum" />
+                  <span class="speedup-num">{{ bench.speedupNum.toFixed(1) }}×</span>
                 </span>
-                <span class="speedup-num">{{ bench.speedup }}</span>
-              </span>
-            </td>
-          </tr>
+              </td>
+            </tr>
+            <tr v-if="expandedOp === bench.name" class="code-row">
+              <td colspan="4">
+                <div class="code-grid">
+                  <div class="code-block">
+                    <div class="code-label">Native</div>
+                    <code>{{ bench.code.native }}</code>
+                  </div>
+                  <div class="code-block">
+                    <div class="code-label">collect-ts</div>
+                    <code>{{ bench.code.collectTs }}</code>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
 
-      <div class="lazy-insight">
-        <strong>Key insight:</strong> LazyCollection trades raw speed for a fluent API.
-        Use it for complex pipelines with early termination — it crushes Native Array
-        by avoiding intermediate allocations.
+      <div class="footer">
+        <span>Click row for code</span>
+        <span>Vitest · Node v22 · <code>pnpm bench:docs</code></span>
       </div>
-    </div>
+    </section>
+
+    <!-- Act III: When Lazy Changes Everything -->
+    <section v-if="earlyExitData" class="story-section lazy-benchmarks">
+      <h3>When Lazy Changes Everything</h3>
+
+      <LazySpotlight
+        :title="earlyExitData.title"
+        :collect-prefix="earlyExitData.collectPrefix"
+        :collect-suffix="earlyExitData.collectSuffix"
+        :eager-items="earlyExitData.eagerItems"
+        :lazy-items="earlyExitData.lazyItems"
+        :eager-time="earlyExitData.eagerTime"
+        :lazy-time="earlyExitData.lazyTime"
+        :speedup="earlyExitData.speedup"
+      />
+
+      <div class="lazy-insight">
+        LazyCollection uses <code>function*</code> under the hood. Same performance as
+        hand-written generators, less code. Zero dependencies.
+      </div>
+    </section>
+
+    <!-- Act IV: Choosing Your Tool -->
+    <section class="story-section decision-guide">
+      <h3>Choosing Your Tool</h3>
+
+      <table class="decision-matrix">
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Best Choice</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in decisionMatrix" :key="row.scenario">
+            <td>{{ row.scenario }}</td>
+            <td class="choice"><code>{{ row.choice }}</code></td>
+            <td class="reason">{{ row.reason }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.benchmarks {
+.performance-story {
   font-size: 0.9375rem;
+}
+
+/* Story sections */
+.story-section {
+  margin-bottom: 4rem;
+}
+
+.story-section h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.75rem;
+  color: var(--vp-c-text-1);
+}
+
+/* Act I: Callback Tax */
+.callback-tax {
+  margin-bottom: 2.5rem;
+}
+
+.intro-text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+  margin-bottom: 1.5rem;
+}
+
+.intro-text code {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  background: var(--vp-c-default-soft);
+  border-radius: 4px;
+}
+
+.insight-text {
+  font-size: 0.95rem;
+  color: var(--doc-c-success);
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+.insight-text code {
+  font-family: var(--vp-font-family-mono);
+  background: var(--doc-c-success-soft);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+/* Hero Stats */
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
 }
 
 /* Controls */
@@ -243,6 +357,8 @@ function toggleExpand(name: string) {
   color: var(--vp-c-text-3);
   cursor: pointer;
   border-right: 1px solid var(--vp-c-divider);
+  transition: background var(--bench-duration-fast) ease,
+              color var(--bench-duration-fast) ease;
 }
 
 .size-btn:last-child {
@@ -303,13 +419,15 @@ td:first-child {
   width: 100%;
 }
 
-
 .data-row {
   cursor: pointer;
+  transition: background var(--bench-duration-fast) ease,
+              box-shadow var(--bench-duration-fast) ease;
 }
 
 .data-row:hover {
   background: var(--vp-c-bg-soft);
+  box-shadow: inset 3px 0 0 var(--doc-c-success);
 }
 
 .op {
@@ -332,68 +450,25 @@ td:first-child {
 
 .speedup {
   font-family: var(--vp-font-family-mono);
-  font-weight: 500;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.625rem;
 }
 
 .speedup.win {
-  color: #059669;
+  color: var(--doc-c-success);
 }
 
 .speedup.lose {
-  color: #a1a1aa;
-}
-
-:global(.dark) .speedup.win {
-  color: #34d399;
-}
-
-:global(.dark) .speedup.lose {
-  color: #71717a;
+  color: var(--doc-c-neutral);
 }
 
 .speedup-num {
-  width: 2.5rem;
+  width: 3rem;
   text-align: right;
-}
-
-/* Bar visualization */
-.bar {
-  width: 32px;
-  height: 4px;
-  background: var(--vp-c-divider);
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
-}
-
-.bar-fill {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.2s;
-}
-
-.bar-fill.win {
-  left: 50%;
-  background: #059669;
-}
-
-.bar-fill.lose {
-  right: 50%;
-  background: #a1a1aa;
-}
-
-:global(.dark) .bar-fill.win {
-  background: #34d399;
-}
-
-:global(.dark) .bar-fill.lose {
-  background: #71717a;
+  font-size: 0.9375rem;
 }
 
 /* Code row */
@@ -448,46 +523,15 @@ td:first-child {
   border-radius: 4px;
 }
 
-@media (max-width: 480px) {
-  .code-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .bar {
-    display: none;
-  }
-}
-
-/* Lazy Benchmarks Section */
-.lazy-section {
-  margin-top: 3rem;
+/* Lazy Section */
+.lazy-benchmarks {
   padding-top: 2rem;
   border-top: 1px solid var(--vp-c-divider);
 }
 
-.lazy-section h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.lazy-intro {
-  color: var(--vp-c-text-2);
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
-}
-
-.lazy-intro code {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8125rem;
-  padding: 0.125rem 0.375rem;
-  background: var(--vp-c-bg-soft);
-  border-radius: 4px;
-}
-
 .lazy-insight {
-  margin-top: 1.5rem;
-  font-size: 0.875rem;
+  margin-top: 1.25rem;
+  font-size: 0.9375rem;
   color: var(--vp-c-text-2);
   padding: 1rem;
   background: var(--vp-c-bg-soft);
@@ -495,7 +539,74 @@ td:first-child {
   line-height: 1.6;
 }
 
-.lazy-insight strong {
-  color: var(--vp-c-text-1);
+.lazy-insight code {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.9em;
+  padding: 0.125rem 0.375rem;
+  background: var(--vp-c-bg-alt);
+  border-radius: 4px;
+}
+
+/* Decision Matrix */
+.decision-guide {
+  padding-top: 2rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* Override generic table styles for decision matrix - needs balanced columns */
+.decision-matrix th:first-child,
+.decision-matrix td:first-child {
+  width: auto;
+}
+
+.decision-matrix th {
+  white-space: nowrap;
+}
+
+.decision-matrix td {
+  vertical-align: top;
+}
+
+.decision-matrix td:first-child {
+  min-width: 200px;
+}
+
+.decision-matrix .choice {
+  white-space: nowrap;
+}
+
+.decision-matrix .choice code {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  background: var(--doc-c-success-soft);
+  color: var(--doc-c-success);
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.decision-matrix .reason {
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  min-width: 140px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .code-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }
 </style>

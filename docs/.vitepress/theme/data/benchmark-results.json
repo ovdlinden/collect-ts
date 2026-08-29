@@ -3,32 +3,32 @@
     {
       "name": "sum",
       "native": {
-        "ops": "22.8K"
+        "ops": "17.5K"
       },
       "collectTs": {
-        "ops": "114.9K"
+        "ops": "111.5K"
       },
-      "speedup": "5.0x"
+      "speedup": "6.4x"
     },
     {
       "name": "avg",
       "native": {
-        "ops": "26.9K"
+        "ops": "33.7K"
       },
       "collectTs": {
-        "ops": "112.5K"
+        "ops": "112.1K"
       },
-      "speedup": "4.2x"
+      "speedup": "3.3x"
     },
     {
       "name": "filter",
       "native": {
-        "ops": "17.1K"
+        "ops": "17.6K"
       },
       "collectTs": {
-        "ops": "29.5K"
+        "ops": "28.6K"
       },
-      "speedup": "1.7x"
+      "speedup": "1.6x"
     },
     {
       "name": "pluck",
@@ -36,81 +36,81 @@
         "ops": "14.4K"
       },
       "collectTs": {
-        "ops": "43.4K"
+        "ops": "43.5K"
       },
       "speedup": "3.0x"
     },
     {
       "name": "unique",
       "native": {
-        "ops": "7.4K"
+        "ops": "7.3K"
       },
       "collectTs": {
-        "ops": "13.6K"
+        "ops": "14.4K"
       },
-      "speedup": "1.8x"
+      "speedup": "2.0x"
     },
     {
       "name": "groupBy",
       "native": {
-        "ops": "9.5K"
+        "ops": "9.1K"
       },
       "collectTs": {
-        "ops": "9.7K"
+        "ops": "9.2K"
       },
       "speedup": "1.0x"
     },
     {
       "name": "find",
       "native": {
-        "ops": "203.8K"
+        "ops": "207.6K"
       },
       "collectTs": {
-        "ops": "295.6K"
+        "ops": "290.2K"
       },
-      "speedup": "1.5x"
+      "speedup": "1.4x"
     },
     {
       "name": "filter → map → reduce",
       "native": {
-        "ops": "7.2K"
+        "ops": "7.4K"
       },
       "collectTs": {
-        "ops": "23.2K"
+        "ops": "22.8K"
       },
-      "speedup": "3.2x"
+      "speedup": "3.1x"
     }
   ],
   "100K": [
     {
       "name": "sum",
       "native": {
-        "ops": "10.9K"
+        "ops": "8.9K"
       },
       "collectTs": {
-        "ops": "10.9K"
+        "ops": "10.7K"
       },
-      "speedup": "1.0x"
+      "speedup": "1.2x"
     },
     {
       "name": "avg",
       "native": {
-        "ops": "10.7K"
+        "ops": "10.9K"
       },
       "collectTs": {
-        "ops": "9.7K"
+        "ops": "9.9K"
       },
       "speedup": "0.9x"
     },
     {
       "name": "filter",
       "native": {
-        "ops": "1.5K"
+        "ops": "2.2K"
       },
       "collectTs": {
         "ops": "2.6K"
       },
-      "speedup": "1.7x"
+      "speedup": "1.1x"
     },
     {
       "name": "pluck",
@@ -118,47 +118,47 @@
         "ops": "1.2K"
       },
       "collectTs": {
-        "ops": "2.6K"
+        "ops": "2.8K"
       },
-      "speedup": "2.2x"
+      "speedup": "2.3x"
     },
     {
       "name": "unique",
       "native": {
-        "ops": "626"
+        "ops": "694"
       },
       "collectTs": {
-        "ops": "1.3K"
+        "ops": "1.4K"
       },
       "speedup": "2.0x"
     },
     {
       "name": "groupBy",
       "native": {
-        "ops": "577"
+        "ops": "563"
       },
       "collectTs": {
-        "ops": "952"
+        "ops": "877"
       },
-      "speedup": "1.7x"
+      "speedup": "1.6x"
     },
     {
       "name": "find",
       "native": {
-        "ops": "27.4K"
+        "ops": "27.2K"
       },
       "collectTs": {
-        "ops": "34.8K"
+        "ops": "34.1K"
       },
       "speedup": "1.3x"
     },
     {
       "name": "filter → map → reduce",
       "native": {
-        "ops": "559"
+        "ops": "610"
       },
       "collectTs": {
-        "ops": "1.5K"
+        "ops": "1.6K"
       },
       "speedup": "2.7x"
     }
@@ -167,198 +167,198 @@
     {
       "name": "sum",
       "native": {
-        "ops": "967"
+        "ops": "995"
       },
       "collectTs": {
-        "ops": "911"
+        "ops": "992"
       },
-      "speedup": "0.9x"
+      "speedup": "1.0x"
     },
     {
       "name": "avg",
       "native": {
-        "ops": "985"
+        "ops": "993"
       },
       "collectTs": {
-        "ops": "846"
+        "ops": "958"
       },
-      "speedup": "0.9x"
+      "speedup": "1.0x"
     },
     {
       "name": "filter",
       "native": {
-        "ops": "267"
+        "ops": "253"
       },
       "collectTs": {
-        "ops": "215"
+        "ops": "221"
       },
-      "speedup": "0.8x"
+      "speedup": "0.9x"
     },
     {
       "name": "pluck",
       "native": {
-        "ops": "78"
+        "ops": "90"
       },
       "collectTs": {
-        "ops": "170"
+        "ops": "226"
       },
-      "speedup": "2.2x"
+      "speedup": "2.5x"
     },
     {
       "name": "unique",
       "native": {
-        "ops": "50"
+        "ops": "68"
       },
       "collectTs": {
-        "ops": "129"
+        "ops": "141"
       },
-      "speedup": "2.6x"
+      "speedup": "2.1x"
     },
     {
       "name": "groupBy",
       "native": {
-        "ops": "55"
+        "ops": "59"
       },
       "collectTs": {
-        "ops": "75"
+        "ops": "78"
       },
-      "speedup": "1.4x"
+      "speedup": "1.3x"
     },
     {
       "name": "find",
       "native": {
-        "ops": "2.0K"
+        "ops": "2.1K"
       },
       "collectTs": {
-        "ops": "2.1K"
+        "ops": "2.3K"
       },
       "speedup": "1.1x"
     },
     {
       "name": "filter → map → reduce",
       "native": {
-        "ops": "49"
+        "ops": "51"
       },
       "collectTs": {
-        "ops": "123"
+        "ops": "149"
       },
-      "speedup": "2.5x"
+      "speedup": "2.9x"
     }
   ],
   "lazy": [
     {
       "name": "Early exit (take 10 from 1M)",
       "rawLoop": {
-        "ops": "25.3M",
-        "hz": 25281616.53
+        "ops": "20.2M",
+        "hz": 20222688.32
       },
       "nativeArray": {
-        "ops": "52",
-        "hz": 52.2997
+        "ops": "57",
+        "hz": 57.4443
       },
       "nativeGenerator": {
-        "ops": "1.1M",
-        "hz": 1074098.93
+        "ops": "1.2M",
+        "hz": 1174337.39
       },
       "collectionEager": {
-        "ops": "55",
-        "hz": 54.7662
+        "ops": "59",
+        "hz": 58.5541
       },
       "lazyCollection": {
-        "ops": "251.0K",
-        "hz": 251009.3
+        "ops": "1.9M",
+        "hz": 1900804.27
       }
     },
     {
       "name": "First match",
       "rawLoop": {
-        "ops": "3.6M",
-        "hz": 3593529.9
+        "ops": "2.9M",
+        "hz": 2947673.76
       },
       "nativeArray": {
-        "ops": "4.1M",
-        "hz": 4087072.81
+        "ops": "4.0M",
+        "hz": 3993505.69
       },
       "nativeGenerator": {
         "ops": "2.8M",
-        "hz": 2813810.8
+        "hz": 2753109.81
       },
       "collectionEager": {
-        "ops": "396.0K",
-        "hz": 395958.14
+        "ops": "342.7K",
+        "hz": 342699.49
       },
       "lazyCollection": {
-        "ops": "199.4K",
-        "hz": 199355.66
+        "ops": "1.6M",
+        "hz": 1616709.01
       }
     },
     {
       "name": "Chained (filter→map→filter→map)",
       "rawLoop": {
-        "ops": "2.3K",
-        "hz": 2262.18
+        "ops": "3.0K",
+        "hz": 3031.98
       },
       "nativeArray": {
-        "ops": "206",
-        "hz": 205.66
+        "ops": "203",
+        "hz": 203.41
       },
       "nativeGenerator": {
-        "ops": "123",
-        "hz": 123.02
+        "ops": "164",
+        "hz": 164.37
       },
       "collectionEager": {
-        "ops": "139",
-        "hz": 138.97
+        "ops": "204",
+        "hz": 204.42
       },
       "lazyCollection": {
-        "ops": "85",
-        "hz": 85.2099
+        "ops": "283",
+        "hz": 282.54
       }
     },
     {
       "name": "Full processing (no early exit)",
       "rawLoop": {
-        "ops": "5.5K",
-        "hz": 5541.25
+        "ops": "2.9K",
+        "hz": 2948.72
       },
       "nativeArray": {
-        "ops": "1.2K",
-        "hz": 1177.82
+        "ops": "921",
+        "hz": 920.71
       },
       "nativeGenerator": {
-        "ops": "264",
-        "hz": 263.88
+        "ops": "337",
+        "hz": 336.55
       },
       "collectionEager": {
-        "ops": "711",
-        "hz": 711.35
+        "ops": "898",
+        "hz": 898.06
       },
       "lazyCollection": {
-        "ops": "135",
-        "hz": 134.72
+        "ops": "530",
+        "hz": 529.94
       }
     },
     {
       "name": "Range generation",
       "rawLoop": {
-        "ops": "47.9M",
-        "hz": 47863443.23
+        "ops": "47.8M",
+        "hz": 47844411.71
       },
       "nativeArray": {
-        "ops": "41",
-        "hz": 41.472
+        "ops": "46",
+        "hz": 45.7062
       },
       "nativeGenerator": {
-        "ops": "3.3M",
-        "hz": 3269849.43
+        "ops": "3.5M",
+        "hz": 3549280.45
       },
       "collectionEager": {
-        "ops": "42",
-        "hz": 41.5879
+        "ops": "43",
+        "hz": 42.8337
       },
       "lazyCollection": {
-        "ops": "417.5K",
-        "hz": 417517.99
+        "ops": "3.8M",
+        "hz": 3757852.81
       }
     }
   ]

@@ -18,7 +18,14 @@ export type GeneratorFactory<T> = () => Generator<[number, T]>;
 /** Value-only generator factory - no tuple allocation */
 type ValueGeneratorFactory<T> = () => Generator<T>;
 
-type LazySource<T> = ValueGeneratorFactory<T> | T[];
+/** Range source - avoids generator overhead for numeric ranges */
+interface RangeSource {
+	readonly __range: true;
+	readonly from: number;
+	readonly to: number;
+}
+
+type LazySource<T> = ValueGeneratorFactory<T> | T[] | RangeSource;
 
 export type ProxiedLazyCollection<T> = LazyCollection<T> & {
 	[K in keyof Collection<T>]: Collection<T>[K];
@@ -73,9 +80,105 @@ function* iterateValues<T>(source: LazySource<T>): Generator<T> {
 		for (let i = 0; i < source.length; i++) {
 			yield source[i];
 		}
+	} else if (isRangeSource(source)) {
+		const step = source.from <= source.to ? 1 : -1;
+		for (let i = source.from; step > 0 ? i <= source.to : i >= source.to; i += step) {
+			yield i as T;
+		}
 	} else {
 		yield* source();
 	}
+}
+
+// =============================================================================
+// Fast Iterator Factories - no generator state machine overhead
+// These create plain {next()} objects that V8 can inline.
+// =============================================================================
+
+type IteratorTransform<T = unknown, U = unknown> = (source: Iterator<T>) => Iterator<U>;
+
+function createFilterIterator<T>(source: Iterator<unknown>, predicate: (item: T) => boolean): Iterator<T> {
+	return {
+		next(): IteratorResult<T> {
+			while (true) {
+				const result = source.next();
+				if (result.done) return result as IteratorResult<T>;
+				if (predicate(result.value as T)) return result as IteratorResult<T>;
+			}
+		},
+	};
+}
+
+function createMapIterator<T, U>(source: Iterator<unknown>, transform: (item: T) => U): Iterator<U> {
+	return {
+		next(): IteratorResult<U> {
+			const result = source.next();
+			if (result.done) return result as IteratorResult<U>;
+			return { done: false, value: transform(result.value as T) };
+		},
+	};
+}
+
+function createTakeIterator<T>(source: Iterator<unknown>, limit: number): Iterator<T> {
+	let count = 0;
+	return {
+		next(): IteratorResult<T> {
+			if (count >= limit) return { done: true, value: undefined };
+			count++;
+			return source.next() as IteratorResult<T>;
+		},
+	};
+}
+
+function createSkipIterator<T>(source: Iterator<unknown>, count: number): Iterator<T> {
+	let skipped = 0;
+	return {
+		next(): IteratorResult<T> {
+			while (skipped < count) {
+				const result = source.next();
+				if (result.done) return result as IteratorResult<T>;
+				skipped++;
+			}
+			return source.next() as IteratorResult<T>;
+		},
+	};
+}
+
+function isRangeSource(source: LazySource<unknown>): source is RangeSource {
+	return typeof source === 'object' && source !== null && '__range' in source;
+}
+
+function createRangeIterator(from: number, to: number): Iterator<number> {
+	const step = from <= to ? 1 : -1;
+	let i = from;
+	return {
+		next(): IteratorResult<number> {
+			if (step > 0 ? i > to : i < to) {
+				return { done: true, value: undefined };
+			}
+			const value = i;
+			i += step;
+			return { done: false, value };
+		},
+	};
+}
+
+function getBaseIterator<T>(source: LazySource<T>): Iterator<T> {
+	if (Array.isArray(source)) {
+		return source[Symbol.iterator]();
+	}
+	if (isRangeSource(source)) {
+		return createRangeIterator(source.from, source.to) as Iterator<T>;
+	}
+	return source()[Symbol.iterator]();
+}
+
+function applyChain<T, U = T>(source: LazySource<T>, chain: IteratorTransform[]): Iterator<U> {
+	let iter: Iterator<unknown> = getBaseIterator(source);
+	for (const transform of chain) {
+		iter = transform(iter);
+	}
+	return iter as Iterator<U>;
 }
 
 function wrap<U>(lc: LazyCollection<U>): ProxiedLazyCollection<U> {
@@ -91,6 +194,9 @@ function wrapAsync<U>(alc: AsyncLazyCollection<U>): ProxiedAsyncLazyCollection<U
 export class LazyCollection<T> implements Iterable<T> {
 	public source: LazySource<T>;
 
+	// Chain of iterator transforms - lightweight alternative to nested generator closures
+	private _chain: IteratorTransform[] = [];
+
 	constructor(source?: Iterable<T> | (() => Generator<T>)) {
 		if (isGenerator(source)) {
 			throw new Error(
@@ -101,8 +207,28 @@ export class LazyCollection<T> implements Iterable<T> {
 		this.source = normalizeSource(source);
 	}
 
+	// Fast internal factory - skips normalizeSource validation
+	// Uses unknown for source since transforms may change the type
+	private static _fromChain<U>(source: LazySource<unknown>, chain: IteratorTransform[]): LazyCollection<U> {
+		const lc = Object.create(LazyCollection.prototype) as LazyCollection<U>;
+		lc.source = source as LazySource<U>;
+		lc._chain = chain;
+		return lc;
+	}
+
 	*[Symbol.iterator](): Generator<T> {
-		yield* iterateValues(this.source);
+		if (this._chain.length === 0) {
+			yield* iterateValues(this.source);
+			return;
+		}
+
+		// Apply chain transforms and yield values
+		const iter = applyChain(this.source, this._chain);
+		while (true) {
+			const result = iter.next();
+			if (result.done) return;
+			yield result.value;
+		}
 	}
 
 	*entries(): Generator<[number, T]> {
@@ -117,14 +243,9 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 
 	static range(from: number, to: number): ProxiedLazyCollection<number> {
-		return lazy(
-			new LazyCollection(function* () {
-				const step = from <= to ? 1 : -1;
-				for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
-					yield i;
-				}
-			}),
-		);
+		// Use specialized range source - avoids generator overhead
+		const rangeSource: RangeSource = { __range: true, from, to };
+		return lazy(LazyCollection._fromChain<number>(rangeSource, []));
 	}
 
 	static times<U>(n: number, callback?: (index: number) => U): ProxiedLazyCollection<U | number> {
@@ -142,29 +263,46 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 
 	map<U>(callback: (value: T, key: number) => U): ProxiedLazyCollection<U> {
-		const source = this.source;
+		// Check callback arity - skip index tracking if not needed
+		const needsIndex = callback.length > 1;
+
+		if (needsIndex) {
+			let index = 0;
+			const indexedTransform = (v: T) => callback(v, index++);
+			return wrap(
+				LazyCollection._fromChain<U>(this.source, [
+					...this._chain,
+					(iter) => createMapIterator(iter, indexedTransform),
+				]),
+			);
+		}
+
 		return wrap(
-			new LazyCollection(function* () {
-				let index = 0;
-				for (const value of iterateValues(source)) {
-					yield callback(value, index++);
-				}
-			}),
+			LazyCollection._fromChain<U>(this.source, [
+				...this._chain,
+				(iter) => createMapIterator(iter, callback as (v: T) => U),
+			]),
 		);
 	}
 
 	filter(callback?: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
-		const source = this.source;
+		const pred = callback ?? (Boolean as (v: T) => boolean);
+		// Check callback arity - skip index tracking if not needed
+		const needsIndex = callback && callback.length > 1;
+
+		if (needsIndex) {
+			let index = 0;
+			const indexedPred = (v: T) => pred(v, index++);
+			return wrap(
+				LazyCollection._fromChain<T>(this.source, [...this._chain, (iter) => createFilterIterator(iter, indexedPred)]),
+			);
+		}
+
 		return wrap(
-			new LazyCollection(function* () {
-				let index = 0;
-				for (const value of iterateValues(source)) {
-					if (callback ? callback(value, index) : Boolean(value)) {
-						yield value;
-					}
-					index++;
-				}
-			}),
+			LazyCollection._fromChain<T>(this.source, [
+				...this._chain,
+				(iter) => createFilterIterator(iter, pred as (v: T) => boolean),
+			]),
 		);
 	}
 
@@ -174,32 +312,15 @@ export class LazyCollection<T> implements Iterable<T> {
 
 	take(limit: number): ProxiedLazyCollection<T> {
 		if (limit < 0) {
+			// Negative take requires materialization
 			return wrap(new LazyCollection([...this].slice(limit)));
 		}
 
-		const source = this.source;
-		return wrap(
-			new LazyCollection(function* () {
-				let count = 0;
-				for (const value of iterateValues(source)) {
-					yield value;
-					if (++count >= limit) break;
-				}
-			}),
-		);
+		return wrap(LazyCollection._fromChain<T>(this.source, [...this._chain, (iter) => createTakeIterator(iter, limit)]));
 	}
 
 	skip(count: number): ProxiedLazyCollection<T> {
-		const source = this.source;
-		return wrap(
-			new LazyCollection(function* () {
-				let skipped = 0;
-				for (const value of iterateValues(source)) {
-					if (skipped++ < count) continue;
-					yield value;
-				}
-			}),
-		);
+		return wrap(LazyCollection._fromChain<T>(this.source, [...this._chain, (iter) => createSkipIterator(iter, count)]));
 	}
 
 	takeWhile(callback: (value: T, key: number) => boolean): ProxiedLazyCollection<T> {
@@ -402,21 +523,64 @@ export class LazyCollection<T> implements Iterable<T> {
 	}
 
 	all(): T[] {
-		return [...this];
+		// Fast path: array source with no chain
+		if (this._chain.length === 0 && Array.isArray(this.source)) {
+			return this.source.slice();
+		}
+
+		// Build array directly from iterator (no generator yield overhead)
+		const result: T[] = [];
+		const iter = this._chain.length > 0 ? applyChain(this.source, this._chain) : getBaseIterator(this.source);
+		while (true) {
+			const next = iter.next();
+			if (next.done) break;
+			result.push(next.value);
+		}
+		return result;
 	}
 
 	toArray(): T[] {
-		return [...this];
+		return this.all();
 	}
 
 	first(callback?: (value: T, key: number) => boolean): T | undefined {
-		let index = 0;
-		for (const value of iterateValues(this.source)) {
-			if (!callback || callback(value, index++)) {
-				return value;
+		// Fast path: array source with no chain - direct iteration, no generator
+		if (this._chain.length === 0 && Array.isArray(this.source)) {
+			const arr = this.source;
+			if (!callback) return arr[0];
+			for (let i = 0; i < arr.length; i++) {
+				if (callback(arr[i], i)) return arr[i];
+			}
+			return undefined;
+		}
+
+		// Chain path or generator source
+		if (this._chain.length > 0) {
+			const iter = applyChain(this.source, this._chain);
+			if (!callback) {
+				const result = iter.next();
+				return result.done ? undefined : result.value;
+			}
+			let index = 0;
+			while (true) {
+				const result = iter.next();
+				if (result.done) return undefined;
+				if (callback(result.value, index++)) return result.value;
 			}
 		}
-		return undefined;
+
+		// No chain - use base iterator directly
+		const iter = getBaseIterator(this.source);
+		if (!callback) {
+			const result = iter.next();
+			return result.done ? undefined : result.value;
+		}
+		let index = 0;
+		while (true) {
+			const result = iter.next();
+			if (result.done) return undefined;
+			if (callback(result.value, index++)) return result.value;
+		}
 	}
 
 	last(callback?: (value: T, key: number) => boolean): T | undefined {
@@ -453,6 +617,22 @@ export class LazyCollection<T> implements Iterable<T> {
 		const retriever = valueRetriever<T, number>(keyOrCallback);
 		let total = 0;
 		let index = 0;
+
+		// Fast path: use chain if present
+		if (this._chain.length > 0) {
+			const iter = applyChain(this.source, this._chain);
+			while (true) {
+				const result = iter.next();
+				if (result.done) break;
+				const num = retriever(result.value, index++);
+				if (typeof num === 'number' && !Number.isNaN(num)) {
+					total += num;
+				}
+			}
+			return total;
+		}
+
+		// No chain - iterate source directly
 		for (const value of iterateValues(this.source)) {
 			const num = retriever(value, index++);
 			if (typeof num === 'number' && !Number.isNaN(num)) {

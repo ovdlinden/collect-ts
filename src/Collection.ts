@@ -7193,6 +7193,22 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	/**
 	 * Get the value at a given offset.
 	 *
+	 * Part of the ArrayAccess interface for bracket-style access. Unlike
+	 * `get()`, this method does not support default values and returns
+	 * `undefined` for missing keys.
+	 *
+	 * @param key - The key to retrieve
+	 * @returns The value at the given key, or `undefined` if not found
+	 *
+	 * @example
+	 * collect({ name: 'Taylor', role: 'Developer' })
+	 *     .offsetGet('name')
+	 * // → 'Taylor'
+	 *
+	 * @see {@link get} - Primary method with default value support
+	 * @see {@link offsetExists} - Check if key exists
+	 * @see {@link offsetSet} - Set value at offset
+	 *
 	 * @category Finding
 	 */
 	offsetGet(key: string | number): T {
@@ -7285,6 +7301,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		}
 		return lazyFn([] as T[]);
 	}
+
+	/**
+	 * Find the first item matching a predicate without creating LazyCollection.
+	 * Faster than `.lazy().first()` for simple lookups.
+	 * @category Searching
+	 */
+	lazyFirst(callback?: (value: T, key: number) => boolean): T | undefined {
+		const items = this.#arrayItems ?? (this._items !== null ? Object.values(this._items) : []);
+		if (!callback) return items[0];
+		for (let i = 0; i < items.length; i++) {
+			if (callback(items[i], i)) return items[i];
+		}
+		return undefined;
+	}
 }
 
 export class WithCollection<T, U, CK extends CollectionKind = 'array'> {
@@ -7367,6 +7397,36 @@ export interface CollectFunction {
 	 * @see https://laravel.com/docs/collections#lazy-collections
 	 */
 	async: AsyncCollectFunction;
+
+	/**
+	 * Find the first item matching a predicate without creating Collection.
+	 * Zero allocation overhead - as fast as native Array.find.
+	 */
+	first: <T>(items: T[], callback?: (value: T, index: number) => boolean) => T | undefined;
+
+	/**
+	 * Filter items without creating Collection.
+	 * Zero allocation overhead - as fast as native Array.filter.
+	 */
+	filter: <T>(items: T[], callback: (value: T, index: number) => boolean) => T[];
+
+	/**
+	 * Map items without creating Collection.
+	 * Zero allocation overhead - as fast as native Array.map.
+	 */
+	map: <T, U>(items: T[], callback: (value: T, index: number) => U) => U[];
+
+	/**
+	 * Take first n items without creating Collection.
+	 * Zero allocation overhead.
+	 */
+	take: <T>(items: T[], n: number) => T[];
+
+	/**
+	 * Sum values without creating Collection.
+	 * Zero allocation overhead.
+	 */
+	sum: <T>(items: T[], callback?: (value: T, index: number) => number) => number;
 }
 
 function collectImpl<T>(items?: CollectInput<T> | Collection<T, CollectionKind>): ProxiedCollection<T, CollectionKind> {
@@ -7399,6 +7459,57 @@ const asyncWithStatics = Object.assign(asyncLazyFn, asyncStatics);
 
 collectImpl.lazy = lazyWithStatics;
 collectImpl.async = asyncWithStatics;
+
+// Zero-allocation utilities - match native Array method performance
+
+collectImpl.first = <T>(items: T[], callback?: (value: T, index: number) => boolean): T | undefined => {
+	if (!callback) return items[0];
+	for (let i = 0; i < items.length; i++) {
+		if (callback(items[i], i)) return items[i];
+	}
+	return undefined;
+};
+
+collectImpl.filter = <T>(items: T[], callback: (value: T, index: number) => boolean): T[] => {
+	const result: T[] = [];
+	for (let i = 0; i < items.length; i++) {
+		if (callback(items[i], i)) result.push(items[i]);
+	}
+	return result;
+};
+
+collectImpl.map = <T, U>(items: T[], callback: (value: T, index: number) => U): U[] => {
+	const result: U[] = new Array(items.length);
+	for (let i = 0; i < items.length; i++) {
+		result[i] = callback(items[i], i);
+	}
+	return result;
+};
+
+collectImpl.take = <T>(items: T[], n: number): T[] => {
+	if (n <= 0) return [];
+	if (n >= items.length) return items.slice();
+	const result: T[] = new Array(n);
+	for (let i = 0; i < n; i++) {
+		result[i] = items[i];
+	}
+	return result;
+};
+
+collectImpl.sum = <T>(items: T[], callback?: (value: T, index: number) => number): number => {
+	let total = 0;
+	if (callback) {
+		for (let i = 0; i < items.length; i++) {
+			total += callback(items[i], i);
+		}
+	} else {
+		for (let i = 0; i < items.length; i++) {
+			const val = items[i];
+			if (typeof val === 'number') total += val;
+		}
+	}
+	return total;
+};
 
 export const collect: CollectFunction = collectImpl as CollectFunction;
 
