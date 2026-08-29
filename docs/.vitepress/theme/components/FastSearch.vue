@@ -94,7 +94,7 @@ const results = computed<ProcessedResult[]>(() => {
 
 	const searchOpts =
 		searchMode.value === 'name'
-			? { fields: ['title'], fuzzy: 0.2, prefix: true }
+			? { fields: ['title', 'aliases'], fuzzy: 0.2, prefix: true }
 			: { fuzzy: 0.15, prefix: true };
 
 	const raw = miniSearch.value.search(q, searchOpts) as (MiniSearchResult & SearchEntry)[];
@@ -309,9 +309,6 @@ function getResultId(index: number): string {
 							{{ result.breadcrumb }}
 						</span>
 						<span class="fast-search-result-title" v-html="result.highlightedTitle" />
-						<code v-if="result.signature" class="fast-search-result-signature">
-							{{ result.signature }}
-						</code>
 						<span v-if="result.snippet" class="fast-search-result-snippet" v-html="result.snippet" />
 						<span class="visually-hidden">
 							{{ result.breadcrumb ? `in ${result.breadcrumb}` : '' }}
@@ -364,7 +361,7 @@ function getResultId(index: number): string {
 	max-width: none;
 	max-height: none;
 	overflow: visible;
-	margin-top: 10vh;
+	margin: 10vh auto auto;
 }
 
 .fast-search-dialog::backdrop {
@@ -530,15 +527,6 @@ function getResultId(index: number): string {
 	color: var(--vp-c-brand-1);
 	border-radius: 2px;
 	padding: 0 2px;
-}
-
-.fast-search-result-signature {
-	font-size: 12px;
-	color: var(--vp-c-text-3);
-	font-family: var(--vp-font-family-mono);
-	margin-top: 2px;
-	background: none;
-	padding: 0;
 }
 
 .fast-search-result-snippet {

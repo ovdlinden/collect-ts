@@ -9,7 +9,143 @@ interface SearchEntry {
 	titles: string[];
 	text: string;
 	signature?: string;
+	aliases?: string;
 }
+
+const METHOD_ALIASES: Record<string, string[]> = {
+	// Finding
+	get: ['find', 'retrieve', 'fetch', 'lookup'],
+	first: ['head', 'front', 'find'],
+	firstOrFail: ['findOrFail'],
+	last: ['tail', 'end'],
+	find: ['lookup', 'search'],
+	firstWhere: ['findWhere'],
+	sole: ['only', 'single', 'one'],
+
+	// Removing
+	forget: ['remove', 'delete', 'unset', 'drop'],
+	pull: ['remove', 'extract', 'pop'],
+	reject: ['remove', 'exclude', 'omit', 'filterOut'],
+	except: ['omit', 'exclude', 'without'],
+	skip: ['offset', 'drop'],
+	skipUntil: ['dropUntil'],
+	skipWhile: ['dropWhile'],
+
+	// Iteration
+	each: ['forEach', 'loop', 'iterate', 'walk'],
+	eachSpread: ['forEachSpread'],
+	map: ['transform', 'convert', 'apply'],
+	mapSpread: ['transformSpread'],
+	mapWithKeys: ['mapToObject', 'keyBy'],
+	transform: ['mutate', 'modify'],
+
+	// Extraction
+	pluck: ['extract', 'pick', 'select', 'column'],
+	only: ['pick', 'select', 'include'],
+	value: ['scalar', 'unwrap'],
+	values: ['toArray', 'list'],
+	keys: ['indices', 'properties'],
+
+	// Grouping
+	chunk: ['split', 'batch', 'partition', 'paginate'],
+	chunkWhile: ['splitWhile'],
+	groupBy: ['group', 'categorize', 'bucket'],
+	partition: ['split', 'divide', 'separate'],
+	splitIn: ['divide', 'chunk'],
+
+	// Checking
+	contains: ['has', 'includes', 'exists', 'in'],
+	containsStrict: ['hasStrict', 'includesStrict'],
+	doesntContain: ['notContains', 'missing', 'excludes'],
+	has: ['exists', 'contains', 'hasKey'],
+	hasAny: ['hasOneOf', 'containsAny'],
+	isEmpty: ['empty', 'blank', 'none'],
+	isNotEmpty: ['notEmpty', 'hasItems', 'any'],
+	some: ['any', 'exists'],
+	every: ['all', 'each'],
+
+	// Aggregating
+	sum: ['total', 'add'],
+	avg: ['average', 'mean'],
+	average: ['avg', 'mean'],
+	count: ['length', 'size', 'total'],
+	countBy: ['groupCount', 'tally'],
+	min: ['minimum', 'lowest', 'smallest'],
+	max: ['maximum', 'highest', 'largest'],
+	median: ['middle'],
+	mode: ['mostCommon', 'frequent'],
+
+	// Sorting
+	sort: ['order', 'arrange'],
+	sortBy: ['orderBy'],
+	sortByDesc: ['orderByDesc', 'sortByDescending'],
+	sortDesc: ['sortDescending', 'reverse'],
+	sortKeys: ['ksort', 'orderKeys'],
+	sortKeysDesc: ['krsort'],
+	shuffle: ['randomize', 'scramble'],
+	random: ['sample', 'pick'],
+	reverse: ['flip', 'invert'],
+
+	// Combining
+	merge: ['combine', 'extend', 'assign'],
+	mergeRecursive: ['deepMerge'],
+	concat: ['append', 'join', 'add'],
+	union: ['merge', 'combine', 'dedupe'],
+	combine: ['zip', 'pair'],
+	zip: ['combine', 'pair', 'zipWith'],
+	crossJoin: ['cartesian', 'product'],
+	join: ['implode', 'glue', 'concatenate'],
+	implode: ['join', 'glue'],
+
+	// Transforming
+	flatten: ['flat', 'unwrap'],
+	flatMap: ['flattenMap', 'mapFlat'],
+	collapse: ['flatten', 'merge'],
+	unique: ['distinct', 'dedupe', 'deduplicate'],
+	uniqueStrict: ['distinctStrict'],
+	duplicates: ['repeated', 'copies'],
+	flip: ['swap', 'invert'],
+	pad: ['fill', 'extend'],
+	replace: ['substitute', 'swap'],
+	splice: ['insert', 'remove'],
+	put: ['set', 'add', 'insert'],
+	prepend: ['unshift', 'addFirst'],
+	push: ['append', 'add', 'addLast'],
+	pop: ['removeLast', 'last'],
+	shift: ['removeFirst', 'first'],
+
+	// Filtering
+	filter: ['where', 'select', 'keep'],
+	where: ['filter', 'match'],
+	whereStrict: ['filterStrict'],
+	whereBetween: ['range', 'inRange'],
+	whereIn: ['inArray', 'oneOf'],
+	whereNotIn: ['notInArray', 'notOneOf'],
+	whereNull: ['nulls', 'filterNull'],
+	whereNotNull: ['notNull', 'filterNotNull'],
+	whereInstanceOf: ['ofType', 'instanceof'],
+	take: ['limit', 'first', 'head'],
+	takeUntil: ['limitUntil'],
+	takeWhile: ['limitWhile'],
+	slice: ['subset', 'range'],
+	nth: ['everyNth', 'step'],
+
+	// Other
+	tap: ['debug', 'inspect', 'peek'],
+	pipe: ['chain', 'through', 'apply'],
+	pipeInto: ['into', 'pipeTo'],
+	when: ['if', 'conditional'],
+	whenEmpty: ['ifEmpty'],
+	whenNotEmpty: ['ifNotEmpty'],
+	unless: ['ifNot', 'except'],
+	dd: ['dump', 'debug', 'die'],
+	dump: ['log', 'debug', 'print'],
+	toJson: ['serialize', 'stringify'],
+	toArray: ['array', 'all'],
+	all: ['toArray', 'unwrap'],
+	lazy: ['defer', 'stream', 'generator'],
+	collect: ['eager', 'materialize'],
+};
 
 interface TitleEntry {
 	level: number;
@@ -195,12 +331,12 @@ for (const file of mdFiles) {
 	// Only include method entries (h3 headings), skip category headers
 	for (const section of sections) {
 		if (section.titles.length > 1) {
-			// Add signature if available (strip () from title to match)
+			// Add signature and aliases if available (strip () from title to match)
 			const methodName = section.title.replace(/\(\)$/, '');
 			const sig = signatures.get(methodName);
-			if (sig) {
-				section.signature = sig;
-			}
+			const aliases = METHOD_ALIASES[methodName];
+			if (sig) section.signature = sig;
+			if (Array.isArray(aliases)) section.aliases = aliases.join(' ');
 			searchIndex.push(section);
 		}
 	}
@@ -209,10 +345,10 @@ for (const file of mdFiles) {
 // Build MiniSearch index with unique numeric IDs
 const miniSearch = new MiniSearch<SearchEntry & { _id: number }>({
 	idField: '_id',
-	fields: ['title', 'text', 'signature'],
+	fields: ['title', 'text', 'signature', 'aliases'],
 	storeFields: ['id', 'title', 'titles', 'text', 'signature'],
 	searchOptions: {
-		boost: { title: 3, signature: 2, text: 1 },
+		boost: { title: 3, signature: 2, aliases: 1.5, text: 1 },
 		prefix: true,
 		fuzzy: 0.2,
 	},
