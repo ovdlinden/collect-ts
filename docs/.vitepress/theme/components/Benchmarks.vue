@@ -63,13 +63,18 @@ const results = benchmarkResults as Record<Size, BenchmarkOps[]> & { lazy?: Lazy
 
 const lazyBenchmarks = computed(() => {
   return (results.lazy || []).map((item) => {
-    const generatorVsLazy = item.nativeGenerator.hz / item.lazyCollection.hz
-    const lazyVsArray = item.lazyCollection.hz / (item.nativeArray.hz || 1)
+    const speedupNum = item.lazyCollection.hz / item.nativeGenerator.hz
+    const isFaster = speedupNum >= 1
+    const logValue = Math.log2(speedupNum || 1)
+    const clampedLog = Math.max(-2, Math.min(2, logValue))
+    const barWidth = Math.abs(clampedLog) / 2 * 50
+
     return {
       ...item,
-      generatorVsLazy: generatorVsLazy.toFixed(1) + 'x',
-      lazyVsArray: item.nativeArray.hz > 0 ? lazyVsArray.toFixed(0) + 'x' : 'N/A',
-      lazyWins: item.lazyCollection.hz > item.nativeArray.hz,
+      speedupNum,
+      speedup: speedupNum.toFixed(1) + 'x',
+      isFaster,
+      barWidth,
     }
   })
 })
@@ -169,13 +174,13 @@ function toggleExpand(name: string) {
         When should you use <code>.lazy()</code>? Compare against hand-rolled <code>function*</code> pipelines.
       </p>
 
-      <table class="lazy-table">
+      <table>
         <thead>
           <tr>
             <th>Scenario</th>
-            <th>Native Generator</th>
+            <th>Generator</th>
             <th>LazyCollection</th>
-            <th>Overhead</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -183,15 +188,25 @@ function toggleExpand(name: string) {
             <td class="op">{{ bench.name }}</td>
             <td class="ops">{{ bench.nativeGenerator.ops }}</td>
             <td class="ops">{{ bench.lazyCollection.ops }}</td>
-            <td class="overhead">{{ bench.generatorVsLazy }}</td>
+            <td class="speedup-cell">
+              <span :class="['speedup', bench.isFaster ? 'win' : 'lose']">
+                <span class="bar">
+                  <span
+                    :class="['bar-fill', bench.isFaster ? 'win' : 'lose']"
+                    :style="{ width: bench.barWidth + '%' }"
+                  ></span>
+                </span>
+                <span class="speedup-num">{{ bench.speedup }}</span>
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
 
       <div class="lazy-insight">
-        <strong>Key insight:</strong> LazyCollection adds overhead vs hand-rolled generators,
-        but provides a clean fluent API and full type safety. Both crush Native Array
-        for early termination (1M+ times faster when exiting early).
+        <strong>Key insight:</strong> LazyCollection trades raw speed for a fluent API.
+        Use it for complex pipelines with early termination — it crushes Native Array
+        by avoiding intermediate allocations.
       </div>
     </div>
   </div>
@@ -470,51 +485,8 @@ td:first-child {
   border-radius: 4px;
 }
 
-.lazy-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
-}
-
-.lazy-table thead {
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--vp-c-text-3);
-}
-
-.lazy-table th {
-  font-weight: 500;
-  text-align: left;
-  padding: 0.625rem 1rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-  white-space: nowrap;
-}
-
-.lazy-table th:first-child {
-  width: 100%;
-}
-
-.lazy-table th:nth-child(2),
-.lazy-table th:nth-child(3),
-.lazy-table th:nth-child(4) {
-  text-align: right;
-}
-
-.lazy-table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-}
-
-.lazy-table .overhead {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8125rem;
-  text-align: right;
-  color: var(--vp-c-text-3);
-}
-
 .lazy-insight {
+  margin-top: 1.5rem;
   font-size: 0.875rem;
   color: var(--vp-c-text-2);
   padding: 1rem;
