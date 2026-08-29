@@ -59,16 +59,6 @@ watch(
 	},
 );
 
-// Announce result count for screen readers
-watch(
-	() => results.value.length,
-	(count) => {
-		if (query.value.length >= 2) {
-			announceText.value = count > 0 ? `${count} results found. Use arrow keys to navigate.` : 'No results found.';
-		}
-	},
-);
-
 // Fast search using collect-ts lazy evaluation
 const results = computed<ProcessedResult[]>(() => {
 	const q = query.value.toLowerCase().trim();
@@ -91,6 +81,16 @@ const results = computed<ProcessedResult[]>(() => {
 		}))
 		.all();
 });
+
+// Announce result count for screen readers
+watch(
+	() => results.value.length,
+	(count) => {
+		if (query.value.length >= 2) {
+			announceText.value = count > 0 ? `${count} results found. Use arrow keys to navigate.` : 'No results found.';
+		}
+	},
+);
 
 function highlightTerms(text: string, terms: string[]): string {
 	let result = text;
