@@ -27,6 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const query = ref('');
+const dialogRef = ref<HTMLDialogElement>();
 const inputRef = ref<HTMLInputElement>();
 const listRef = ref<HTMLUListElement>();
 const selectedIndex = ref(0);
@@ -53,11 +54,12 @@ onMounted(async () => {
 
 const searchMode = ref<'name' | 'description'>('name');
 
-// Focus input and announce when visible (keep last search)
+// Open/close dialog when visible prop changes
 watch(
 	() => props.visible,
 	(visible) => {
 		if (visible) {
+			dialogRef.value?.showModal();
 			selectedIndex.value = 0;
 			searchMode.value = 'name';
 			nextTick(() => {
@@ -67,9 +69,23 @@ watch(
 					? 'Search dialog opened with previous search.'
 					: 'Search dialog opened. Type to search methods.';
 			});
+		} else {
+			dialogRef.value?.close();
 		}
 	},
 );
+
+// Handle native dialog close event (ESC key, etc.)
+function handleDialogClose() {
+	emit('close');
+}
+
+// Handle backdrop click (click on ::backdrop)
+function handleDialogClick(e: MouseEvent) {
+	if (e.target === dialogRef.value) {
+		emit('close');
+	}
+}
 
 // Search using MiniSearch with collect-ts post-processing
 const results = computed<ProcessedResult[]>(() => {
@@ -189,10 +205,6 @@ function handleKeydown(e: KeyboardEvent) {
 				navigate(results.value[selectedIndex.value]);
 			}
 			break;
-		case 'Escape':
-			e.preventDefault();
-			emit('close');
-			break;
 		case 'Home':
 			if (results.value.length > 0) {
 				e.preventDefault();
@@ -210,12 +222,6 @@ function handleKeydown(e: KeyboardEvent) {
 	}
 }
 
-function handleBackdropClick(e: MouseEvent) {
-	if (e.target === e.currentTarget) {
-		emit('close');
-	}
-}
-
 function getResultId(index: number): string {
 	return `search-result-${index}`;
 }
@@ -223,125 +229,118 @@ function getResultId(index: number): string {
 
 <template>
 	<Teleport to="body">
-		<Transition name="search-fade">
-			<div
-				v-if="visible"
-				class="fast-search-overlay"
-				role="presentation"
-				@click="handleBackdropClick"
-				@keydown.stop
-			>
-				<div
-					class="fast-search-modal"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="search-title"
-					@keydown="handleKeydown"
-				>
-					<h2 id="search-title" class="visually-hidden">Search documentation</h2>
+		<dialog
+			ref="dialogRef"
+			class="fast-search-dialog"
+			aria-labelledby="search-title"
+			@close="handleDialogClose"
+			@click="handleDialogClick"
+			@keydown="handleKeydown"
+		>
+			<div class="fast-search-modal">
+				<h2 id="search-title" class="visually-hidden">Search documentation</h2>
 
-					<!-- Live region for screen reader announcements -->
-					<div aria-live="polite" aria-atomic="true" class="visually-hidden">
-						{{ announceText }}
-					</div>
+				<!-- Live region for screen reader announcements -->
+				<div aria-live="polite" aria-atomic="true" class="visually-hidden">
+					{{ announceText }}
+				</div>
 
-					<div class="fast-search-input-wrapper">
-						<svg
-							class="fast-search-icon"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							aria-hidden="true"
-						>
-							<circle cx="11" cy="11" r="8" />
-							<path d="m21 21-4.35-4.35" />
-						</svg>
-						<input
-							ref="inputRef"
-							v-model="query"
-							type="search"
-							:placeholder="searchMode === 'name' ? 'Search methods...' : 'Search descriptions...'"
-							class="fast-search-input"
-							autocomplete="off"
-							aria-label="Search documentation"
-							aria-controls="search-results"
-							aria-expanded="true"
-							:aria-activedescendant="results.length > 0 ? getResultId(selectedIndex) : undefined"
-						/>
-						<button
-							class="fast-search-mode-toggle"
-							:class="{ active: searchMode === 'description' }"
-							:aria-pressed="searchMode === 'description'"
-							@click="toggleSearchMode"
-							type="button"
-						>
-							{{ searchMode === 'name' ? 'Abc' : 'Full' }}
-						</button>
-						<kbd class="fast-search-kbd" aria-hidden="true">ESC</kbd>
-					</div>
-
-					<div v-if="isLoading" class="fast-search-loading" role="status">
-						<span class="visually-hidden">Loading</span>
-						Loading search index...
-					</div>
-
-					<ul
-						v-else-if="results.length > 0"
-						id="search-results"
-						ref="listRef"
-						class="fast-search-results"
-						role="listbox"
-						aria-label="Search results"
+				<div class="fast-search-input-wrapper">
+					<svg
+						class="fast-search-icon"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
 					>
-						<li
-							v-for="(result, i) in results"
-							:id="getResultId(i)"
-							:key="result.id"
-							role="option"
-							:aria-selected="i === selectedIndex"
-							class="fast-search-result"
-							:class="{ selected: i === selectedIndex }"
-							@click="navigate(result)"
-							@mouseenter="selectedIndex = i"
-						>
-							<span v-if="result.breadcrumb" class="fast-search-result-breadcrumb" aria-hidden="true">
-								{{ result.breadcrumb }}
-							</span>
-							<span class="fast-search-result-title" v-html="result.highlightedTitle" />
-							<code v-if="result.signature" class="fast-search-result-signature">
-								{{ result.signature }}
-							</code>
-							<span v-if="result.snippet" class="fast-search-result-snippet" v-html="result.snippet" />
-							<span class="visually-hidden">
-								{{ result.breadcrumb ? `in ${result.breadcrumb}` : '' }}
-							</span>
-						</li>
-					</ul>
+						<circle cx="11" cy="11" r="8" />
+						<path d="m21 21-4.35-4.35" />
+					</svg>
+					<input
+						ref="inputRef"
+						v-model="query"
+						type="search"
+						:placeholder="searchMode === 'name' ? 'Search methods...' : 'Search descriptions...'"
+						class="fast-search-input"
+						autocomplete="off"
+						aria-label="Search documentation"
+						aria-controls="search-results"
+						aria-expanded="true"
+						:aria-activedescendant="results.length > 0 ? getResultId(selectedIndex) : undefined"
+					/>
+					<button
+						class="fast-search-mode-toggle"
+						:class="{ active: searchMode === 'description' }"
+						:aria-pressed="searchMode === 'description'"
+						@click="toggleSearchMode"
+						type="button"
+					>
+						{{ searchMode === 'name' ? 'Abc' : 'Full' }}
+					</button>
+					<kbd class="fast-search-kbd" aria-hidden="true">ESC</kbd>
+				</div>
 
-					<div v-else-if="query.length >= 2" class="fast-search-empty" role="status">
-						<template v-if="searchMode === 'name'">
-							No methods matching "{{ query }}"
-							<div class="fast-search-hint-toggle">Try toggling to full-text search</div>
-						</template>
-						<template v-else>
-							No results for "{{ query }}"
-						</template>
-					</div>
+				<div v-if="isLoading" class="fast-search-loading" role="status">
+					<span class="visually-hidden">Loading</span>
+					Loading search index...
+				</div>
 
-					<div v-else class="fast-search-hint" role="status">Type at least 2 characters to search</div>
-
-					<div class="fast-search-footer" aria-hidden="true">
-						<span><kbd>↑↓</kbd> Navigate</span>
-						<span><kbd>↵</kbd> Select</span>
-						<span><kbd>Esc</kbd> Close</span>
-						<span class="fast-search-powered">
-							Powered by <strong>collect-ts</strong>
+				<ul
+					v-else-if="results.length > 0"
+					id="search-results"
+					ref="listRef"
+					class="fast-search-results"
+					role="listbox"
+					aria-label="Search results"
+				>
+					<li
+						v-for="(result, i) in results"
+						:id="getResultId(i)"
+						:key="result.id"
+						role="option"
+						:aria-selected="i === selectedIndex"
+						class="fast-search-result"
+						:class="{ selected: i === selectedIndex }"
+						@click="navigate(result)"
+						@mouseenter="selectedIndex = i"
+					>
+						<span v-if="result.breadcrumb" class="fast-search-result-breadcrumb" aria-hidden="true">
+							{{ result.breadcrumb }}
 						</span>
-					</div>
+						<span class="fast-search-result-title" v-html="result.highlightedTitle" />
+						<code v-if="result.signature" class="fast-search-result-signature">
+							{{ result.signature }}
+						</code>
+						<span v-if="result.snippet" class="fast-search-result-snippet" v-html="result.snippet" />
+						<span class="visually-hidden">
+							{{ result.breadcrumb ? `in ${result.breadcrumb}` : '' }}
+						</span>
+					</li>
+				</ul>
+
+				<div v-else-if="query.length >= 2" class="fast-search-empty" role="status">
+					<template v-if="searchMode === 'name'">
+						No methods matching "{{ query }}"
+						<div class="fast-search-hint-toggle">Try toggling to full-text search</div>
+					</template>
+					<template v-else>
+						No results for "{{ query }}"
+					</template>
+				</div>
+
+				<div v-else class="fast-search-hint" role="status">Type at least 2 characters to search</div>
+
+				<div class="fast-search-footer" aria-hidden="true">
+					<span><kbd>↑↓</kbd> Navigate</span>
+					<span><kbd>↵</kbd> Select</span>
+					<span><kbd>Esc</kbd> Close</span>
+					<span class="fast-search-powered">
+						Powered by <strong>collect-ts</strong>
+					</span>
 				</div>
 			</div>
-		</Transition>
+		</dialog>
 	</Teleport>
 </template>
 
@@ -358,31 +357,47 @@ function getResultId(index: number): string {
 	border: 0;
 }
 
-.search-fade-enter-active,
-.search-fade-leave-active {
-	transition: opacity 150ms ease;
+.fast-search-dialog {
+	padding: 0;
+	border: none;
+	background: transparent;
+	max-width: none;
+	max-height: none;
+	overflow: visible;
+	margin-top: 10vh;
 }
 
-.search-fade-enter-from,
-.search-fade-leave-to {
-	opacity: 0;
-}
-
-.fast-search-overlay {
-	position: fixed;
-	inset: 0;
+.fast-search-dialog::backdrop {
 	background: rgba(0, 0, 0, 0.5);
-	z-index: 200;
-	display: flex;
-	align-items: flex-start;
-	justify-content: center;
-	padding-top: 10vh;
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.search-fade-enter-active,
-	.search-fade-leave-active {
-		transition: none;
+@media (prefers-reduced-motion: no-preference) {
+	.fast-search-dialog[open] {
+		animation: dialog-fade-in 150ms ease;
+	}
+
+	.fast-search-dialog::backdrop {
+		animation: backdrop-fade-in 150ms ease;
+	}
+}
+
+@keyframes dialog-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes backdrop-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
 	}
 }
 
