@@ -11,6 +11,7 @@ import './style.css';
 const Benchmarks = defineAsyncComponent(() => import('./components/Benchmarks.vue'));
 const HomepageLazyDemo = defineAsyncComponent(() => import('./components/HomepageLazyDemo.vue'));
 const LazySpotlight = defineAsyncComponent(() => import('./components/LazySpotlight.vue'));
+const SearchButton = defineAsyncComponent(() => import('./components/SearchButton.vue'));
 const SearchProvider = defineAsyncComponent(() => import('./components/SearchProvider.vue'));
 
 // Direct imports for small/common components
@@ -32,6 +33,7 @@ export default {
 	Layout() {
 		return h(DefaultTheme.Layout, null, {
 			'doc-before': () => h('div', { class: 'doc-header-actions' }, [h(CopyAsMarkdown)]),
+			'nav-bar-content-after': () => h(SearchButton),
 			'layout-bottom': () => h(SearchProvider),
 		});
 	},

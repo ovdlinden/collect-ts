@@ -190,26 +190,23 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 	bench('Native Array', () => {
 		small
 			.filter((x) => x.value > 0.2)
-			.map((x) => ({ ...x, doubled: x.value * 2 }))
-			.filter((x) => x.doubled > 1)
-			.map((x) => x.doubled)
+			.map((x) => x.value * 2)
+			.filter((x) => x > 1)
 			.reduce((a, b) => a + b, 0);
 	});
 
 	bench('Native Generator', () => {
 		const step1 = nativeGeneratorFilter(small, (x) => x.value > 0.2);
-		const step2 = nativeGeneratorMap(step1, (x) => ({ ...x, doubled: x.value * 2 }));
-		const step3 = nativeGeneratorFilter(step2, (x) => x.doubled > 1);
-		const step4 = nativeGeneratorMap(step3, (x) => x.doubled);
-		return nativeGeneratorSum(step4);
+		const step2 = nativeGeneratorMap(step1, (x) => x.value * 2);
+		const step3 = nativeGeneratorFilter(step2, (x) => x > 1);
+		return nativeGeneratorSum(step3);
 	});
 
 	bench('Collection (eager)', () => {
 		collect(small)
 			.filter((x) => x.value > 0.2)
-			.map((x) => ({ ...x, doubled: x.value * 2 }))
-			.filter((x) => x.doubled > 1)
-			.map((x) => x.doubled)
+			.map((x) => x.value * 2)
+			.filter((x) => x > 1)
 			.sum();
 	});
 
@@ -217,9 +214,8 @@ describe('Chained: filter → map → filter → map on 100K items', () => {
 		collect(small)
 			.lazy()
 			.filter((x) => x.value > 0.2)
-			.map((x) => ({ ...x, doubled: x.value * 2 }))
-			.filter((x) => x.doubled > 1)
-			.map((x) => x.doubled)
+			.map((x) => x.value * 2)
+			.filter((x) => x > 1)
 			.sum();
 	});
 });
