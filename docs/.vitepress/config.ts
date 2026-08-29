@@ -20,9 +20,15 @@ const guideSidebar = [
 		items: [
 			{ text: 'Introduction', link: '/' },
 			{ text: 'Quick Start', link: '/00-quickstart' },
-			{ text: 'For Laravel Developers', link: '/for/laravel-developers' },
-			{ text: 'For JavaScript Developers', link: '/for/javascript-developers' },
-			{ text: 'For Lodash Users', link: '/for/lodash-users' },
+		],
+	},
+	{
+		text: 'Coming From...',
+		collapsed: true,
+		items: [
+			{ text: 'Laravel', link: '/for/laravel-developers' },
+			{ text: 'JavaScript', link: '/for/javascript-developers' },
+			{ text: 'Lodash', link: '/for/lodash-users' },
 		],
 	},
 	{
@@ -46,7 +52,7 @@ const guideSidebar = [
 const collectionsSidebar = [
 	{ text: 'Collections', link: '/collections/' },
 	{
-		text: 'Guides',
+		text: 'By Category',
 		items: [
 			{ text: 'Creating', link: '/collections/creating' },
 			{ text: 'Finding', link: '/collections/finding' },
