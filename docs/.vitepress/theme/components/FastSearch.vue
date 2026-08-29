@@ -1,18 +1,21 @@
 <script setup lang="ts">
+import MiniSearch, { type SearchResult as MiniSearchResult } from 'minisearch';
 import { collect } from '../../../../src/Collection';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vitepress';
 
-interface SearchResult {
+interface SearchEntry {
 	id: string;
 	title: string;
 	titles: string[];
 	text: string;
+	signature?: string;
 }
 
-interface ProcessedResult extends SearchResult {
+interface ProcessedResult extends SearchEntry {
 	highlightedTitle: string;
 	breadcrumb: string;
+	snippet: string;
 }
 
 const props = defineProps<{
@@ -27,17 +30,21 @@ const query = ref('');
 const inputRef = ref<HTMLInputElement>();
 const listRef = ref<HTMLUListElement>();
 const selectedIndex = ref(0);
-const searchIndex = ref<SearchResult[]>([]);
+const miniSearch = ref<MiniSearch<SearchEntry> | null>(null);
 const isLoading = ref(true);
 const announceText = ref('');
 
 const router = useRouter();
 
-// Load search index on mount
+// Load pre-built MiniSearch index
 onMounted(async () => {
 	try {
-		const indexModule = await import('../data/search-index.json');
-		searchIndex.value = indexModule.default;
+		const indexData = await import('../data/search-index.json');
+		miniSearch.value = MiniSearch.loadJSON<SearchEntry>(JSON.stringify(indexData.default), {
+			idField: '_id',
+			fields: ['title', 'text', 'signature'],
+			storeFields: ['id', 'title', 'titles', 'text', 'signature'],
+		});
 	} catch {
 		console.warn('Search index not found');
 	}
@@ -64,25 +71,29 @@ watch(
 	},
 );
 
-// Fast search using collect-ts lazy evaluation
+// Search using MiniSearch with collect-ts post-processing
 const results = computed<ProcessedResult[]>(() => {
-	const q = query.value.toLowerCase().trim();
-	if (!q || q.length < 2) return [];
+	const q = query.value.trim();
+	if (!miniSearch.value || !q || q.length < 2) return [];
 
-	// Use collect().lazy() for fast, early-terminating search
-	return collect(searchIndex.value)
+	const searchOpts =
+		searchMode.value === 'name'
+			? { fields: ['title'], fuzzy: 0.2, prefix: true }
+			: { fuzzy: 0.15, prefix: true };
+
+	const raw = miniSearch.value.search(q, searchOpts) as (MiniSearchResult & SearchEntry)[];
+
+	// Use collect-ts lazy evaluation for post-processing
+	return collect(raw)
 		.lazy()
-		.filter((item) => {
-			if (searchMode.value === 'name') {
-				return item.title.toLowerCase().includes(q);
-			}
-			// Full-text mode: search title + text
-			return `${item.title} ${item.text}`.toLowerCase().includes(q);
-		})
 		.take(12)
 		.map((item) => ({
-			...item,
-			highlightedTitle: highlightTerms(item.title, [q]),
+			id: item.id,
+			title: item.title,
+			titles: item.titles,
+			text: item.text,
+			signature: item.signature,
+			highlightedTitle: highlightTerms(item.title, q.split(/\s+/)),
 			breadcrumb: item.titles.slice(0, -1).join(' › '),
 			snippet: searchMode.value === 'description' ? getSnippet(item.text, q) : '',
 		}))
@@ -98,19 +109,25 @@ function getSnippet(text: string, query: string): string {
 		.replace(/---/g, '') // Remove separators
 		.trim();
 
+	// Find the first matching term
+	const terms = query.toLowerCase().split(/\s+/);
 	const lowerText = cleanText.toLowerCase();
-	const idx = lowerText.indexOf(query);
+	let idx = -1;
+	for (const term of terms) {
+		idx = lowerText.indexOf(term);
+		if (idx !== -1) break;
+	}
 	if (idx === -1) return '';
 
 	// Extract ~60 chars around the match
 	const start = Math.max(0, idx - 30);
-	const end = Math.min(cleanText.length, idx + query.length + 50);
+	const end = Math.min(cleanText.length, idx + 50);
 	let snippet = cleanText.slice(start, end).trim();
 
 	if (start > 0) snippet = '...' + snippet;
 	if (end < cleanText.length) snippet = snippet + '...';
 
-	return highlightTerms(snippet, [query]);
+	return highlightTerms(snippet, terms);
 }
 
 function toggleSearchMode() {
@@ -131,6 +148,7 @@ watch(
 function highlightTerms(text: string, terms: string[]): string {
 	let result = text;
 	for (const term of terms) {
+		if (term.length < 2) continue;
 		const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
 		result = result.replace(regex, '<mark>$1</mark>');
 	}
@@ -291,6 +309,9 @@ function getResultId(index: number): string {
 								{{ result.breadcrumb }}
 							</span>
 							<span class="fast-search-result-title" v-html="result.highlightedTitle" />
+							<code v-if="result.signature" class="fast-search-result-signature">
+								{{ result.signature }}
+							</code>
 							<span v-if="result.snippet" class="fast-search-result-snippet" v-html="result.snippet" />
 							<span class="visually-hidden">
 								{{ result.breadcrumb ? `in ${result.breadcrumb}` : '' }}
@@ -494,6 +515,15 @@ function getResultId(index: number): string {
 	color: var(--vp-c-brand-1);
 	border-radius: 2px;
 	padding: 0 2px;
+}
+
+.fast-search-result-signature {
+	font-size: 12px;
+	color: var(--vp-c-text-3);
+	font-family: var(--vp-font-family-mono);
+	margin-top: 2px;
+	background: none;
+	padding: 0;
 }
 
 .fast-search-result-snippet {
