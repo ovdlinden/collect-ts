@@ -94,6 +94,10 @@
 		padding-left: 48px;
 	}
 
+	.vp-doc div[class*="language-"] .line {
+		display: block;
+	}
+
 	.vp-doc div[class*="language-"] .line::before {
 		counter-increment: line-number;
 		content: counter(line-number);
