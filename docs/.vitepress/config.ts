@@ -56,6 +56,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
 const nav = [
 	{ text: 'Quick Start', link: '/00-quickstart' },
 	{ text: 'Collections', link: '/collections/' },
+	{ text: 'Playground', link: '/playground' },
 	{ text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
 ] satisfies DefaultTheme.NavItem[];
 
@@ -109,6 +110,18 @@ export default defineConfig({
 
 	vite: {
 		plugins: [groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
+		optimizeDeps: {
+			include: ['monaco-editor'],
+		},
+		build: {
+			rollupOptions: {
+				output: {
+					manualChunks: {
+						monaco: ['monaco-editor'],
+					},
+				},
+			},
+		},
 	},
 
 	ignoreDeadLinks: [/^https:\/\/laravel\.com/],
