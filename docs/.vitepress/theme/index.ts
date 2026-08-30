@@ -18,6 +18,7 @@ const SearchProvider = defineAsyncComponent(() => import('./components/SearchPro
 import BenchmarkSpeedup from './components/BenchmarkSpeedup.vue';
 import CallbackTaxDiagram from './components/CallbackTaxDiagram.vue';
 import CopyAsMarkdown from './components/CopyAsMarkdown.vue';
+import HeroActions from './components/HeroActions.vue';
 import SpeedupBar from './components/SpeedupBar.vue';
 import StatCard from './components/StatCard.vue';
 
@@ -34,6 +35,7 @@ export default {
 	},
 	Layout() {
 		return h(DefaultTheme.Layout, null, {
+			'home-hero-actions-after': () => h(HeroActions),
 			'doc-before': () => h('div', { class: 'doc-header-actions' }, [h(CopyAsMarkdown)]),
 			'nav-bar-content-after': () => h(SearchButton),
 			'layout-bottom': () => h(SearchProvider),

@@ -45,6 +45,20 @@ html {
 	font-size: 0.9em;
 }
 
+/* Linked code - visually distinct from plain inline code.
+   Underline makes it clear the code is clickable. */
+.vp-doc a > code {
+	text-decoration: underline;
+	text-decoration-color: var(--doc-c-primary-soft);
+	text-underline-offset: 3px;
+	transition: text-decoration-color 0.15s, background 0.15s;
+}
+
+.vp-doc a:hover > code {
+	text-decoration-color: var(--doc-c-primary);
+	background: var(--doc-c-primary-soft);
+}
+
 .vp-doc h1,
 .vp-doc h2,
 .vp-doc h3,
@@ -427,3 +441,22 @@ body:has(dialog.fast-search-dialog[open]) {
 	}
 }
 
+/* Hero spacing ------------------------------------------------------------ */
+.VPHero {
+	padding-top: 4rem !important;
+	padding-bottom: 3rem !important;
+}
+
+@media (min-width: 640px) {
+	.VPHero {
+		padding-top: 6rem !important;
+		padding-bottom: 4rem !important;
+	}
+}
+
+@media (min-width: 960px) {
+	.VPHero {
+		padding-top: 8rem !important;
+		padding-bottom: 5rem !important;
+	}
+}
