@@ -192,3 +192,18 @@
 		overflow: hidden;
 	}
 }
+
+/**
+ * Code block overrides (unlayered to beat Tailwind preflight)
+ * Preflight resets margin/padding on ::before, breaking our line numbers
+ */
+.vp-doc div[class*="language-"] .line::before {
+	margin-left: -48px;
+	margin-right: 16px;
+}
+
+.vp-doc div[class*="language-"] .line.output-line {
+	margin-left: -48px;
+	margin-right: -24px;
+	padding: 0 24px 0 96px;
+}
