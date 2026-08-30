@@ -15,6 +15,7 @@ const SearchButton = defineAsyncComponent(() => import('./components/SearchButto
 const SearchProvider = defineAsyncComponent(() => import('./components/SearchProvider.vue'));
 
 // Direct imports for small/common components
+import BenchmarkSpeedup from './components/BenchmarkSpeedup.vue';
 import CallbackTaxDiagram from './components/CallbackTaxDiagram.vue';
 import CopyAsMarkdown from './components/CopyAsMarkdown.vue';
 import SpeedupBar from './components/SpeedupBar.vue';
@@ -24,6 +25,7 @@ export default {
 	extends: DefaultTheme,
 	enhanceApp({ app }) {
 		app.component('Benchmarks', Benchmarks);
+		app.component('BenchmarkSpeedup', BenchmarkSpeedup);
 		app.component('CallbackTaxDiagram', CallbackTaxDiagram);
 		app.component('HomepageLazyDemo', HomepageLazyDemo);
 		app.component('LazySpotlight', LazySpotlight);

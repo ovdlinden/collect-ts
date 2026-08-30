@@ -10,11 +10,11 @@
 
 [![Laravel 13.x](https://img.shields.io/badge/Laravel-13.x-FF2D20)](https://laravel.com/docs/13.x/collections)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.x-3178C6)](https://www.typescriptlang.org/)
-[![Bundle Size](https://img.shields.io/badge/bundle-12kb%20brotli-blue)]()
+[![Tree-Shakeable](https://img.shields.io/badge/tree--shakeable-yes-blue)](https://collect-ts.dev/guide/tree-shaking)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Fast**: Matches or beats native array methods. `sum()` runs 4.4x faster at 10K items. Never slower at any scale. [Benchmarks →](https://collect-ts.dev/performance)
+> **Fast**: Matches native for simple ops, up to 2.5× faster for chained operations. [See live benchmarks →](https://collect-ts.dev/05-benchmarks)
 
 ## Why collect-ts?
 

@@ -7,7 +7,7 @@
  * and generates JSON that Benchmarks.vue imports.
  */
 
-import { execSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -248,38 +248,51 @@ function extractBenchmarkData(groups: ParsedGroup[]): Record<string, BenchmarkOp
 	return result;
 }
 
-function runBenchmark(benchFile: string): string {
-	try {
-		return execSync(`pnpm vitest bench ${benchFile}`, {
-			encoding: 'utf-8',
+function runBenchmark(...benchFiles: string[]): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const child = spawn('pnpm', ['vitest', 'bench', '--run', ...benchFiles], {
 			cwd: join(__dirname, '../..'),
-			maxBuffer: 50 * 1024 * 1024,
-			stdio: ['inherit', 'pipe', 'pipe'],
+			stdio: ['inherit', 'pipe', 'inherit'],
 		});
-	} catch (error) {
-		if (error instanceof Error && 'stdout' in error) {
-			const output = (error as { stdout?: string }).stdout;
-			if (output) return output;
-		}
-		throw error;
-	}
+
+		let stdout = '';
+		child.stdout.on('data', (data: Buffer) => {
+			const text = data.toString();
+			stdout += text;
+			// Show progress: print lines containing benchmark results
+			for (const line of text.split('\n')) {
+				if (line.includes('✓') || line.includes('·')) {
+					process.stdout.write(`  ${line.trim()}\n`);
+				}
+			}
+		});
+
+		child.on('close', (code) => {
+			if (code === 0 || stdout.includes('✓')) {
+				resolve(stdout);
+			} else {
+				reject(new Error(`Benchmark failed with code ${code}`));
+			}
+		});
+
+		child.on('error', reject);
+	});
 }
 
 async function main() {
-	console.log('Running benchmarks... (this may take a few minutes)\n');
+	console.log('Running benchmarks in parallel... (this may take a few minutes)\n');
 
 	try {
-		// Run eager benchmarks
-		console.log('Running eager benchmarks (collect-vs-native.bench.ts)...');
-		const eagerOutput = runBenchmark('benchmarks/collect-vs-native.bench.ts');
-		const eagerGroups = parseVitestOutput(eagerOutput);
-		console.log(`Parsed ${eagerGroups.length} eager benchmark groups`);
+		// Run both benchmark suites in a single vitest invocation (parallel)
+		const output = await runBenchmark('benchmarks/collect-vs-native.bench.ts', 'benchmarks/lazy.bench.ts');
+
+		// Parse eager benchmarks
+		const eagerGroups = parseVitestOutput(output);
+		console.log(`\nParsed ${eagerGroups.length} eager benchmark groups`);
 		const eagerData = extractBenchmarkData(eagerGroups);
 
-		// Run lazy benchmarks
-		console.log('\nRunning lazy benchmarks (lazy.bench.ts)...');
-		const lazyOutput = runBenchmark('benchmarks/lazy.bench.ts');
-		const lazyGroups = parseVitestOutput(lazyOutput, true);
+		// Parse lazy benchmarks (may have partial results if tinybench crashed)
+		const lazyGroups = parseVitestOutput(output, true);
 		console.log(`Parsed ${lazyGroups.length} lazy benchmark groups`);
 		const lazyData = extractLazyBenchmarkData(lazyGroups);
 

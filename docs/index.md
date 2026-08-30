@@ -50,7 +50,7 @@ collect(users)
     <span class="benefit-label">less code</span>
   </div>
   <div class="benefit">
-    <span class="benefit-value">3×</span>
+    <span class="benefit-value"><BenchmarkSpeedup /></span>
     <span class="benefit-label">faster</span>
   </div>
   <div class="benefit">

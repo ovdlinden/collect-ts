@@ -157,6 +157,28 @@ export function arrayFindByKey<T, K extends keyof T>(
 }
 
 /**
+ * Fast array filter by Set membership with key access.
+ * Used for whereIn/whereNotIn with O(1) lookup per item.
+ */
+export function arrayFilterBySetKey<T, K extends keyof T>(
+	items: readonly T[],
+	key: K,
+	valueSet: Set<unknown>,
+	include: boolean,
+): T[] {
+	const result: T[] = [];
+	const len = items.length;
+
+	for (let i = 0; i < len; i++) {
+		const item = items[i];
+		const has = valueSet.has(item[key]);
+		if (has === include) result.push(item);
+	}
+
+	return result;
+}
+
+/**
  * Fast array contains check (loose equality).
  */
 export function arrayContains<T>(items: readonly T[], value: unknown): boolean {

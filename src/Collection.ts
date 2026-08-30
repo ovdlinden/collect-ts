@@ -1,6 +1,14 @@
 /** @see https://laravel.com/docs/collections */
 
-import { arrayContains, arrayFilterByKey, arrayFilterBySet, arrayFindByKey, arrayGroupByKey, arrayMapByKey } from './arrayUtils.js';
+import {
+	arrayContains,
+	arrayFilterByKey,
+	arrayFilterBySet,
+	arrayFilterBySetKey,
+	arrayFindByKey,
+	arrayGroupByKey,
+	arrayMapByKey,
+} from './arrayUtils.js';
 import {
 	InvalidArgumentException,
 	ItemNotFoundException,
@@ -637,6 +645,8 @@ export function wrapWithProxy<T, C extends CollectionLike<T>>(collection: C, get
 				return function (this: C, ...args: unknown[]) {
 					const result = macro.apply(target, args);
 					if (isCollection(result)) {
+						const coll = result as Collection<unknown>;
+						if (coll.hasPendingOps?.()) return result;
 						return wrapResult(result as AnyCollection);
 					}
 					return result;
@@ -653,6 +663,8 @@ export function wrapWithProxy<T, C extends CollectionLike<T>>(collection: C, get
 							return receiver;
 						}
 						if (isCollection(result)) {
+							const coll = result as Collection<unknown>;
+							if (coll.hasPendingOps?.()) return result;
 							return wrapResult(result as AnyCollection);
 						}
 						return result;
@@ -667,6 +679,8 @@ export function wrapWithProxy<T, C extends CollectionLike<T>>(collection: C, get
 			const callableProxy = function (this: C, ...args: unknown[]) {
 				const result = (value as (...a: unknown[]) => unknown).apply(target, args);
 				if (isCollection(result)) {
+					const coll = result as Collection<unknown>;
+					if (coll.hasPendingOps?.()) return result;
 					return wrapResult(result as AnyCollection);
 				}
 				return result;
@@ -729,6 +743,33 @@ function arrayableToArray<T>(items: Arrayable<T>): T[] {
 	return Array.from(items as Iterable<T>);
 }
 
+/** @internal Execution mode for deferred pipeline */
+type ExecutionMode = 'compiled' | 'iterator' | 'eager';
+
+/** @internal Deferred operation descriptor with compilability flag */
+type Operation =
+	// Key-based filter (compilable to for-loop condition)
+	| { type: 'filter'; key: string; value: unknown; operator: string; compilable: true }
+	// Callback-based filter (requires iterator)
+	| { type: 'filterCallback'; callback: (item: unknown, index: number) => boolean; compilable: false }
+	// Set-based filter (compilable with Set.has)
+	| { type: 'filterSet'; key: string; values: Set<unknown>; include: boolean; compilable: true }
+	// Key-based map/pluck (compilable)
+	| { type: 'map'; key: string; compilable: true }
+	// Callback-based map (requires iterator)
+	| { type: 'mapCallback'; callback: (item: unknown, index: number) => unknown; compilable: false }
+	// Take first n items (compilable with early break)
+	| { type: 'take'; n: number; compilable: true }
+	// Skip first n items (compilable with counter)
+	| { type: 'skip'; n: number; compilable: true }
+	// Key-based sort (materializing - flushes pipeline)
+	| { type: 'sort'; key: string; descending: boolean; compilable: true }
+	// Complex operations (always iterator)
+	| { type: 'complex'; name: string; args: unknown[]; compilable: false };
+
+// Legacy type alias for gradual migration
+type Op = Operation;
+
 function collectableToRecord<T>(items: Collectable<T>): Record<string, T> {
 	if (items instanceof Collection) {
 		return items.all() as Record<string, T>;
@@ -756,6 +797,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	#arrayItems: T[] | null = null;
 	#source: Iterable<T> | (() => Generator<T>) | null = null;
 	#sourceTransferred = false;
+
+	// Pipeline state for deferred execution
+	#ops: Op[] = [];
 
 	/** Lazy getter: materializes Record from #arrayItems on first access */
 	protected get items(): Record<string, T> {
@@ -894,6 +938,407 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	protected invalidateNextNumericKey(): void {
 		this._nextNumericKey = null;
+	}
+
+	/**
+	 * Record a deferred operation. Always creates a new collection to preserve immutability.
+	 * @internal
+	 */
+	#extend(op: Op): Collection<T, CK> {
+		const fork = new Collection<T, CK>(this.#arrayItems ?? [], this.isAssociative);
+		fork.#ops = [...this.#ops, op];
+		return fork;
+	}
+
+	/**
+	 * Check if this collection has pending pipeline operations.
+	 * Used by wrapWithProxy to skip wrapping intermediate results.
+	 * @internal
+	 */
+	hasPendingOps(): boolean {
+		return this.#ops.length > 0;
+	}
+
+	/**
+	 * Execute the pipeline and return results.
+	 * @internal
+	 */
+	#execute(limit?: number): T[] {
+		const source = this.#arrayItems ?? Object.values(this._items ?? {});
+		if (this.#ops.length === 0) {
+			return limit !== undefined && limit < source.length ? source.slice(0, limit) : source;
+		}
+		return this.#runPipeline(source, limit);
+	}
+
+	/**
+	 * Run all deferred operations on the source array (eager sequential mode).
+	 * @internal
+	 */
+	#runPipeline(source: T[], limit?: number): T[] {
+		let result: unknown[] = source;
+
+		for (const op of this.#ops) {
+			switch (op.type) {
+				case 'filter':
+					result = arrayFilterByKey(result as T[], op.key as keyof T, op.value, op.operator as WhereOperator | '===');
+					break;
+				case 'filterCallback':
+					result = result.filter((item, i) => op.callback(item, i));
+					break;
+				case 'map':
+					result = arrayMapByKey(result as T[], op.key as keyof T);
+					break;
+				case 'mapCallback':
+					result = result.map((item, i) => op.callback(item, i));
+					break;
+				case 'filterSet':
+					result = arrayFilterBySetKey(result as T[], op.key as keyof T, op.values, op.include);
+					break;
+				case 'take':
+					if (result.length > op.n) result = result.slice(0, op.n);
+					break;
+				case 'skip':
+					if (op.n > 0) result = result.slice(op.n);
+					break;
+				case 'sort': {
+					const k = op.key as keyof T;
+					const desc = op.descending;
+					result = [...result].sort((a, b) => {
+						const av = (a as T)[k];
+						const bv = (b as T)[k];
+						const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+						return desc ? -cmp : cmp;
+					});
+					break;
+				}
+			}
+		}
+
+		if (limit !== undefined && result.length > limit) {
+			result = result.slice(0, limit);
+		}
+
+		return result as T[];
+	}
+
+	/**
+	 * Check if all pending operations are compilable (key-based).
+	 * @internal
+	 */
+	#allOpsCompilable(): boolean {
+		return this.#ops.every((op) => op.compilable);
+	}
+
+	/**
+	 * Choose execution mode based on source and operations.
+	 * @internal
+	 */
+	#chooseMode(terminal: string): ExecutionMode {
+		// Must use iterator for non-array sources
+		if (!this.#arrayItems) return 'iterator';
+
+		// No ops? Direct access (eager)
+		if (this.#ops.length === 0) return 'eager';
+
+		// Any non-compilable op? Use iterator
+		if (!this.#allOpsCompilable()) return 'iterator';
+
+		// All ops are compilable (key-based)
+		// Small source + full terminal? Eager is acceptable
+		if (this.#arrayItems.length < 1000 && terminal === 'all') return 'eager';
+
+		// Compiled loop for key-based ops (fastest path)
+		return 'compiled';
+	}
+
+	/**
+	 * Execute pipeline using compiled for-loop (fastest for key-based ops).
+	 * Fuses all filter conditions into a single loop with short-circuit support.
+	 * @internal
+	 */
+	#executeCompiled(terminal: string, args: unknown[] = []): unknown {
+		const source = this.#arrayItems!;
+
+		// Fast path: single filter with equality, no skip/take
+		if (this.#ops.length === 1 && this.#ops[0].type === 'filter') {
+			const op = this.#ops[0];
+			const key = op.key;
+			const value = op.value;
+			const operator = op.operator;
+			if (operator === '=' || operator === '==' || operator === '===') {
+				const strict = operator === '===';
+				// Special case: boolean true comparison (common pattern)
+				if (value === true && !strict) {
+					if (terminal === 'all') {
+						const results: T[] = [];
+						for (let i = 0; i < source.length; i++) {
+							const item = source[i];
+							if ((item as Record<string, unknown>)[key]) {
+								results.push(item);
+							}
+						}
+						return results;
+					}
+					if (terminal === 'count') {
+						let count = 0;
+						for (let i = 0; i < source.length; i++) {
+							if ((source[i] as Record<string, unknown>)[key]) count++;
+						}
+						return count;
+					}
+					if (terminal === 'first') {
+						for (let i = 0; i < source.length; i++) {
+							const item = source[i];
+							if ((item as Record<string, unknown>)[key]) return item;
+						}
+						return undefined;
+					}
+				}
+				// General equality case
+				if (terminal === 'all') {
+					const results: T[] = [];
+					for (let i = 0; i < source.length; i++) {
+						const item = source[i];
+						const itemValue = (item as Record<string, unknown>)[key];
+						// biome-ignore lint/suspicious/noDoubleEquals: intentional loose equality
+						if (strict ? itemValue === value : itemValue == value) {
+							results.push(item);
+						}
+					}
+					return results;
+				}
+				if (terminal === 'count') {
+					let count = 0;
+					for (let i = 0; i < source.length; i++) {
+						const itemValue = (source[i] as Record<string, unknown>)[key];
+						// biome-ignore lint/suspicious/noDoubleEquals: intentional loose equality
+						if (strict ? itemValue === value : itemValue == value) count++;
+					}
+					return count;
+				}
+				if (terminal === 'first') {
+					for (let i = 0; i < source.length; i++) {
+						const item = source[i];
+						const itemValue = (item as Record<string, unknown>)[key];
+						// biome-ignore lint/suspicious/noDoubleEquals: intentional loose equality
+						if (strict ? itemValue === value : itemValue == value) return item;
+					}
+					return undefined;
+				}
+			}
+		}
+
+		const filters: Array<{ key: string; value: unknown; operator: string }> = [];
+		const filterSets: Array<{ key: string; values: Set<unknown>; include: boolean }> = [];
+		let takeN: number | null = null;
+		let skipN = 0;
+
+		// Collect operations
+		for (const op of this.#ops) {
+			switch (op.type) {
+				case 'filter':
+					filters.push({ key: op.key, value: op.value, operator: op.operator });
+					break;
+				case 'filterSet':
+					filterSets.push({ key: op.key, values: op.values, include: op.include });
+					break;
+				case 'take':
+					takeN = takeN === null ? op.n : Math.min(takeN, op.n);
+					break;
+				case 'skip':
+					skipN += op.n;
+					break;
+			}
+		}
+
+		const results: T[] = [];
+		let skipped = 0;
+
+		outer: for (let i = 0; i < source.length; i++) {
+			const item = source[i];
+
+			// Check all key-based filter conditions
+			for (const f of filters) {
+				const itemValue = (item as Record<string, unknown>)[f.key];
+				let pass = false;
+				switch (f.operator) {
+					case '=':
+					case '==':
+						// biome-ignore lint/suspicious/noDoubleEquals: intentional loose equality
+						pass = itemValue == f.value;
+						break;
+					case '===':
+						pass = itemValue === f.value;
+						break;
+					case '!=':
+					case '<>':
+						// biome-ignore lint/suspicious/noDoubleEquals: intentional loose inequality
+						pass = itemValue != f.value;
+						break;
+					case '!==':
+						pass = itemValue !== f.value;
+						break;
+					case '<':
+						pass = (itemValue as number) < (f.value as number);
+						break;
+					case '<=':
+						pass = (itemValue as number) <= (f.value as number);
+						break;
+					case '>':
+						pass = (itemValue as number) > (f.value as number);
+						break;
+					case '>=':
+						pass = (itemValue as number) >= (f.value as number);
+						break;
+					default:
+						// Unknown operator falls back to loose equality (Laravel behavior)
+						// biome-ignore lint/suspicious/noDoubleEquals: intentional loose equality
+						pass = itemValue == f.value;
+				}
+				if (!pass) continue outer;
+			}
+
+			// Check all Set-based conditions
+			for (const fs of filterSets) {
+				const itemValue = (item as Record<string, unknown>)[fs.key];
+				const inSet = fs.values.has(itemValue);
+				if (fs.include ? !inSet : inSet) continue outer;
+			}
+
+			// Handle skip
+			if (skipped < skipN) {
+				skipped++;
+				continue;
+			}
+
+			// Short-circuit terminals
+			if (terminal === 'first') return item;
+			if (terminal === 'contains' && item === args[0]) return true;
+
+			results.push(item);
+
+			// Handle take
+			if (takeN !== null && results.length >= takeN) break;
+		}
+
+		// Return based on terminal
+		switch (terminal) {
+			case 'all':
+				return results;
+			case 'count':
+				return results.length;
+			case 'first':
+				return undefined;
+			case 'last':
+				return results[results.length - 1];
+			case 'contains':
+				return false;
+			default:
+				return results;
+		}
+	}
+
+	/**
+	 * Resolve and execute the pipeline with automatic mode selection.
+	 * @internal
+	 */
+	#resolve(terminal: string, ...args: unknown[]): unknown {
+		const mode = this.#chooseMode(terminal);
+
+		switch (mode) {
+			case 'compiled':
+				return this.#executeCompiled(terminal, args);
+			case 'iterator':
+				// For now, fall back to eager execution
+				// TODO: Use LazyCollection for true iterator execution
+				return this.#resolveEager(terminal, args);
+			case 'eager':
+			default:
+				return this.#resolveEager(terminal, args);
+		}
+	}
+
+	/**
+	 * Execute pipeline eagerly and apply terminal.
+	 * @internal
+	 */
+	#resolveEager(terminal: string, args: unknown[]): unknown {
+		const items = this.#execute();
+		switch (terminal) {
+			case 'all':
+				return items;
+			case 'count':
+				return items.length;
+			case 'first':
+				return items[0];
+			case 'last':
+				return items[items.length - 1];
+			case 'contains':
+				return items.includes(args[0] as T);
+			default:
+				return items;
+		}
+	}
+
+	/**
+	 * Debug method to inspect pipeline state and execution mode.
+	 * @internal - underscore prefix indicates internal use
+	 *
+	 * @example
+	 * collect(items).where('status', 'active').take(10)._explain('first')
+	 * // → { source: 'array', sourceSize: 10000, ops: [...], mode: 'compiled', reason: '...' }
+	 */
+	_explain(terminal = 'all'): {
+		source: 'array' | 'object' | 'generator';
+		sourceSize: number | 'unknown';
+		ops: Operation[];
+		mode: ExecutionMode;
+		allCompilable: boolean;
+		reason: string;
+	} {
+		const source = this.#arrayItems ? 'array' : this.#source ? 'generator' : 'object';
+		const sourceSize = this.#arrayItems
+			? this.#arrayItems.length
+			: source === 'object'
+				? Object.keys(this.items).length
+				: 'unknown';
+		const allCompilable = this.#allOpsCompilable();
+		const mode = this.#chooseMode(terminal);
+
+		let reason: string;
+		if (!this.#arrayItems) {
+			reason = 'Non-array source requires iterator mode';
+		} else if (this.#ops.length === 0) {
+			reason = 'No pending operations - direct access';
+		} else if (!allCompilable) {
+			reason = 'Contains callback-based operations - requires iterator';
+		} else if (typeof sourceSize === 'number' && sourceSize < 1000 && terminal === 'all') {
+			reason = 'Small array with full terminal - eager is acceptable';
+		} else {
+			reason = 'Key-based operations - compiled loop optimal';
+		}
+
+		return {
+			source,
+			sourceSize,
+			ops: [...this.#ops],
+			mode,
+			allCompilable,
+			reason,
+		};
+	}
+
+	/**
+	 * Materialize pending operations - used by non-deferred methods that need
+	 * to work with the current pipeline state.
+	 * @internal
+	 */
+	#materialize(): void {
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			this.#arrayItems = this.#execute();
+			this.#ops = [];
+		}
 	}
 
 	/**
@@ -1129,6 +1574,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Finding
 	 */
 	all(): CK extends 'array' ? T[] : Record<string, T> {
+		// Use automatic mode selection for optimal performance
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			const result = this.#resolve('all') as T[];
+			return result as CK extends 'array' ? T[] : Record<string, T>;
+		}
 		const arr = this.ensureConsumed();
 		if (arr) {
 			return [...arr] as CK extends 'array' ? T[] : Record<string, T>;
@@ -1255,27 +1705,42 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		callback?: ((value: T, key: string) => boolean) | null,
 		defaultValue?: D | (() => D),
 	): T | D | undefined {
-		if (this.#arrayItems) {
-			if (!callback) {
-				if (this.#arrayItems.length > 0) return this.#arrayItems[0];
-				return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+		const resolveDefault = () => (typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue);
+
+		// No callback - use automatic mode selection for optimal performance
+		if (!callback) {
+			if (this.#ops.length > 0 && this.#arrayItems) {
+				const result = this.#resolve('first') as T | undefined;
+				return result !== undefined ? result : resolveDefault();
 			}
+			if (this.#arrayItems) {
+				return this.#arrayItems.length > 0 ? this.#arrayItems[0] : resolveDefault();
+			}
+			const keys = Object.keys(this.items);
+			return keys.length > 0 ? this.items[keys[0]] : resolveDefault();
+		}
+
+		// Has callback - execute pipeline first, then apply callback
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			const executed = this.#execute();
+			for (let i = 0; i < executed.length; i++) {
+				if (callback(executed[i], String(i))) return executed[i];
+			}
+			return resolveDefault();
+		}
+
+		if (this.#arrayItems) {
 			for (let i = 0; i < this.#arrayItems.length; i++) {
 				if (callback(this.#arrayItems[i], String(i))) return this.#arrayItems[i];
 			}
-			return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+			return resolveDefault();
 		}
-		if (!callback) {
-			const keys = Object.keys(this.items);
-			if (keys.length > 0) {
-				return this.items[keys[0]];
-			}
-			return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
-		}
+
+		// Object-based collection with callback
 		for (const [key, value] of Object.entries(this.items)) {
 			if (callback(value, key)) return value;
 		}
-		return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+		return resolveDefault();
 	}
 
 	/**
@@ -1311,6 +1776,19 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 		callback?: ((value: T, key: string) => boolean) | null,
 		defaultValue?: D | (() => D),
 	): T | D | undefined {
+		// Execute pipeline if we have pending operations
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			const executed = this.#execute();
+			if (!callback) {
+				if (executed.length > 0) return executed[executed.length - 1];
+				return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+			}
+			for (let i = executed.length - 1; i >= 0; i--) {
+				if (callback(executed[i], String(i))) return executed[i];
+			}
+			return typeof defaultValue === 'function' ? (defaultValue as () => D)() : defaultValue;
+		}
+
 		if (this.#arrayItems) {
 			if (!callback) {
 				if (this.#arrayItems.length > 0) return this.#arrayItems[this.#arrayItems.length - 1];
@@ -1363,6 +1841,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Finding
 	 */
 	keys(): Collection<string> {
+		this.#materialize();
 		if (this.#arrayItems) {
 			return new Collection(this.#arrayItems.map((_, i) => String(i)));
 		}
@@ -1391,6 +1870,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Finding
 	 */
 	values(): Collection<T> {
+		this.#materialize();
 		if (this.#arrayItems) {
 			return new Collection([...this.#arrayItems]);
 		}
@@ -1426,6 +1906,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Transforming
 	 */
 	map<U>(callback: (value: T, key: CollectionKey<CK>) => U): Collection<U, CK> {
+		this.#materialize();
 		if (this.#arrayItems) {
 			return new Collection(this.#arrayItems.map((v, k) => callback(v, k as CollectionKey<CK>))) as Collection<U, CK>;
 		}
@@ -1664,6 +2145,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	filter<S extends T>(callback: (value: T, key: CollectionKey<CK>) => value is S): Collection<S, CK>;
 	filter(callback?: (value: T, key: CollectionKey<CK>) => boolean): Collection<T, CK>;
 	filter(callback?: (value: T, key: CollectionKey<CK>) => boolean): Collection<T, CK> {
+		this.#materialize();
 		const arr = this.ensureConsumed();
 		if (arr) {
 			const cb = callback ? (v: T, k: number) => callback(v, k as CollectionKey<CK>) : Boolean;
@@ -2962,6 +3444,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Aggregating
 	 */
 	count(): number {
+		// Use automatic mode selection for optimal performance
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			return this.#resolve('count') as number;
+		}
 		if (this.#arrayItems) {
 			return this.#arrayItems.length;
 		}
@@ -3029,6 +3515,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Aggregating
 	 */
 	sum(keyOrCallback?: ValueRetriever<T, number>): number {
+		// Execute pipeline if we have pending operations
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			const executed = this.#execute();
+			const retriever = valueRetriever(keyOrCallback);
+			let total = 0;
+			for (let i = 0; i < executed.length; i++) {
+				const num = retriever(executed[i], i);
+				if (typeof num === 'number' && !Number.isNaN(num)) {
+					total += num;
+				}
+			}
+			return total;
+		}
+
 		if (this.#arrayItems) {
 			const len = this.#arrayItems.length;
 			if (len === 0) return 0;
@@ -3122,6 +3622,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Aggregating
 	 */
 	avg(keyOrCallback?: ValueRetriever<T, number>): number | null {
+		// Execute pipeline if we have pending operations
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			const executed = this.#execute();
+			if (executed.length === 0) return null;
+			const retriever = valueRetriever(keyOrCallback);
+			let total = 0;
+			let count = 0;
+			for (let i = 0; i < executed.length; i++) {
+				const num = retriever(executed[i], i);
+				if (typeof num === 'number' && !Number.isNaN(num)) {
+					total += num;
+					count++;
+				}
+			}
+			return count > 0 ? total / count : null;
+		}
+
 		if (this.#arrayItems) {
 			const len = this.#arrayItems.length;
 			if (len === 0) return null;
@@ -3233,7 +3750,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	min(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever(keyOrCallback);
 		let min: number | null = null;
-		const items = this.#arrayItems ?? Object.values(this.items);
+		// Execute pipeline if we have pending operations
+		const items =
+			this.#ops.length > 0 && this.#arrayItems ? this.#execute() : (this.#arrayItems ?? Object.values(this.items));
 		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
 		for (let i = 0; i < items.length; i++) {
 			const num = retriever(items[i], keys[i]);
@@ -3271,7 +3790,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	max(keyOrCallback?: ValueRetriever<T, number>): number | null {
 		const retriever = valueRetriever(keyOrCallback);
 		let max: number | null = null;
-		const items = this.#arrayItems ?? Object.values(this.items);
+		// Execute pipeline if we have pending operations
+		const items =
+			this.#ops.length > 0 && this.#arrayItems ? this.#execute() : (this.#arrayItems ?? Object.values(this.items));
 		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
 		for (let i = 0; i < items.length; i++) {
 			const num = retriever(items[i], keys[i]);
@@ -4132,15 +4653,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 			// Single pass: group items directly into raw arrays
 			for (let i = 0; i < len; i++) {
 				const item = arr[i];
-				let gk = item[k] as unknown;
-				if (typeof gk === 'boolean') {
-					gk = gk ? '1' : '0';
-				} else if (gk === null || gk === undefined) {
-					gk = '';
-				} else {
-					gk = String(gk);
-				}
-				const key = gk as string;
+				const gk = item[k];
+				// Fast path for string keys (most common case)
+				const key = typeof gk === 'string' ? gk : gk === true ? '1' : gk === false ? '0' : gk == null ? '' : String(gk);
 				let group = rawGroups[key];
 				if (!group) {
 					group = [];
@@ -4517,6 +5032,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Sorting
 	 */
 	sortBy(callback: ValueRetriever<T, unknown>, _options?: number, descending = false): Collection<T> {
+		// Fast path: string key on array-backed collection
+		if (this.#arrayItems && typeof callback === 'string' && !callback.includes('.')) {
+			return this.#extend({ type: 'sort', key: callback, descending, compilable: true }) as Collection<T>;
+		}
 		const retriever = valueRetriever(callback as ValueRetriever<T, unknown>);
 		if (this.#arrayItems) {
 			const indexed = this.#arrayItems.map((v, i) => ({ v, i }));
@@ -4674,6 +5193,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Filtering
 	 */
 	skip(count: number): Collection<T> {
+		// Fast path: positive count on array-backed collection
+		if (this.#arrayItems && count > 0) {
+			return this.#extend({ type: 'skip', n: count, compilable: true }) as Collection<T>;
+		}
 		return this.slice(count);
 	}
 
@@ -4791,6 +5314,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Filtering
 	 */
 	take(limit: number): Collection<T> {
+		// Fast path: positive limit on array-backed collection
+		if (this.#arrayItems && limit > 0) {
+			return this.#extend({ type: 'take', n: limit, compilable: true }) as Collection<T>;
+		}
 		if (limit < 0) {
 			return this.slice(limit);
 		}
@@ -5312,6 +5839,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	pluck<P extends Path<T>>(path: P): Collection<PathValue<T, P>, CK>;
 	pluck<P extends Path<T>, K extends Path<T>>(path: P, key: K): Collection<PathValue<T, P>, 'assoc'>;
 	pluck<P extends Path<T>>(path: P, key?: Path<T>): Collection<PathValue<T, P>, CollectionKind> {
+		this.#materialize();
 		// Fast path: simple key without dots on array-backed collection
 		if (this.#arrayItems && typeof path === 'string' && !path.includes('.')) {
 			const p = path as keyof T;
@@ -5954,19 +6482,18 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Filtering
 	 */
 	where(key: string, operatorOrValue?: WhereOperator | unknown, value?: unknown): Collection<T, CK> {
-		// Fast path: simple key on array-backed collection
+		// Fast path: simple key on array-backed collection - use deferred execution
 		if (this.#arrayItems && key && !key.includes('.')) {
-			const k = key as keyof T;
 			// where(key, value) - equality check
 			if (value === undefined && operatorOrValue !== undefined) {
-				return new Collection(arrayFilterByKey(this.#arrayItems, k, operatorOrValue, '==')) as Collection<T, CK>;
+				return this.#extend({ type: 'filter', key, value: operatorOrValue, operator: '==', compilable: true });
 			}
 			// where(key, operator, value)
 			if (value !== undefined) {
-				const op = (operatorOrValue as WhereOperator | '===') || '==';
-				return new Collection(arrayFilterByKey(this.#arrayItems, k, value, op)) as Collection<T, CK>;
+				const op = (operatorOrValue as string) || '==';
+				return this.#extend({ type: 'filter', key, value, operator: op, compilable: true });
 			}
-			// where(key) with no value - fall through
+			// where(key) with no value - fall through to filter
 		}
 		return this.filter(operatorForWhere(key, operatorOrValue, value) as (value: T, key: CollectionKey<CK>) => boolean);
 	}
@@ -5984,6 +6511,10 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Filtering
 	 */
 	whereStrict(key: string, value: unknown): Collection<T, CK> {
+		// Fast path: simple key on array-backed collection
+		if (this.#arrayItems && key && !key.includes('.')) {
+			return this.#extend({ type: 'filter', key, value, operator: '===', compilable: true });
+		}
 		return this.filter((item) => dataGet(item, key) === value);
 	}
 
@@ -6013,6 +6544,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Filtering
 	 */
 	whereIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
+		// Fast path: simple key on array-backed collection with strict mode
+		if (this.#arrayItems && key && !key.includes('.') && strict) {
+			const set = new Set(values);
+			return this.#extend({ type: 'filterSet', key, values: set, include: true, compilable: true });
+		}
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
 			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
@@ -6069,6 +6605,11 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Filtering
 	 */
 	whereNotIn(key: string, values: unknown[], strict = false): Collection<T, CK> {
+		// Fast path: simple key on array-backed collection with strict mode
+		if (this.#arrayItems && key && !key.includes('.') && strict) {
+			const set = new Set(values);
+			return this.#extend({ type: 'filterSet', key, values: set, include: false, compilable: true });
+		}
 		return this.filter((item) => {
 			const retrieved = dataGet(item, key);
 			// biome-ignore lint/suspicious/noDoubleEquals: loose comparison by design
@@ -6586,6 +7127,16 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @category Aggregating
 	 */
 	toArray(): T[] | Record<string, T> {
+		// Execute pipeline if we have pending operations
+		if (this.#ops.length > 0 && this.#arrayItems) {
+			const executed = this.#execute();
+			const result: unknown[] = [];
+			for (const val of executed) {
+				result.push(val instanceof Collection ? val.toArray() : val);
+			}
+			return result as T[];
+		}
+
 		const items = this.#arrayItems ?? Object.values(this.items);
 		const keys = this.#arrayItems ? items.map((_, i) => String(i)) : Object.keys(this.items);
 
