@@ -38,28 +38,31 @@ collect([1, 2, 3, 4, 5])
 // → 24
 ```
 
-## Common Operations
+## Tree-Shaking
 
-| Task | Method |
-|------|--------|
-| Filter items | [`where()`](/collections/filtering#where), [`filter()`](/collections/filtering#filter) |
-| Extract values | [`pluck()`](/collections/transforming#pluck) |
-| Group data | [`groupBy()`](/collections/grouping#groupby) |
-| Get first match | [`first()`](/collections/finding#first), [`firstWhere()`](/collections/finding#firstwhere) |
-| Aggregate | [`sum()`](/collections/aggregating#sum), [`avg()`](/collections/aggregating#avg) |
+Add the plugin:
 
-## LazyCollection for Large Datasets
+::: code-group
+```ts [Vite]
+import { vite as collectionPlugin } from 'collect-ts/plugin';
 
-Process millions of items without loading everything into memory:
-
-```typescript
-collect(hugeDataset)
-    .lazy()
-    .filter(item => item.active)
-    .take(100)
-    .all()
-// → [first 100 active items]
+export default { plugins: [collectionPlugin()] };
 ```
+
+```ts [Rollup]
+import { rollup as collectionPlugin } from 'collect-ts/plugin';
+
+export default { plugins: [collectionPlugin()] };
+```
+
+```js [Webpack]
+const { webpack: collectionPlugin } = require('collect-ts/plugin');
+
+module.exports = { plugins: [collectionPlugin()] };
+```
+:::
+
+Ships only the methods you call. Typical bundle: ~14 KB gzipped. See the [Tree-Shaking Guide](/guide/tree-shaking) for Next.js, Nuxt, esbuild, and manual approaches.
 
 ## What's next
 

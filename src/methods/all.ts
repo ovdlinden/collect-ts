@@ -5,28 +5,19 @@
 import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
- * The `all` method returns the underlying array or object represented by the collection.
+ * The `all` method returns the underlying array or object represented by the collection:
  *
  * @returns The underlying items as an array or object
  *
- * @example With an array:
+ * @example
  * collect([1, 2, 3])
  *     .all()
  * // → [1, 2, 3]
  *
- * @example With an object:
+ * @example
  * collect({ name: 'Taylor', role: 'Developer' })
  *     .all()
  * // → { name: 'Taylor', role: 'Developer' }
- *
- * @example After transformations:
- * collect([1, 2, 3])
- *     .map(n => n * 2)
- *     .all()
- * // → [2, 4, 6]
- *
- * @see {@link toArray} - Always returns an array (values only)
- * @see {@link values} - Get values as a new collection
  *
  * @category Finding
  */
@@ -43,8 +34,8 @@ export const allMethod: MethodDefinition<'all'> = {
 };
 
 /**
- * The `toArray` method converts the collection into a plain array.
- * For associative collections, only the values are returned.
+ * The `toArray` method converts the collection into a plain array. For
+ * associative collections, only the values are returned:
  *
  * @returns Plain array of values
  *
@@ -53,13 +44,10 @@ export const allMethod: MethodDefinition<'all'> = {
  *     .toArray()
  * // → [1, 2, 3]
  *
- * @example From an object (values only):
+ * @example
  * collect({ a: 1, b: 2, c: 3 })
  *     .toArray()
  * // → [1, 2, 3]
- *
- * @see {@link all} - Returns array or object depending on collection type
- * @see {@link values} - Get values as a new collection
  *
  * @category Finding
  */

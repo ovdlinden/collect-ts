@@ -5,7 +5,7 @@
 
 ### median()
 
-Returns the median value of a given key.
+The **median** method returns the median value of a given key.
 The median is the middle value when all values are sorted in order.
 For collections with an even number of items, it returns the average of the two middle values.
 
@@ -41,7 +41,7 @@ To get the mean (average), use [`avg`](#avg). To get most frequent value, use [`
 
 ### mode()
 
-Returns the mode value of a given key.
+The **mode** method returns the mode value of a given key.
 The mode is the value that appears most often. If multiple values appear
 with the same frequency, all of them are returned.
 
@@ -78,7 +78,7 @@ To get the middle value, use [`median`](#median). To get the mean (average), use
 
 ### count()
 
-Returns the total number of items in the collection.
+The **count** method returns the total number of items in the collection.
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -117,7 +117,7 @@ To calculate average instead, use [`avg`](#avg). To get minimum value, use [`min
 
 ### avg()
 
-Returns the average value of a given key.
+The **avg** method returns the average value of a given key.
 
 ```typescript
 collect([1, 2, 3])
@@ -142,7 +142,7 @@ To get total instead of average, use [`sum`](#sum). To get minimum value, use [`
 
 ### average()
 
-Returns the average value of a given key.
+The **average** method returns the average value of a given key.
 This is an alias for the {@link avg} method.
 
 ```typescript
@@ -180,7 +180,7 @@ To primary method, use [`avg`](#avg). To sum all values, use [`sum`](#sum).
 
 ### min()
 
-Returns the minimum value of a given key.
+The **min** method returns the minimum value of a given key.
 
 ```typescript
 collect([3, 1, 2])
@@ -205,7 +205,7 @@ To get maximum value, use [`max`](#max). To get average value, use [`avg`](#avg)
 
 ### max()
 
-Returns the maximum value of a given key.
+The **max** method returns the maximum value of a given key.
 
 ```typescript
 collect([1, 2, 3])
@@ -230,7 +230,7 @@ To get minimum value, use [`min`](#min). To get average value, use [`avg`](#avg)
 
 ### percentage()
 
-May be used to quickly determine the percentage of
+The **percentage** method may be used to quickly determine the percentage of
 items in the collection that pass a given truth test.
 
 ```typescript
@@ -265,7 +265,7 @@ To count items, use [`count`](#count). To filter matching items, use [`filter`](
 
 ### implode()
 
-Joins items in a collection.
+The **implode** method joins items in a collection.
 
 Its arguments depend on the type of items in the collection. If the collection contains
 arrays or objects, pass the key of the attribute you wish to join, and the "glue" string.
@@ -308,9 +308,9 @@ To join with a final separator, use [`join`](#join). To convert to comma-separat
 
 ### join()
 
-Joins the collection's values with a string.
+The **join** method joins the collection's values with a string.
 
-Using its second argument, also specify how the final element should be appended,
+Using its second argument, you may also specify how the final element should be appended,
 which is useful for natural-language formatting like "and" or "or".
 
 ```typescript
@@ -341,7 +341,7 @@ To join by property or callback, use [`implode`](#implode). To convert to comma-
 
 ### reduce()
 
-Reduces the collection to a single value, passing the result of each
+The **reduce** method reduces the collection to a single value, passing the result of each
 iteration into the subsequent iteration.
 
 The value for the accumulator on the first iteration is the initial value; on subsequent
@@ -373,7 +373,7 @@ To reduce with spread arguments, use [`reduceSpread`](#reducespread). To same as
 
 ### reduceSpread()
 
-Reduces the collection to multiple values using spread arguments.
+The **reduceSpread** method reduces the collection to multiple values using spread arguments.
 
 Calculate sum and product together:
 
@@ -392,7 +392,7 @@ To single accumulator, use [`reduce`](#reduce). To reduce by mutating an object,
 
 ### reduceWithKeys()
 
-Reduces the collection with access to both value and key.
+The **reduceWithKeys** method reduces the collection with access to both value and key.
 
 This method works identically to `reduce` since the key is always provided as the third
 argument. It exists for API compatibility with Laravel.
@@ -414,7 +414,7 @@ To primary reduce method, use [`reduce`](#reduce).
 
 ### reduceInto()
 
-Reduces the collection into an existing object, mutating it.
+The **reduceInto** method reduces the collection into an existing object, mutating it.
 
 Unlike `reduce`, the callback does not return a value. Instead, it modifies the carry
 object directly. The same object is returned at the end.

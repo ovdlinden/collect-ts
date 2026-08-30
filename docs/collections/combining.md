@@ -5,7 +5,7 @@
 
 ### zip()
 
-Merges together the values of the given array with the values
+The **zip** method merges together the values of the given array with the values
 of the original collection at their corresponding index.
 
 ```typescript
@@ -30,7 +30,7 @@ To use values as keys/values, use [`combine`](#combine).
 
 ### diff()
 
-Compares the collection against another array or collection
+The **diff** method compares the collection against another array or collection
 based on its values. This method returns the values in the original collection
 that are not present in the given collection.
 
@@ -56,7 +56,7 @@ To compare by keys, use [`diffKeys`](#diffkeys). To compare by key and value, us
 
 ### diffUsing()
 
-Compares the collection against another array or collection
+The **diffUsing** method compares the collection against another array or collection
 using a callback for comparison. The callback should return 0 when two values are
 considered equal.
 
@@ -77,7 +77,7 @@ To compare using default equality, use [`diff`](#diff).
 
 ### diffKeys()
 
-Compares the collection against another array or collection
+The **diffKeys** method compares the collection against another array or collection
 based on its keys. This method returns the key/value pairs in the original collection
 that are not present in the given collection.
 
@@ -94,7 +94,7 @@ To compare by values, use [`diff`](#diff). To compare by key and value, use [`di
 
 ### diffKeysUsing()
 
-Compares the collection against another array or collection
+The **diffKeysUsing** method compares the collection against another array or collection
 based on its keys using a callback. The callback should return 0 when two keys are
 considered equal.
 
@@ -115,7 +115,7 @@ To compare keys using default equality, use [`diffKeys`](#diffkeys).
 
 ### diffAssoc()
 
-Compares the collection against another array or collection
+The **diffAssoc** method compares the collection against another array or collection
 based on its keys and values. This method returns the key/value pairs in the original
 collection that are not present in the given collection.
 
@@ -132,7 +132,7 @@ To compare by values only, use [`diff`](#diff). To compare by keys only, use [`d
 
 ### diffAssocUsing()
 
-Compares the collection against another array or collection
+The **diffAssocUsing** method compares the collection against another array or collection
 based on its keys and values, using a callback for key comparison. The callback should
 return 0 when two keys are considered equal.
 
@@ -153,7 +153,7 @@ To compare using default key equality, use [`diffAssoc`](#diffassoc). To compare
 
 ### intersect()
 
-Removes any values from the original collection that are not
+The **intersect** method removes any values from the original collection that are not
 present in the given array or collection.
 
 ```typescript
@@ -178,7 +178,7 @@ To intersect by keys, use [`intersectByKeys`](#intersectbykeys). To get values N
 
 ### intersectUsing()
 
-Removes values not present in the given array or collection,
+The **intersectUsing** method removes values not present in the given array or collection,
 using a callback for comparison. The callback should return 0 when two values are
 considered equal.
 
@@ -199,7 +199,7 @@ To intersect using default equality, use [`intersect`](#intersect).
 
 ### intersectAssoc()
 
-Compares the collection against another array or collection,
+The **intersectAssoc** method compares the collection against another array or collection,
 returning key/value pairs that are present in both. Unlike `intersect`, this method
 considers both keys and values when determining matches.
 
@@ -218,7 +218,7 @@ To intersect by values only, use [`intersect`](#intersect). To intersect by keys
 
 ### intersectAssocUsing()
 
-Compares the collection against another array or collection
+The **intersectAssocUsing** method compares the collection against another array or collection
 based on both keys and values, using a callback for key comparison. The callback should
 return 0 when two keys are considered equal.
 
@@ -239,7 +239,7 @@ To intersect using default key equality, use [`intersectAssoc`](#intersectassoc)
 
 ### intersectByKeys()
 
-Removes any keys from the original collection that are
+The **intersectByKeys** method removes any keys from the original collection that are
 not present in the given array or collection.
 
 ```typescript
@@ -255,7 +255,7 @@ To intersect by values, use [`intersect`](#intersect). To get keys NOT in the ot
 
 ### merge()
 
-Merges the given array or collection with the original collection.
+The **merge** method merges the given array or collection with the original collection.
 If a string key in the given items matches a string key in the original collection,
 the given item's value will overwrite the value in the original collection.
 
@@ -281,7 +281,7 @@ To keeping original values for duplicate keys, use [`union`](#union). To merge n
 
 ### mergeRecursive()
 
-Merges the given array or collection recursively with
+The **mergeRecursive** method merges the given array or collection recursively with
 the original collection. If a string key in the given items matches a string key
 in the original collection, then the values for these keys are merged together
 into an array, and this is done recursively.
@@ -310,7 +310,7 @@ To shallow merge (overwrites nested objects), use [`merge`](#merge). To similar 
 
 ### union()
 
-Adds the given array to the collection. If the given array
+The **union** method adds the given array to the collection. If the given array
 contains keys that are already in the original collection, the original
 collection's values will be preferred.
 
@@ -327,7 +327,7 @@ To overwrites existing keys, use [`merge`](#merge). To use values as keys, use [
 
 ### combine()
 
-Combines the values of the collection, as keys, with the
+The **combine** method combines the values of the collection, as keys, with the
 values of another array or collection.
 
 ```typescript
@@ -352,7 +352,7 @@ To merge collections element-by-element, use [`zip`](#zip). To create key/value 
 
 ### crossJoin()
 
-Cross joins the collection's values among the given
+The **crossJoin** method cross joins the collection's values among the given
 arrays or collections, returning a Cartesian product with all possible permutations.
 
 Two-way cross join:
@@ -383,7 +383,7 @@ To pair by index instead of creating all combinations, use [`zip`](#zip).
 
 ### concat()
 
-Appends the given array or collection's values onto the end
+The **concat** method appends the given array or collection's values onto the end
 of another collection. Unlike `merge`, this method does not consider keys and
 simply appends all values to the end.
 
@@ -408,7 +408,7 @@ To merge with key consideration, use [`merge`](#merge). To append single items (
 
 ### replace()
 
-Replaces items in the collection by key. Existing keys will be
+The **replace** method replaces items in the collection by key. Existing keys will be
 overwritten with the new values. This is useful for merging settings or configurations
 where you want to ensure certain keys are updated.
 
@@ -436,7 +436,7 @@ To merge without replacing by numeric key, use [`merge`](#merge). To replace nes
 
 ### replaceRecursive()
 
-Works like `replace`, but it will recurse into
+The **replaceRecursive** method works like `replace`, but it will recurse into
 nested objects and apply the same replacement process to the inner values.
 
 Recursive replacement:
@@ -456,7 +456,7 @@ To shallow replacement, use [`replace`](#replace). To similar but merges arrays 
 
 ### with()
 
-Pairs the collection with a related collection, creating a
+The **with** method pairs the collection with a related collection, creating a
 WithCollection that allows ORM-style operations where each primary item can be
 processed alongside filtered related items.
 

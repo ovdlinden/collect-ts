@@ -13,7 +13,6 @@ const site = {
 };
 
 const sidebar: DefaultTheme.SidebarItem[] = [
-	{ text: 'Introduction', link: '/' },
 	{ text: 'Quick Start', link: '/00-quickstart' },
 	{
 		text: 'Guide',
@@ -21,6 +20,7 @@ const sidebar: DefaultTheme.SidebarItem[] = [
 			{ text: 'TypeScript', link: '/01-typescript' },
 			{ text: 'Common Patterns', link: '/02-patterns' },
 			{ text: 'LazyCollection', link: '/03-lazy' },
+			{ text: 'Tree-Shaking', link: '/guide/tree-shaking' },
 			{ text: 'Performance', link: '/05-benchmarks' },
 			{
 				text: 'Coming From...',
@@ -47,6 +47,10 @@ const sidebar: DefaultTheme.SidebarItem[] = [
 			{ text: 'Combining', link: '/collections/combining' },
 			{ text: 'Checking', link: '/collections/checking' },
 		],
+	},
+	{
+		text: 'Advanced',
+		items: [{ text: 'Extending Collections', link: '/collections/extending' }],
 	},
 ];
 

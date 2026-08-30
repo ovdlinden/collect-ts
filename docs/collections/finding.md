@@ -5,9 +5,7 @@
 
 ### all()
 
-Returns the underlying array or object represented by the collection.
-
-With an array:
+The **all** method returns the underlying array or object represented by the collection:
 
 ```typescript
 collect([1, 2, 3])
@@ -15,30 +13,17 @@ collect([1, 2, 3])
 // → [1, 2, 3]
 ```
 
-With an object:
-
 ```typescript
 collect({ name: 'Taylor', role: 'Developer' })
     .all()
 // → { name: 'Taylor', role: 'Developer' }
 ```
 
-After transformations:
-
-```typescript
-collect([1, 2, 3])
-    .map(n => n * 2)
-    .all()
-// → [2, 4, 6]
-```
-
-To always returns an array (values only), use [`toArray`](#toarray). To get values as a new collection, use [`values`](#values).
-
 ---
 
 ### get()
 
-Returns the item at a given key. If the key does not exist,
+The **get** method returns the item at a given key. If the key does not exist,
 `null` is returned. Optionally, pass a default value as the second argument.
 
 ```typescript
@@ -71,13 +56,13 @@ collect({ user: { name: 'Taylor' } })
 // → 'Taylor'
 ```
 
-To get and remove from collection, use [`pull`](#pull). To get first item, use [`first`](#first).
+To to get and remove from collection, use [`pull`](#pull). To to get first item, use [`first`](#first).
 
 ---
 
 ### getOrPut()
 
-Retrieves the value for the given key. If the key does not
+The **getOrPut** method retrieves the value for the given key. If the key does not
 exist, the default value is stored in the collection and returned.
 
 ```typescript
@@ -100,9 +85,9 @@ To get without setting default, use [`get`](#get). To set value by key, use [`pu
 
 ### first()
 
-Returns the first element in the collection that passes a given truth test.
+The **first** method returns the first element in the collection that passes a given truth test.
 
-With no arguments, returns the first element. If the collection
+You may also call the method with no arguments to get the first element. If the collection
 is empty, the default value or undefined is returned.
 
 ```typescript
@@ -133,9 +118,9 @@ To get the last item instead, use [`last`](#last). To throwing when no item foun
 
 ### last()
 
-Returns the last element in the collection that passes a given truth test.
+The **last** method returns the last element in the collection that passes a given truth test.
 
-With no arguments, returns the last element. If the collection
+You may also call the method with no arguments to get the last element. If the collection
 is empty, the default value or undefined is returned.
 
 ```typescript
@@ -158,7 +143,7 @@ To get the first item instead, use [`first`](#first). To remove and return the l
 
 ### keys()
 
-Returns all of the collection's keys as a new collection.
+The **keys** method returns all of the collection's keys as a new collection.
 For array-backed collections, this returns the numeric indices as strings.
 
 For an associative collection:
@@ -181,7 +166,7 @@ To get all values, use [`values`](#values). To check if a key exists, use [`has`
 
 ### values()
 
-Returns all of the collection's values as a new
+The **values** method returns all of the collection's values as a new
 collection with reset, sequential integer keys.
 
 For an associative collection:
@@ -206,8 +191,8 @@ To get all keys, use [`keys`](#keys). To get the raw underlying data, use [`all`
 
 ### slice()
 
-Returns a slice of the collection starting at the
-given index. Pass a second argument to limit the size of the
+The **slice** method returns a slice of the collection starting at the
+given index. You may pass a second argument to limit the size of the
 returned slice.
 
 ```typescript
@@ -235,7 +220,7 @@ To take items from beginning or end, use [`take`](/collections/filtering#take). 
 
 ### pull()
 
-Removes and returns an item from the collection by its key.
+The **pull** method removes and returns an item from the collection by its key.
 This method modifies the collection in place.
 
 ```typescript
@@ -260,7 +245,7 @@ To get without removing, use [`get`](#get). To remove without returning, use [`f
 
 ### search()
 
-Searches the collection for the given value and returns
+The **search** method searches the collection for the given value and returns
 its key if found. If the item is not found, `false` is returned.
 
 ```typescript
@@ -294,7 +279,7 @@ To check if value exists, use [`contains`](/collections/filtering#contains). To 
 
 ### toString()
 
-Returns the collection as a string representation.
+The **toString** method returns the collection as a string representation.
 For arrays, items are joined with commas. For objects, returns JSON.
 
 With array:
@@ -319,7 +304,7 @@ To join with custom separator, use [`join`](/collections/aggregating#join). To j
 
 ### sole()
 
-Returns the first element in the collection that passes
+The **sole** method returns the first element in the collection that passes
 a given truth test, but only if exactly one element matches. If no elements
 match or more than one element matches, an exception is thrown.
 
@@ -351,7 +336,7 @@ To get first without uniqueness check, use [`first`](#first). To get first, thro
 
 ### firstOrFail()
 
-Returns the first element in the collection, or throws
+The **firstOrFail** method returns the first element in the collection, or throws
 an exception if the collection is empty.
 
 ```typescript
@@ -382,7 +367,7 @@ To returns undefined instead of throwing, use [`first`](#first). To requires exa
 
 ### nth()
 
-Returns every n-th element of the collection.
+The **nth** method returns every n-th element of the collection.
 
 ```typescript
 collect([1, 2, 3, 4, 5, 6])
@@ -406,7 +391,7 @@ To filter with custom callback, use [`filter`](/collections/filtering#filter). T
 
 ### random()
 
-Returns a random item from the collection.
+The **random** method returns a random item from the collection.
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -428,7 +413,7 @@ To randomize entire collection, use [`shuffle`](/collections/sorting#shuffle). T
 
 ### firstWhere()
 
-Returns the first element in the collection with the
+The **firstWhere** method returns the first element in the collection with the
 given key/value pair.
 
 ```typescript
@@ -458,8 +443,8 @@ To get first item with callback, use [`first`](#first). To get all matching item
 
 ### toArray()
 
-Converts the collection into a plain array.
-For associative collections, only the values are returned.
+The **toArray** method converts the collection into a plain array. For
+associative collections, only the values are returned:
 
 ```typescript
 collect([1, 2, 3])
@@ -467,21 +452,17 @@ collect([1, 2, 3])
 // → [1, 2, 3]
 ```
 
-From an object (values only):
-
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
     .toArray()
 // → [1, 2, 3]
 ```
 
-To returns array or object depending on collection type, use [`all`](#all). To get values as a new collection, use [`values`](#values).
-
 ---
 
 ### toJson()
 
-Converts the collection into a JSON serialized string.
+The **toJson** method converts the collection into a JSON serialized string.
 
 ```typescript
 collect({ name: 'Taylor', age: 25 })
@@ -503,7 +484,7 @@ To format with indentation, use [`toPrettyJson`](#toprettyjson). To get raw item
 
 ### toPrettyJson()
 
-Converts the collection into a formatted JSON string
+The **toPrettyJson** method converts the collection into a formatted JSON string
 with indentation for readability.
 
 ```typescript
@@ -526,7 +507,7 @@ To compact JSON, use [`toJson`](#tojson).
 
 ### value()
 
-Retrieves a given value from the first element of the collection.
+The **value** method retrieves a given value from the first element of the collection.
 
 ```typescript
 collect([
@@ -551,7 +532,7 @@ To get values from all items, use [`pluck`](/collections/transforming#pluck). To
 
 ### offsetGet()
 
-Returns the value at a given offset.
+The **offsetGet** method returns the value at a given offset.
 
 Part of the ArrayAccess interface for bracket-style access. Unlike
 `get()`, this method does not support default values and returns
@@ -577,7 +558,7 @@ To primary method with default value support, use [`get`](#get). To check if key
 
 ### after()
 
-Returns the item after the given item.
+The **after** method returns the item after the given item.
 Returns null if the item is not found or is the last item.
 
 ```typescript
@@ -612,7 +593,7 @@ To get the item before, use [`before`](#before). To find item's key, use [`searc
 
 ### before()
 
-Returns the item before the given item.
+The **before** method returns the item before the given item.
 Returns null if the item is not found or is the first item.
 
 ```typescript

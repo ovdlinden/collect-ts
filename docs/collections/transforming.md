@@ -5,7 +5,7 @@
 
 ### range()
 
-Creates a collection containing numbers within a specified range.
+The **range** method creates a collection containing numbers within a specified range.
 
 Works in both directions: ascending when `from < to`, descending otherwise.
 
@@ -29,7 +29,7 @@ To generate by calling a function N times, use [`times`](#times).
 
 ### times()
 
-Creates a new collection by invoking the given closure a specified number of times.
+The **times** method creates a new collection by invoking the given closure a specified number of times.
 
 The callback receives 1-based indices (1, 2, 3...). Without a callback,
 returns a collection of numbers 1 through N.
@@ -54,7 +54,7 @@ To generate a range between two numbers, use [`range`](#range).
 
 ### map()
 
-Iterates over the collection and passes each value to the given callback.
+The **map** method iterates over the collection and passes each value to the given callback.
 The callback is free to modify the item and return it, thus forming a new collection of
 modified items.
 
@@ -81,7 +81,7 @@ To extract a single property by key, use [`pluck`](#pluck). To transform and cha
 
 ### mapWithKeys()
 
-Iterates through the collection and passes each value
+The **mapWithKeys** method iterates through the collection and passes each value
 to the given callback. The callback should return an associative array containing
 a single key/value pair.
 
@@ -100,7 +100,7 @@ To transform values keeping original keys, use [`map`](#map). To key by a proper
 
 ### mapToDictionary()
 
-Runs the given callback over each item and groups
+The **mapToDictionary** method runs the given callback over each item and groups
 the returned values by their keys.
 
 ```typescript
@@ -120,7 +120,7 @@ To similar but returns nested Collections, use [`mapToGroups`](#maptogroups). To
 
 ### mapToGroups()
 
-Groups the collection's items by the given callback.
+The **mapToGroups** method groups the collection's items by the given callback.
 The callback returns a [key, value] tuple that determines the grouping.
 
 ```typescript
@@ -139,7 +139,7 @@ To similar but returns plain arrays, use [`mapToDictionary`](#maptodictionary). 
 
 ### mapInto()
 
-Iterates over the collection and creates a new instance
+The **mapInto** method iterates over the collection and creates a new instance
 of the given class for each item, passing the item value and key to the constructor.
 
 ```typescript
@@ -160,7 +160,7 @@ To transform with arbitrary callback, use [`map`](#map). To pass entire collecti
 
 ### mapSpread()
 
-Iterates over the collection's items, passing each nested
+The **mapSpread** method iterates over the collection's items, passing each nested
 item value into the given callback as separate arguments.
 
 ```typescript
@@ -199,7 +199,7 @@ To transform without flattening, use [`map`](#map). To flatten without mapping, 
 
 ### collapse()
 
-Collapses a collection of arrays into a single, flat collection.
+The **collapse** method collapses a collection of arrays into a single, flat collection.
 It merges the elements of nested arrays or Collections into one level.
 
 ```typescript
@@ -222,7 +222,7 @@ To recursively flatten to any depth, use [`flatten`](#flatten). To map then coll
 
 ### collapseWithKeys()
 
-Collapses a collection of arrays into a single, flat
+The **collapseWithKeys** method collapses a collection of arrays into a single, flat
 collection while preserving the original keys.
 
 ```typescript
@@ -241,8 +241,8 @@ To collapse without preserving keys, use [`collapse`](#collapse). To flatten nes
 
 ### flatten()
 
-Flattens a multi-dimensional collection into a single dimension.
-Optionally, pass a depth argument to limit how many levels deep the flattening
+The **flatten** method flattens a multi-dimensional collection into a single dimension.
+You may optionally pass a depth argument to limit how many levels deep the flattening
 should go.
 
 To flatten all levels:
@@ -267,7 +267,7 @@ To flatten by exactly one level, use [`collapse`](#collapse). To flatten to dot 
 
 ### flip()
 
-Swaps the collection's keys with their corresponding values. Values
+The **flip** method swaps the collection's keys with their corresponding values. Values
 are converted to strings since object keys must be strings.
 
 ```typescript
@@ -290,7 +290,7 @@ To get just the keys, use [`keys`](/collections/finding#keys). To get just the v
 
 ### pad()
 
-Fills the array with the given value until the array reaches
+The **pad** method fills the array with the given value until the array reaches
 the specified size. This method behaves like PHP's `array_pad` function.
 
 To pad to the left, specify a negative size. No padding occurs if the absolute
@@ -329,7 +329,7 @@ To take items from start or end, use [`take`](/collections/filtering#take). To i
 
 ### put()
 
-Sets the given key and value in the collection.
+The **put** method sets the given key and value in the collection.
 This method modifies the collection in place.
 
 ```typescript
@@ -354,7 +354,7 @@ To append to end of array, use [`push`](#push). To add to beginning, use [`prepe
 
 ### push()
 
-Appends an item to the end of the collection.
+The **push** method appends an item to the end of the collection.
 This method modifies the collection in place.
 
 ```typescript
@@ -379,7 +379,7 @@ To add to beginning, use [`prepend`](#prepend). To set by key, use [`put`](#put)
 
 ### prepend()
 
-Adds an item to the beginning of the collection.
+The **prepend** method adds an item to the beginning of the collection.
 This method modifies the collection in place.
 
 ```typescript
@@ -404,7 +404,7 @@ To add to end, use [`push`](#push). To remove from beginning, use [`shift`](#shi
 
 ### unshift()
 
-Adds one or more items to the beginning of the collection.
+The **unshift** method adds one or more items to the beginning of the collection.
 
 ```typescript
 collect([3, 4, 5])
@@ -419,7 +419,7 @@ To add single item to beginning, use [`prepend`](#prepend). To add to end, use [
 
 ### pop()
 
-Removes and returns the last item from the collection.
+The **pop** method removes and returns the last item from the collection.
 This method modifies the collection in place.
 
 ```typescript
@@ -446,7 +446,7 @@ To add to end, use [`push`](#push). To remove from beginning, use [`shift`](#shi
 
 ### shift()
 
-Removes and returns the first item from the collection.
+The **shift** method removes and returns the first item from the collection.
 This method modifies the collection in place.
 
 ```typescript
@@ -473,7 +473,7 @@ To add to beginning, use [`prepend`](#prepend). To remove from end, use [`pop`](
 
 ### add()
 
-Appends an item to the end of the collection.
+The **add** method appends an item to the end of the collection.
 This is an alias for {@link push}.
 
 ```typescript
@@ -489,7 +489,7 @@ To add to end, use [`push`](#push). To add to beginning, use [`prepend`](#prepen
 
 ### forget()
 
-Removes an item from the collection by its key.
+The **forget** method removes an item from the collection by its key.
 This method modifies the collection in place. Unlike `except`, this method
 modifies the collection directly.
 
@@ -517,7 +517,7 @@ To return new collection without keys (immutable), use [`except`](/collections/f
 
 ### select()
 
-Selects the given keys from the collection, similar to
+The **select** method selects the given keys from the collection, similar to
 an SQL SELECT statement.
 
 ```typescript
@@ -567,7 +567,7 @@ To transform items with full callback control, use [`map`](#map). To get first i
 
 ### transform()
 
-Iterates over the collection and calls the given callback
+The **transform** method iterates over the collection and calls the given callback
 with each item in the collection. The items in the collection will be replaced
 by the values returned by the callback. Unlike `map`, this method modifies the
 collection in place.
@@ -603,7 +603,7 @@ To transform without mutation (returns new collection), use [`map`](#map). To it
 
 ### multiply()
 
-Creates multiple copies of all items in the collection.
+The **multiply** method creates multiple copies of all items in the collection.
 
 ```typescript
 collect([1, 2])
@@ -618,8 +618,8 @@ To pad to a specific size, use [`pad`](#pad).
 
 ### splice()
 
-Removes and returns a slice of items starting at the
-specified index. Pass a second argument to limit the size of the
+The **splice** method removes and returns a slice of items starting at the
+specified index. You may pass a second argument to limit the size of the
 removed slice, and a third argument containing replacement items.
 This method modifies the original collection.
 
@@ -656,7 +656,7 @@ To extract without mutation, use [`slice`](/collections/finding#slice). To take 
 
 ### dot()
 
-Flattens a multi-dimensional collection into a single level
+The **dot** method flattens a multi-dimensional collection into a single level
 collection that uses "dot" notation to indicate depth. This is useful for
 working with nested configuration or form data.
 
@@ -687,7 +687,7 @@ To expand dot notation back to nested structure, use [`undot`](#undot). To flatt
 
 ### undot()
 
-Expands a single-level collection that uses "dot" notation
+The **undot** method expands a single-level collection that uses "dot" notation
 into a multi-dimensional collection. This is the inverse of the `dot` method.
 
 ```typescript
@@ -721,7 +721,7 @@ To flatten to dot notation, use [`dot`](#dot).
 
 ### each()
 
-Iterates over the items in the collection and passes each item to a closure.
+The **each** method iterates over the items in the collection and passes each item to a closure.
 
 If you would like to stop iterating through the items, you may return false from your closure.
 
@@ -749,7 +749,7 @@ To execute callback on entire collection, use [`tap`](#tap). To transform items 
 
 ### eachSpread()
 
-Iterates over the collection's items, passing each nested
+The **eachSpread** method iterates over the collection's items, passing each nested
 item value into the given callback as separate arguments.
 
 ```typescript
@@ -787,7 +787,7 @@ To transform with spread arguments, use [`mapSpread`](#mapspread). To iterate wi
 
 ### collect()
 
-Returns a new Collection instance with the current items.
+The **collect** method returns a new Collection instance with the current items.
 This is useful when you want to break the chain and get a fresh collection,
 or convert a subclass back to a base Collection.
 
@@ -816,7 +816,7 @@ To convert subclass to base Collection, use [`toBase`](#tobase).
 
 ### toBase()
 
-Returns a base Collection instance from the current collection.
+The **toBase** method returns a base Collection instance from the current collection.
 This is useful when working with collection subclasses and you need to ensure
 you have a standard Collection instance.
 
@@ -835,7 +835,7 @@ To create a new collection copy, use [`collect`](#collect).
 
 ### pipe()
 
-Passes the collection to the given closure and returns the result
+The **pipe** method passes the collection to the given closure and returns the result
 of the executed closure. This is useful for wrapping the collection in custom logic
 or breaking out of the method chain when needed.
 
@@ -872,7 +872,7 @@ To execute callback but return collection unchanged, use [`tap`](#tap). To pass 
 
 ### pipeInto()
 
-Creates a new instance of the given class and passes the
+The **pipeInto** method creates a new instance of the given class and passes the
 collection into the constructor. This is useful for wrapping the collection in
 domain-specific objects or adapters.
 
@@ -893,7 +893,7 @@ To pass collection to a callback, use [`pipe`](#pipe). To create instances from 
 
 ### pipeThrough()
 
-Passes the collection through a series of callbacks and
+The **pipeThrough** method passes the collection through a series of callbacks and
 returns the final result. Each callback receives the result of the previous callback,
 creating a pipeline of transformations.
 
@@ -943,7 +943,7 @@ To execute callback for each item, use [`each`](#each). To transform and return 
 
 ### dump()
 
-Outputs the collection's items to the console and returns the
+The **dump** method outputs the collection's items to the console and returns the
 collection, allowing you to inspect the contents at any point in a method chain
 without interrupting the flow.
 
@@ -976,7 +976,7 @@ To dump and halt execution, use [`dd`](#dd). To execute any callback mid-chain, 
 
 ### dd()
 
-Outputs the collection's items to the console and then throws
+The **dd** method outputs the collection's items to the console and then throws
 an error to halt script execution. This is useful for debugging when you want
 to inspect the collection and stop processing. The name comes from "dump and die."
 
@@ -1001,7 +1001,7 @@ To dump without halting, use [`dump`](#dump).
 
 ### when()
 
-Executes the given callback when the first argument evaluates to true.
+The **when** method executes the given callback when the first argument evaluates to true.
 The collection instance and the resolved value are passed to the closure.
 An optional second callback is executed when the condition is falsy.
 
@@ -1044,7 +1044,7 @@ To execute when condition is falsy, use [`unless`](#unless). To execute when col
 
 ### unless()
 
-Executes the given callback when the first argument evaluates to false.
+The **unless** method executes the given callback when the first argument evaluates to false.
 This is the inverse of the `when` method. An optional second callback is executed when
 the condition is truthy.
 
@@ -1084,7 +1084,7 @@ To execute when condition is truthy, use [`when`](#when). To execute when collec
 
 ### whenEmpty()
 
-Executes the given callback when the collection is empty.
+The **whenEmpty** method executes the given callback when the collection is empty.
 An optional second callback is executed when the collection is not empty.
 
 To provide defaults for an empty collection:
@@ -1110,7 +1110,7 @@ To execute when collection has items, use [`whenNotEmpty`](#whennotempty). To ex
 
 ### whenNotEmpty()
 
-Executes the given callback when the collection is not empty.
+The **whenNotEmpty** method executes the given callback when the collection is not empty.
 An optional second callback is executed when the collection is empty.
 
 To process only if items exist:
@@ -1142,7 +1142,7 @@ To execute when collection is empty, use [`whenEmpty`](#whenempty). To alias for
 
 ### unlessEmpty()
 
-Executes the given callback when the collection is not empty.
+The **unlessEmpty** method executes the given callback when the collection is not empty.
 This is an alias for {@link whenNotEmpty}.
 
 ```typescript
@@ -1167,7 +1167,7 @@ To canonical method, use [`whenNotEmpty`](#whennotempty). To execute when collec
 
 ### unlessNotEmpty()
 
-Executes the given callback when the collection is empty.
+The **unlessNotEmpty** method executes the given callback when the collection is empty.
 This is an alias for {@link whenEmpty}.
 
 To provide a default value for empty results:
@@ -1194,7 +1194,7 @@ To canonical method, use [`whenEmpty`](#whenempty). To execute when collection i
 
 ### offsetSet()
 
-Sets the value at a given offset.
+The **offsetSet** method sets the value at a given offset.
 
 Part of the ArrayAccess interface for bracket-style assignment. If the key is `null`,
 the value is appended to the collection (like `push`). This method modifies the
@@ -1233,7 +1233,7 @@ To primary method for setting values, use [`put`](#put). To append to collection
 
 ### offsetUnset()
 
-Removes the value at a given offset.
+The **offsetUnset** method removes the value at a given offset.
 
 Part of the ArrayAccess interface for bracket-style deletion. This method modifies
 the collection in place. For arrays, this does not re-index the remaining items.
@@ -1262,7 +1262,7 @@ To primary method for removing items, use [`forget`](#forget). To remove and ret
 
 ### lazy()
 
-Returns a new LazyCollection instance from the underlying items.
+The **lazy** method returns a new LazyCollection instance from the underlying items.
 
 This is particularly useful when you need to perform transformations on a large collection
 and want to defer processing until the items are actually needed. LazyCollection only
@@ -1311,7 +1311,7 @@ To convert back to eager Collection, use [`collect`](#collect).
 
 ### mapWithKey()
 
-Iterates through the collection with access to a related
+The **mapWithKey** method iterates through the collection with access to a related
 collection, allowing transformation based on related data.
 
 To simple transformation, use [`map`](#map). To transform and change keys, use [`mapWithKeys`](#mapwithkeys).

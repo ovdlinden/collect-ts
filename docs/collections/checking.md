@@ -5,7 +5,7 @@
 
 ### containsStrict()
 
-Determines if the collection contains a given item
+The **containsStrict** method determines if the collection contains a given item
 using strict comparison (`===`).
 
 ```typescript
@@ -36,7 +36,7 @@ To loose equality, use [`contains`](/collections/filtering#contains). To negatio
 
 ### doesntContain()
 
-Determines if the collection does not contain a given item.
+The **doesntContain** method determines if the collection does not contain a given item.
 This is the inverse of {@link contains}.
 
 ```typescript
@@ -67,7 +67,7 @@ To check if item exists, use [`contains`](/collections/filtering#contains). To s
 
 ### doesntContainStrict()
 
-Determines if the collection does not contain
+The **doesntContainStrict** method determines if the collection does not contain
 a given item using strict comparison.
 
 ```typescript
@@ -82,7 +82,7 @@ To loose comparison, use [`doesntContain`](#doesntcontain). To inverse check, us
 
 ### has()
 
-Determines if one or more keys exist in the collection.
+The **has** method determines if one or more keys exist in the collection.
 When checking multiple keys, all must exist for the method to return true.
 
 Single key:
@@ -123,7 +123,7 @@ To true if ANY key exists, use [`hasAny`](#hasany). To get value at key, use [`g
 
 ### hasAny()
 
-Determines if any of the given keys exist in the collection.
+The **hasAny** method determines if any of the given keys exist in the collection.
 Returns true if at least one key exists.
 
 ```typescript
@@ -146,7 +146,7 @@ To true only if ALL keys exist, use [`has`](#has). To check if value exists, use
 
 ### isEmpty()
 
-Returns `true` if the collection is empty; otherwise, `false` is returned.
+The **isEmpty** method returns `true` if the collection is empty; otherwise, `false` is returned.
 
 ```typescript
 collect([])
@@ -176,7 +176,7 @@ To inverse check, use [`isNotEmpty`](#isnotempty). To get number of items, use [
 
 ### isNotEmpty()
 
-Returns `true` if the collection is not empty; otherwise, `false` is returned.
+The **isNotEmpty** method returns `true` if the collection is not empty; otherwise, `false` is returned.
 
 ```typescript
 collect([1, 2, 3])
@@ -198,7 +198,7 @@ To inverse check, use [`isEmpty`](#isempty). To get number of items, use [`count
 
 ### containsOneItem()
 
-Returns `true` if the collection contains exactly one item.
+The **containsOneItem** method returns `true` if the collection contains exactly one item.
 
 ```typescript
 collect([1])
@@ -228,7 +228,7 @@ To get number of items, use [`count`](/collections/aggregating#count). To check 
 
 ### hasMany()
 
-Determines if multiple items exist in the collection
+The **hasMany** method determines if multiple items exist in the collection
 that match the given criteria.
 
 ```typescript
@@ -263,7 +263,7 @@ To check for exactly one, use [`hasSole`](#hassole). To get exact count, use [`c
 
 ### hasSole()
 
-Determines if exactly one item exists in the collection
+The **hasSole** method determines if exactly one item exists in the collection
 that matches the given criteria.
 
 ```typescript
@@ -298,7 +298,7 @@ To get the sole item (throws if not exactly one), use [`sole`](/collections/find
 
 ### every()
 
-Verifies that all elements of the collection pass a given truth test.
+The **every** method verifies that all elements of the collection pass a given truth test.
 
 Returns `true` if the callback returns truthy for every item. If the collection is
 empty, **every** returns `true` (vacuous truth).
@@ -333,7 +333,7 @@ To checking if any item passes, use [`some`](#some). To check if a specific valu
 
 ### some()
 
-Is an alias for the `contains` method.
+The **some** method is an alias for the `contains` method.
 
 It determines whether the collection contains any items that pass the given truth test.
 This method is useful for developers coming from JavaScript's Array.some() convention.
@@ -350,7 +350,7 @@ To primary method (identical behavior), use [`contains`](/collections/filtering#
 
 ### offsetExists()
 
-Determines if a key exists at the given offset.
+The **offsetExists** method determines if a key exists at the given offset.
 
 This method implements the ArrayAccess interface pattern, allowing bracket-style
 key existence checks. It is used internally for array-like access.
@@ -375,7 +375,7 @@ To primary method for key existence checks, use [`has`](#has). To get value at o
 
 ### ensure()
 
-May be used to verify that all elements of a collection
+The **ensure** method may be used to verify that all elements of a collection
 are of a given type or list of types. Otherwise, an exception will be thrown.
 
 With primitive type:

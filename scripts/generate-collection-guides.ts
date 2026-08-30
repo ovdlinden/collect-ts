@@ -363,31 +363,6 @@ function parseJSDoc(source: string): MethodDoc[] {
 		const selfRefPattern = new RegExp(`\`${methodName}\``, 'g');
 		description = description.replace(selfRefPattern, `**${methodName}**`);
 
-		// Remove "The **methodName** method" opener - just start with what it does
-		// "The **avg** method returns the average" → "Returns the average"
-		const methodOpenerPattern = new RegExp(`^The \\*\\*${methodName}\\*\\* method\\s+`, 'i');
-		if (methodOpenerPattern.test(description)) {
-			description = description.replace(methodOpenerPattern, '');
-			// Capitalize first letter
-			description = description.charAt(0).toUpperCase() + description.slice(1);
-		}
-
-		// Replace "You may also" hedging with direct phrasing
-		description = description.replace(/You may also pass/g, 'Pass');
-		description = description.replace(/you may also pass/g, 'pass');
-		description = description.replace(/You may pass/g, 'Pass');
-		description = description.replace(/you may pass/g, 'pass');
-		description = description.replace(
-			/You may also call the method with no arguments to get/g,
-			'With no arguments, returns',
-		);
-		description = description.replace(/You may also call/g, 'Call');
-		description = description.replace(/You may also/g, 'Also');
-		description = description.replace(/you may also/g, 'also');
-		description = description.replace(/You may optionally pass/g, 'Optionally, pass');
-		description = description.replace(/You may specify/g, 'Specify');
-		description = description.replace(/You may chain/g, 'Chain');
-
 		// Extract examples with prose
 		const examples: ExampleBlock[] = [];
 		const exampleRegex = /@example\s*([\s\S]*?)(?=\s*\*\s*@|\s*\*\/)/g;

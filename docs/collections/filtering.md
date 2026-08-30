@@ -5,7 +5,7 @@
 
 ### filter()
 
-Filters the collection using the given callback, keeping only
+The **filter** method filters the collection using the given callback, keeping only
 items that pass a given truth test. If no callback is supplied, all falsy values
 (`false`, `null`, `undefined`, `0`, `''`) are removed.
 
@@ -29,7 +29,7 @@ To the inverse (keeps items that fail), use [`reject`](#reject). To filter by ke
 
 ### reject()
 
-Filters the collection using the given callback, removing
+The **reject** method filters the collection using the given callback, removing
 items that pass the truth test. It is the inverse of the `filter` method.
 
 ```typescript
@@ -52,7 +52,7 @@ To the inverse (keeps items that pass), use [`filter`](#filter). To excluding it
 
 ### contains()
 
-Determines whether the collection contains a given item.
+The **contains** method determines whether the collection contains a given item.
 
 Uses loose equality (`==`) to match Laravel behavior. Note that JS differs from PHP:
 `0 == false`, `null == undefined`, `"" == 0`.
@@ -91,7 +91,7 @@ To strict equality (`===`), use [`containsStrict`](/collections/checking#contain
 
 ### duplicates()
 
-Retrieves and returns duplicate values from the collection.
+The **duplicates** method retrieves and returns duplicate values from the collection.
 
 ```typescript
 collect(['a', 'b', 'a', 'c', 'b'])
@@ -119,7 +119,7 @@ To strict comparison, use [`duplicatesStrict`](#duplicatesstrict). To get unique
 
 ### duplicatesStrict()
 
-Retrieves duplicate values from the collection using strict
+The **duplicatesStrict** method retrieves duplicate values from the collection using strict
 equality (`===`). Unlike `duplicates`, this method distinguishes between values like `1` and `'1'`.
 
 ```typescript
@@ -163,7 +163,7 @@ To loose equality comparison, use [`duplicates`](#duplicates). To remove duplica
 
 ### except()
 
-Returns all items in the collection except for those with the specified keys.
+The **except** method returns all items in the collection except for those with the specified keys.
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -177,7 +177,7 @@ To include only specified keys, use [`only`](#only). To filter by custom callbac
 
 ### only()
 
-Returns the items in the collection with the specified keys.
+The **only** method returns the items in the collection with the specified keys.
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -191,7 +191,7 @@ To exclude specified keys, use [`except`](#except). To pick specific properties 
 
 ### skip()
 
-Returns a new collection without the first N items.
+The **skip** method returns a new collection without the first N items.
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -205,7 +205,7 @@ To take the first N items, use [`take`](#take). To skip and take in one call, us
 
 ### skipUntil()
 
-Skips items until the given callback returns true,
+The **skipUntil** method skips items until the given callback returns true,
 then returns the remaining items.
 
 ```typescript
@@ -230,7 +230,7 @@ To skip while condition is true, use [`skipWhile`](#skipwhile). To take until co
 
 ### skipWhile()
 
-Skips items while the given callback returns true,
+The **skipWhile** method skips items while the given callback returns true,
 then returns the remaining items.
 
 ```typescript
@@ -246,8 +246,8 @@ To skip until condition is true, use [`skipUntil`](#skipuntil). To take while co
 
 ### take()
 
-Returns a new collection with the specified number of
-items. Pass a negative integer to take that many items from the
+The **take** method returns a new collection with the specified number of
+items. You may pass a negative integer to take that many items from the
 end of the collection.
 
 ```typescript
@@ -270,7 +270,7 @@ To skip the first N items, use [`skip`](#skip). To skip and take in one call, us
 
 ### takeUntil()
 
-Returns items until the given callback returns true.
+The **takeUntil** method returns items until the given callback returns true.
 
 ```typescript
 collect([1, 2, 3, 4])
@@ -294,7 +294,7 @@ To take while condition is true, use [`takeWhile`](#takewhile). To skip until co
 
 ### takeWhile()
 
-Returns items while the given callback returns true.
+The **takeWhile** method returns items while the given callback returns true.
 Once the callback returns false, it stops.
 
 ```typescript
@@ -310,7 +310,7 @@ To take until condition is true, use [`takeUntil`](#takeuntil). To skip while co
 
 ### unique()
 
-Returns all of the unique items in the collection.
+The **unique** method returns all of the unique items in the collection.
 
 When dealing with nested objects, you may specify a key used to determine uniqueness.
 
@@ -341,7 +341,7 @@ To strict equality (always), use [`uniqueStrict`](#uniquestrict). To get the dup
 
 ### uniqueStrict()
 
-Has the same signature as the `unique` method
+The **uniqueStrict** method has the same signature as the `unique` method
 but uses strict comparison (`===`) to filter unique values.
 
 ```typescript
@@ -366,13 +366,13 @@ To loose equality comparison, use [`unique`](#unique). To find duplicates using 
 
 ### where()
 
-Filters the collection by a given key/value pair.
+The **where** method filters the collection by a given key/value pair.
 
 The method uses "loose" comparisons when checking item values, meaning
 a string with an integer value will be considered equal to an integer
 of the same value. Use the `whereStrict` method for strict comparisons.
 
-Optionally, pass a comparison operator as the second argument.
+You may optionally pass a comparison operator as the second argument.
 Supported operators: `=`, `==`, `!=`, `<>`, `<`, `>`, `<=`, `>=`.
 
 ```typescript
@@ -413,7 +413,7 @@ To strict type comparisons, use [`whereStrict`](#wherestrict). To matching again
 
 ### whereStrict()
 
-Filters the collection by a given key/value pair using strict
+The **whereStrict** method filters the collection by a given key/value pair using strict
 comparison (`===`). Unlike `where`, this method distinguishes between values like `1` and `'1'`.
 
 ```typescript
@@ -447,7 +447,7 @@ To loose equality comparison, use [`where`](#where). To match against array of v
 
 ### whereIn()
 
-Filters the collection by a given key/value contained within the given array.
+The **whereIn** method filters the collection by a given key/value contained within the given array.
 
 ```typescript
 collect([
@@ -468,7 +468,7 @@ To excluding items in an array, use [`whereNotIn`](#wherenotin). To match single
 
 ### whereInStrict()
 
-Filters the collection using strict comparison.
+The **whereInStrict** method filters the collection using strict comparison.
 
 ```typescript
 collect([
@@ -486,7 +486,7 @@ To loose comparison, use [`whereIn`](#wherein). To inverse, use [`whereNotInStri
 
 ### whereNotIn()
 
-Filters the collection by a given key/value not contained within the given array.
+The **whereNotIn** method filters the collection by a given key/value not contained within the given array.
 
 ```typescript
 collect([
@@ -507,7 +507,7 @@ To include items matching array, use [`whereIn`](#wherein). To exclude by callba
 
 ### whereNotInStrict()
 
-Filters the collection using strict comparison.
+The **whereNotInStrict** method filters the collection using strict comparison.
 
 ```typescript
 collect([
@@ -525,7 +525,7 @@ To loose comparison, use [`whereNotIn`](#wherenotin). To inverse, use [`whereInS
 
 ### whereBetween()
 
-Filters the collection by determining if a specified
+The **whereBetween** method filters the collection by determining if a specified
 item value is within a given range (inclusive).
 
 ```typescript
@@ -565,7 +565,7 @@ To exclude items within a range, use [`whereNotBetween`](#wherenotbetween). To f
 
 ### whereNotBetween()
 
-Filters the collection by determining if a specified item value
+The **whereNotBetween** method filters the collection by determining if a specified item value
 is outside of a given range.
 
 ```typescript
@@ -606,7 +606,7 @@ To include items within a range, use [`whereBetween`](#wherebetween). To filter 
 
 ### whereNull()
 
-Filters the collection by determining if a specified
+The **whereNull** method filters the collection by determining if a specified
 item value is null or undefined.
 
 ```typescript
@@ -638,7 +638,7 @@ To filter items that are not null, use [`whereNotNull`](#wherenotnull). To filte
 
 ### whereNotNull()
 
-Filters the collection by determining if a specified
+The **whereNotNull** method filters the collection by determining if a specified
 item value is not null and not undefined.
 
 ```typescript
@@ -667,7 +667,7 @@ To filter items that are null, use [`whereNull`](#wherenull). To filter with cus
 
 ### whereInstanceOf()
 
-Filters the collection by a given class type,
+The **whereInstanceOf** method filters the collection by a given class type,
 keeping only items that are instances of the specified class.
 
 ```typescript
@@ -685,7 +685,7 @@ To filter with a custom callback, use [`filter`](#filter).
 
 ### forPage()
 
-Returns a new collection containing the items that
+The **forPage** method returns a new collection containing the items that
 would be present on a given page number.
 
 ```typescript

@@ -23,7 +23,7 @@ To split into N groups, use [`split`](#split). To create overlapping windows, us
 
 ### chunkWhile()
 
-Breaks the collection into multiple, smaller collections
+The **chunkWhile** method breaks the collection into multiple, smaller collections
 based on the evaluation of the given callback.
 
 Group consecutive ascending numbers:
@@ -54,7 +54,7 @@ To fixed-size chunks, use [`chunk`](#chunk). To group by key/callback, use [`gro
 
 ### split()
 
-Breaks a collection into the given number of groups,
+The **split** method breaks a collection into the given number of groups,
 distributing extra items across earlier groups to balance sizes.
 
 ```typescript
@@ -79,7 +79,7 @@ To split with fewer groups allowed, use [`splitIn`](#splitin). To fixed-size chu
 
 ### splitIn()
 
-Breaks a collection into the given number of groups,
+The **splitIn** method breaks a collection into the given number of groups,
 filling non-terminal groups completely before allocating the remainder
 to the final group.
 
@@ -96,7 +96,7 @@ To balanced distribution, use [`split`](#split). To fixed-size chunks, use [`chu
 
 ### countBy()
 
-Counts the occurrences of values in the collection.
+The **countBy** method counts the occurrences of values in the collection.
 By default it counts by the value itself, but you can pass a callback or
 property key to count by a derived grouping key.
 
@@ -212,7 +212,7 @@ To split into multiple groups, use [`groupBy`](#groupby). To keep only passing i
 
 ### sliding()
 
-Returns a new collection of chunks representing a
+The **sliding** method returns a new collection of chunks representing a
 "sliding window" view of the items in the collection.
 
 Default size=2, step=1:

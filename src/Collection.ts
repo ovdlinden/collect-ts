@@ -1343,7 +1343,7 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 
 	/**
 	 * The `make` method creates a new collection instance from the given items.
-	 * This is equivalent to calling `new Collection()` or the `collect()` helper.
+	 * You may pass an array, an object, or an existing collection:
 	 *
 	 * @param items - Array, object, or existing collection
 	 * @returns New collection
@@ -1352,12 +1352,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Collection.make([1, 2, 3])
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example From an object:
+	 * @example
 	 * Collection.make({ name: 'Taylor', role: 'admin' })
 	 * // → Collection { name: 'Taylor', role: 'admin' }
-	 *
-	 * @see {@link wrap} - wrapping non-collection values
-	 * @see {@link empty} - creating an empty collection
 	 *
 	 * @category Creating
 	 */
@@ -1366,27 +1363,23 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * The `wrap` method wraps the given value in a collection when applicable.
-	 * Arrays and iterables are converted directly, single values become a
-	 * one-element collection, and existing collections pass through unchanged.
+	 * The `wrap` method will wrap the given value in a collection. If the given
+	 * value is already a collection, it will be returned unchanged:
 	 *
 	 * @param value - Value to wrap
 	 * @returns Collection containing the value
 	 *
-	 * @example For an array:
+	 * @example
 	 * Collection.wrap([1, 2, 3])
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example For a single value:
+	 * @example If the given value is a single item, it becomes a one-element collection:
 	 * Collection.wrap('hello')
 	 * // → Collection ['hello']
 	 *
-	 * @example An existing collection passes through unchanged:
+	 * @example If the value is already a collection, it is returned unchanged:
 	 * Collection.wrap(collect([1, 2]))
 	 * // → Collection [1, 2]
-	 *
-	 * @see {@link unwrap} - extracting the underlying array
-	 * @see {@link make} - creating from items directly
 	 *
 	 * @category Creating
 	 */
@@ -1404,23 +1397,20 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * The `unwrap` method returns the underlying array from the given value
-	 * when possible. If the value is already an array, it is returned as-is.
-	 * If the value is a collection, the underlying array is extracted.
+	 * The `unwrap` method returns the underlying items from the given value.
+	 * If the value is a collection, the underlying array is returned. If the
+	 * value is already an array, it is returned unchanged:
 	 *
 	 * @param value - Collection or array to unwrap
 	 * @returns Plain array
 	 *
-	 * @example To unwrap a collection:
+	 * @example
 	 * Collection.unwrap(collect([1, 2, 3]))
 	 * // → [1, 2, 3]
 	 *
-	 * @example If already an array, it passes through:
+	 * @example
 	 * Collection.unwrap([1, 2, 3])
 	 * // → [1, 2, 3]
-	 *
-	 * @see {@link wrap} - wrapping a value in a collection
-	 * @see {@link all} - getting items from an instance
 	 *
 	 * @category Creating
 	 */
@@ -1439,8 +1429,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * The `empty` method creates an empty collection. This is useful when you
-	 * need a typed empty collection as a starting point for building up items.
+	 * The `empty` method returns an empty collection. This is useful when you
+	 * need a typed empty collection as a starting point:
 	 *
 	 * @returns Empty collection
 	 *
@@ -1448,12 +1438,9 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * Collection.empty()
 	 * // → Collection []
 	 *
-	 * @example For a typed empty collection:
+	 * @example You may specify a type parameter for type safety:
 	 * Collection.empty<User>()
 	 * // → Collection<User> []
-	 *
-	 * @see {@link make} - creating with items
-	 * @see {@link isEmpty} - checking if a collection is empty
 	 *
 	 * @category Creating
 	 */
@@ -1531,21 +1518,18 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	}
 
 	/**
-	 * The `fromJson` method creates a collection from a JSON string. The string
-	 * must be valid JSON representing either an array or an object.
+	 * The `fromJson` method creates a collection from a JSON string:
 	 *
 	 * @param json - Valid JSON array or object string
 	 * @returns Collection from parsed JSON
 	 *
-	 * @example From JSON array:
+	 * @example
 	 * Collection.fromJson('[1, 2, 3]')
 	 * // → Collection [1, 2, 3]
 	 *
-	 * @example From JSON object:
+	 * @example
 	 * Collection.fromJson('{"a": 1, "b": 2}')
 	 * // → Collection {a: 1, b: 2}
-	 *
-	 * @see {@link toJson} - converting collection to JSON
 	 *
 	 * @category Creating
 	 */

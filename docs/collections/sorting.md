@@ -5,7 +5,7 @@
 
 ### reverse()
 
-Reverses the order of the collection's items, preserving the
+The **reverse** method reverses the order of the collection's items, preserving the
 original keys.
 
 ```typescript
@@ -20,7 +20,7 @@ To sort items, use [`sort`](#sort). To sort in descending order, use [`sortDesc`
 
 ### shuffle()
 
-Randomly shuffles the items in the collection.
+The **shuffle** method randomly shuffles the items in the collection.
 
 Uses the Fisher-Yates algorithm for unbiased shuffling.
 
@@ -36,7 +36,7 @@ To get random item(s), use [`random`](/collections/finding#random). To sort item
 
 ### sort()
 
-Sorts the collection. The sorted collection keeps the original
+The **sort** method sorts the collection. The sorted collection keeps the original
 array keys for associative collections, but resets numeric keys for array collections.
 
 ```typescript
@@ -70,7 +70,7 @@ To sort in descending order, use [`sortDesc`](#sortdesc). To sort by a key or ca
 
 ### sortDesc()
 
-Sorts the collection in descending order.
+The **sortDesc** method sorts the collection in descending order.
 
 ```typescript
 collect([1, 3, 2, 5, 4])
@@ -94,7 +94,7 @@ To sort in ascending order, use [`sort`](#sort). To sort by key in descending or
 
 ### sortBy()
 
-Sorts the collection by the given key.
+The **sortBy** method sorts the collection by the given key.
 
 The sorted collection keeps the original array keys, so in the following example
 we will use the `values` method to reset the keys to consecutively numbered indexes.
@@ -131,7 +131,7 @@ To sort in descending order, use [`sortByDesc`](#sortbydesc). To sort with custo
 
 ### sortByDesc()
 
-Sorts the collection in the opposite order as the `sortBy` method.
+The **sortByDesc** method sorts the collection in the opposite order as the `sortBy` method.
 
 This method has the same signature as `sortBy`, but will sort in descending order.
 
@@ -167,7 +167,7 @@ To sort in ascending order, use [`sortBy`](#sortby). To sort simple values desce
 
 ### sortKeys()
 
-Sorts the collection by its keys.
+The **sortKeys** method sorts the collection by its keys.
 
 ```typescript
 collect({ b: 2, a: 1, c: 3 })
@@ -182,7 +182,7 @@ To sort keys in descending order, use [`sortKeysDesc`](#sortkeysdesc). To sort b
 
 ### sortKeysDesc()
 
-Sorts the collection by its keys in descending order.
+The **sortKeysDesc** method sorts the collection by its keys in descending order.
 
 ```typescript
 collect({ a: 1, c: 3, b: 2 })
@@ -197,7 +197,7 @@ To sort keys in ascending order, use [`sortKeys`](#sortkeys). To sort values in 
 
 ### sortKeysUsing()
 
-Sorts the collection by its keys using a callback.
+The **sortKeysUsing** method sorts the collection by its keys using a callback.
 The callback should return a negative, zero, or positive integer based on comparison.
 
 Numeric string sorting:
