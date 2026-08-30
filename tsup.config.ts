@@ -6,6 +6,9 @@ export default defineConfig({
 		'src/core/index.ts',
 		'src/fn/index.ts',
 		'src/methods/index.ts',
+		'src/plugin/index.ts',
+		'src/plugin/transform.ts',
+		'src/plugin/webpack-loader.ts',
 		// Individual method modules for tree-shaking
 		'src/methods/avg.ts',
 		'src/methods/chunk.ts',

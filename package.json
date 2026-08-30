@@ -26,6 +26,10 @@
 		"./methods/*": {
 			"types": "./dist/methods/*.d.ts",
 			"import": "./dist/methods/*.js"
+		},
+		"./plugin": {
+			"types": "./dist/plugin/index.d.ts",
+			"import": "./dist/plugin/index.js"
 		}
 	},
 	"files": [
