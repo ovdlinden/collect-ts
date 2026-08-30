@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';
@@ -105,7 +106,7 @@ export default defineConfig({
 	},
 
 	vite: {
-		plugins: [groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
+		plugins: [tailwindcss(), groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
 	},
 
 	ignoreDeadLinks: [/^https:\/\/laravel\.com/],

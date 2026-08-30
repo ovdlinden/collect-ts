@@ -1,0 +1,120 @@
+/**
+ * Design System Tokens - Single Source of Truth
+ * All design tokens, theme configuration, and CSS variable mappings
+ */
+
+@import "tailwindcss";
+
+/* Tell Tailwind which files to scan for utilities */
+@source "../components/**/*.vue";
+@source "../../**/*.md";
+@source "../**/*.ts";
+
+/* Configure dark mode for VitePress's .dark class */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+	/* Typography */
+	--font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+		"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco,
+		Consolas, "Liberation Mono", "Courier New", monospace;
+
+	/* Color palette - Laravel inspired */
+	--color-primary: #ff2d20;
+	--color-primary-soft: rgba(255, 45, 32, 0.14);
+	--color-success: #00a896;
+	--color-success-soft: rgba(0, 168, 150, 0.14);
+	--color-warning: #f4a261;
+	--color-warning-soft: rgba(244, 162, 97, 0.16);
+	--color-accent: #0077b6;
+	--color-accent-soft: rgba(0, 119, 182, 0.14);
+	--color-neutral: #6b7280;
+	--color-neutral-soft: rgba(107, 114, 128, 0.14);
+
+	/* Animation timing */
+	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--duration-fast: 150ms;
+	--duration-normal: 250ms;
+	--duration-slow: 400ms;
+}
+
+/* Map tokens to VitePress variables */
+:root {
+	--vp-font-family-base: var(--font-sans);
+	--vp-font-family-mono: var(--font-mono);
+
+	/* Brand colors - Laravel red */
+	--vp-c-brand-1: var(--color-primary);
+	--vp-c-brand-2: #e6261a;
+	--vp-c-brand-3: #cc2216;
+	--vp-c-brand-soft: var(--color-primary-soft);
+
+	/* Accent (blue) for special emphasis */
+	--vp-c-accent-1: var(--color-accent);
+	--vp-c-accent-2: #006399;
+	--vp-c-accent-soft: var(--color-accent-soft);
+
+	/* Map doc colors for backwards compat */
+	--doc-c-primary: var(--color-primary);
+	--doc-c-primary-soft: var(--color-primary-soft);
+	--doc-c-success: var(--color-success);
+	--doc-c-success-soft: var(--color-success-soft);
+	--doc-c-warning: var(--color-warning);
+	--doc-c-warning-soft: var(--color-warning-soft);
+	--doc-c-accent: var(--color-accent);
+	--doc-c-accent-soft: var(--color-accent-soft);
+	--doc-c-neutral: var(--color-neutral);
+	--doc-c-neutral-soft: var(--color-neutral-soft);
+
+	/* Custom blocks */
+	--vp-c-tip-1: var(--color-success);
+	--vp-c-tip-2: var(--color-success);
+	--vp-c-tip-3: var(--color-success);
+	--vp-c-tip-soft: var(--color-success-soft);
+
+	--vp-c-warning-1: var(--color-warning);
+	--vp-c-warning-2: var(--color-warning);
+	--vp-c-warning-3: var(--color-warning);
+	--vp-c-warning-soft: var(--color-warning-soft);
+
+	--vp-c-important-1: var(--color-primary);
+	--vp-c-important-2: var(--color-primary);
+	--vp-c-important-3: var(--color-primary);
+	--vp-c-important-soft: var(--color-primary-soft);
+
+	/* Generic green/success aliases */
+	--vp-c-green-1: var(--color-success);
+	--vp-c-green-soft: var(--color-success-soft);
+
+	/* Animation tokens for components */
+	--bench-ease-out-expo: var(--ease-out-expo);
+	--bench-ease-out-quint: var(--ease-out-quint);
+	--bench-ease-spring: var(--ease-spring);
+	--bench-ease-standard: var(--ease-standard);
+	--bench-duration-fast: var(--duration-fast);
+	--bench-duration-normal: var(--duration-normal);
+	--bench-duration-slow: var(--duration-slow);
+	--bench-stagger-row: 40ms;
+}
+
+/* Dark mode overrides */
+.dark {
+	--color-primary: #ff6b61;
+	--color-primary-soft: rgba(255, 107, 97, 0.16);
+	--color-success: #2dd4bf;
+	--color-success-soft: rgba(45, 212, 191, 0.16);
+	--color-warning: #fbbf24;
+	--color-warning-soft: rgba(251, 191, 36, 0.16);
+	--color-accent: #60a5fa;
+	--color-accent-soft: rgba(96, 165, 250, 0.16);
+	--color-neutral: #9ca3af;
+	--color-neutral-soft: rgba(156, 163, 175, 0.16);
+
+	--vp-c-brand-2: #ff4d42;
+	--vp-c-brand-3: #ff3d32;
+	--vp-c-accent-2: #3b82f6;
+}
