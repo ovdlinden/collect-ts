@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { examples, defaultCode, getExamplesByCategory, type Example } from './examples';
 
 const code = ref(defaultCode);
 const output = ref<string>('');
 const error = ref<string>('');
 const isRunning = ref(false);
+const isLoading = ref(true);
 const selectedExample = ref<string>(examples[0].name);
 const editorRef = ref<HTMLDivElement>();
 const autoRun = ref(true);
 
 let editor: any = null;
+let monaco: any = null;
 let runTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const examplesByCategory = computed(() => getExamplesByCategory());
 
-// Load code from URL hash on mount
 onMounted(async () => {
+	// Load code from URL hash
 	const hash = window.location.hash.slice(1);
 	if (hash) {
 		try {
@@ -31,25 +33,34 @@ onMounted(async () => {
 	runCode();
 });
 
+onUnmounted(() => {
+	if (editor) {
+		editor.dispose();
+	}
+});
+
 async function initMonaco() {
 	if (!editorRef.value) return;
 
-	const monaco = await import('monaco-editor');
+	try {
+		// Use the loader to properly initialize Monaco
+		const loader = await import('@monaco-editor/loader');
+		monaco = await loader.default.init();
 
-	// Configure TypeScript
-	monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-		target: monaco.languages.typescript.ScriptTarget.ESNext,
-		moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-		module: monaco.languages.typescript.ModuleKind.ESNext,
-		strict: true,
-		esModuleInterop: true,
-		skipLibCheck: true,
-		lib: ['esnext', 'dom'],
-	});
+		// Configure TypeScript
+		monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+			target: monaco.languages.typescript.ScriptTarget.ESNext,
+			moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+			module: monaco.languages.typescript.ModuleKind.ESNext,
+			strict: true,
+			esModuleInterop: true,
+			skipLibCheck: true,
+			lib: ['esnext', 'dom'],
+		});
 
-	// Add collect-ts type definitions (simplified for playground)
-	monaco.languages.typescript.typescriptDefaults.addExtraLib(
-		`
+		// Add collect-ts type definitions
+		monaco.languages.typescript.typescriptDefaults.addExtraLib(
+			`
 declare function collect<T>(items?: T[] | Record<string, T>): Collection<T>;
 
 interface Collection<T> {
@@ -111,38 +122,45 @@ interface Collection<T> {
   whereNotNull(key: string): Collection<T>;
 }
 `,
-		'collect-ts.d.ts'
-	);
+			'collect-ts.d.ts'
+		);
 
-	// Create editor
-	editor = monaco.editor.create(editorRef.value, {
-		value: code.value,
-		language: 'typescript',
-		theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs',
-		minimap: { enabled: false },
-		fontSize: 14,
-		lineNumbers: 'on',
-		scrollBeyondLastLine: false,
-		automaticLayout: true,
-		tabSize: 2,
-		padding: { top: 16, bottom: 16 },
-		wordWrap: 'on',
-	});
+		// Create editor
+		editor = monaco.editor.create(editorRef.value, {
+			value: code.value,
+			language: 'typescript',
+			theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs',
+			minimap: { enabled: false },
+			fontSize: 14,
+			lineNumbers: 'on',
+			scrollBeyondLastLine: false,
+			automaticLayout: true,
+			tabSize: 2,
+			padding: { top: 16, bottom: 16 },
+			wordWrap: 'on',
+		});
 
-	// Listen for changes
-	editor.onDidChangeModelContent(() => {
-		code.value = editor.getValue();
-		if (autoRun.value) {
-			debouncedRun();
-		}
-	});
+		// Listen for changes
+		editor.onDidChangeModelContent(() => {
+			code.value = editor.getValue();
+			if (autoRun.value) {
+				debouncedRun();
+			}
+		});
 
-	// Watch for theme changes
-	const observer = new MutationObserver(() => {
-		const isDark = document.documentElement.classList.contains('dark');
-		monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs');
-	});
-	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+		// Watch for theme changes
+		const observer = new MutationObserver(() => {
+			const isDark = document.documentElement.classList.contains('dark');
+			monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs');
+		});
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+		isLoading.value = false;
+	} catch (e) {
+		console.error('Failed to load Monaco:', e);
+		error.value = 'Failed to load editor. Please refresh the page.';
+		isLoading.value = false;
+	}
 }
 
 function debouncedRun() {
@@ -151,6 +169,8 @@ function debouncedRun() {
 }
 
 async function runCode() {
+	if (isLoading.value) return;
+
 	isRunning.value = true;
 	error.value = '';
 	output.value = '';
@@ -244,74 +264,97 @@ function copyOutput() {
 </script>
 
 <template>
-	<div class="playground">
-		<header class="playground-header">
-			<div class="header-left">
-				<select
-					class="example-select"
-					:value="selectedExample"
-					@change="(e) => {
-						const name = (e.target as HTMLSelectElement).value;
-						const ex = examples.find(ex => ex.name === name);
-						if (ex) selectExample(ex);
-					}"
-				>
-					<option value="" disabled>Select an example...</option>
-					<optgroup v-for="[category, exs] in examplesByCategory" :key="category" :label="category">
-						<option v-for="ex in exs" :key="ex.name" :value="ex.name">
-							{{ ex.name }}
-						</option>
-					</optgroup>
-				</select>
-			</div>
-			<div class="header-right">
-				<label class="auto-run">
-					<input type="checkbox" v-model="autoRun" />
-					Auto-run
-				</label>
-				<button class="btn" @click="runCode" :disabled="isRunning">
-					{{ isRunning ? 'Running...' : '▶ Run' }}
-				</button>
-				<button class="btn btn-secondary" @click="shareCode">
-					Share
-				</button>
-			</div>
-		</header>
-
-		<div class="playground-content">
-			<div class="editor-pane">
-				<div class="pane-header">
-					<span>TypeScript</span>
+	<ClientOnly>
+		<div class="playground">
+			<header class="playground-header">
+				<div class="header-left">
+					<select
+						class="example-select"
+						:value="selectedExample"
+						@change="(e) => {
+							const name = (e.target as HTMLSelectElement).value;
+							const ex = examples.find(ex => ex.name === name);
+							if (ex) selectExample(ex);
+						}"
+					>
+						<option value="" disabled>Select an example...</option>
+						<optgroup v-for="[category, exs] in examplesByCategory" :key="category" :label="category">
+							<option v-for="ex in exs" :key="ex.name" :value="ex.name">
+								{{ ex.name }}
+							</option>
+						</optgroup>
+					</select>
 				</div>
-				<div ref="editorRef" class="editor"></div>
-			</div>
-
-			<div class="output-pane">
-				<div class="pane-header">
-					<span>Output</span>
-					<button class="copy-btn" @click="copyOutput" title="Copy output">
-						📋
+				<div class="header-right">
+					<label class="auto-run">
+						<input type="checkbox" v-model="autoRun" />
+						Auto-run
+					</label>
+					<button class="btn" @click="runCode" :disabled="isRunning || isLoading">
+						{{ isRunning ? 'Running...' : '▶ Run' }}
+					</button>
+					<button class="btn btn-secondary" @click="shareCode">
+						Share
 					</button>
 				</div>
-				<div class="output">
-					<pre v-if="error" class="error">{{ error }}</pre>
-					<pre v-else class="result">{{ output || '// Run code to see output' }}</pre>
+			</header>
+
+			<div class="playground-content">
+				<div class="editor-pane">
+					<div class="pane-header">
+						<span>TypeScript</span>
+					</div>
+					<div ref="editorRef" class="editor">
+						<div v-if="isLoading" class="editor-loading">
+							Loading editor...
+						</div>
+					</div>
+				</div>
+
+				<div class="output-pane">
+					<div class="pane-header">
+						<span>Output</span>
+						<button class="copy-btn" @click="copyOutput" title="Copy output">
+							📋
+						</button>
+					</div>
+					<div class="output">
+						<pre v-if="error" class="error">{{ error }}</pre>
+						<pre v-else class="result">{{ output || '// Run code to see output' }}</pre>
+					</div>
 				</div>
 			</div>
 		</div>
-	</div>
+		<template #fallback>
+			<div class="playground-fallback">
+				Loading playground...
+			</div>
+		</template>
+	</ClientOnly>
 </template>
 
 <style scoped>
 .playground {
 	display: flex;
 	flex-direction: column;
-	height: calc(100vh - 64px);
+	height: calc(100vh - 200px);
+	min-height: 500px;
 	max-height: 800px;
 	border: 1px solid var(--vp-c-divider);
 	border-radius: 8px;
 	overflow: hidden;
 	background: var(--vp-c-bg);
+}
+
+.playground-fallback {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 500px;
+	border: 1px solid var(--vp-c-divider);
+	border-radius: 8px;
+	background: var(--vp-c-bg-soft);
+	color: var(--vp-c-text-2);
 }
 
 .playground-header {
@@ -430,6 +473,17 @@ function copyOutput() {
 .editor {
 	flex: 1;
 	min-height: 300px;
+	position: relative;
+}
+
+.editor-loading {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--vp-c-bg);
+	color: var(--vp-c-text-2);
 }
 
 .output {
