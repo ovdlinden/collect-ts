@@ -42,9 +42,7 @@ type CollectionWithMethods<T, CK extends CollectionKind, M extends readonly Meth
 > & {
 	[K in MethodNames<M>]: M[number] extends { name: K; fn: infer F }
 		? F extends (this: CoreCollection<unknown, CollectionKind>, ...args: infer A) => infer R
-			? (
-					...args: A
-				) => R extends CoreCollection<unknown, CollectionKind> ? CollectionWithMethods<T, CK, M> : R
+			? (...args: A) => R extends CoreCollection<unknown, CollectionKind> ? CollectionWithMethods<T, CK, M> : R
 			: never
 		: never;
 };

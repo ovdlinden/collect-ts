@@ -3,7 +3,7 @@
  * Collapse a collection of arrays into a single flat collection.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone collapse function.

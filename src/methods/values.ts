@@ -3,7 +3,7 @@
  * Get values as a new collection with reset keys.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone values function.

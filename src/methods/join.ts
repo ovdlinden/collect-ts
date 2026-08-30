@@ -3,7 +3,7 @@
  * Join items into a string.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 import { dataGet } from '../core/utils.js';
 
 /**
@@ -14,18 +14,14 @@ export function join<T>(items: readonly T[], glue = '', finalGlue?: string): str
 	if (finalGlue === undefined || arr.length <= 1) {
 		return arr.join(glue);
 	}
-	const last = arr.pop()!;
+	const last = arr.pop() ?? '';
 	return arr.join(glue) + finalGlue + last;
 }
 
 export const joinMethod: MethodDefinition<'join'> = {
 	name: 'join',
 	chainable: false,
-	fn<T, CK extends CollectionKind>(
-		this: CoreCollection<T, CK>,
-		glue = '',
-		finalGlue?: string,
-	): string {
+	fn<T, CK extends CollectionKind>(this: CoreCollection<T, CK>, glue = '', finalGlue?: string): string {
 		const arr = this.getArrayItems();
 		const items = arr ?? Object.values(this.getItems());
 		const strings = items.map(String);
@@ -33,7 +29,7 @@ export const joinMethod: MethodDefinition<'join'> = {
 		if (finalGlue === undefined || strings.length <= 1) {
 			return strings.join(glue);
 		}
-		const last = strings.pop()!;
+		const last = strings.pop() ?? '';
 		return strings.join(glue) + finalGlue + last;
 	},
 };
@@ -41,11 +37,7 @@ export const joinMethod: MethodDefinition<'join'> = {
 export const implodeMethod: MethodDefinition<'implode'> = {
 	name: 'implode',
 	chainable: false,
-	fn<T, CK extends CollectionKind>(
-		this: CoreCollection<T, CK>,
-		keyOrGlue: string,
-		glue?: string,
-	): string {
+	fn<T, CK extends CollectionKind>(this: CoreCollection<T, CK>, keyOrGlue: string, glue?: string): string {
 		const arr = this.getArrayItems();
 		const items = arr ?? Object.values(this.getItems());
 

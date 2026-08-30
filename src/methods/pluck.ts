@@ -3,7 +3,7 @@
  * Extracts values for a given key from each item.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 import { dataGet } from '../core/utils.js';
 
 /**

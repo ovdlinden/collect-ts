@@ -3,7 +3,7 @@
  * Get all except the specified keys.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone except function.
@@ -19,10 +19,7 @@ export function except<T, K extends keyof T>(items: T, keys: K[]): Omit<T, K> {
 export const exceptMethod: MethodDefinition<'except'> = {
 	name: 'except',
 	chainable: true,
-	fn<T, CK extends CollectionKind>(
-		this: CoreCollection<T, CK>,
-		keys: string[],
-	): CoreCollection<T, CK> {
+	fn<T, CK extends CollectionKind>(this: CoreCollection<T, CK>, keys: string[]): CoreCollection<T, CK> {
 		const items = this.getItems();
 		const keySet = new Set(keys);
 		const result: Record<string, T> = {};

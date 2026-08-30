@@ -5,6 +5,7 @@
  * This file should stay small (~500 lines). All methods go in src/methods/.
  */
 
+import { allOpsCompilable, type ExecutionMode, type Operation, runPipeline } from './pipeline.js';
 import {
 	COLLECTION_BRAND,
 	type CollectInput,
@@ -12,7 +13,6 @@ import {
 	type CollectionLike,
 	isPlainObject,
 } from './types.js';
-import { type ExecutionMode, type Operation, allOpsCompilable, runPipeline } from './pipeline.js';
 
 /** Shared macro registry for Collection */
 const collectionMacros: Map<string, (...args: unknown[]) => unknown> = new Map();

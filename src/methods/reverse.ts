@@ -3,7 +3,7 @@
  * Reverse the order of items.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone reverse function.

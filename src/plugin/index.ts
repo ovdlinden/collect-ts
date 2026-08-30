@@ -26,7 +26,7 @@
  * ```
  */
 
-import { transform, shouldTransform, type TransformOptions } from './transform.js';
+import { shouldTransform, type TransformOptions, transform } from './transform.js';
 
 export interface PluginOptions extends TransformOptions {
 	/** File patterns to include (default: /\.[jt]sx?$/) */
@@ -140,7 +140,7 @@ export function esbuild(options: PluginOptions = {}) {
 }
 
 // Re-export transform utilities
-export { transform, shouldTransform, type TransformOptions, type TransformResult } from './transform.js';
+export { shouldTransform, type TransformOptions, type TransformResult, transform } from './transform.js';
 
 // Default export for convenience
 export default createPlugin;

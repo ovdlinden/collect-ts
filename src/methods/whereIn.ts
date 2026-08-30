@@ -3,7 +3,7 @@
  * Filter items where key value is in/not in a set.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 import { dataGet } from '../core/utils.js';
 
 /**

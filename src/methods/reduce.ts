@@ -9,7 +9,7 @@
  * collect(prices).reduce((sum, p) => sum + p, 0);
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone reduce function.

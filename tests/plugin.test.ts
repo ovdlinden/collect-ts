@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { transform, shouldTransform } from '../src/plugin/transform.js';
+import { shouldTransform, transform } from '../src/plugin/transform.js';
 
 describe('Plugin Transform', () => {
 	describe('shouldTransform', () => {

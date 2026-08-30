@@ -9,7 +9,7 @@
  * collect(users).first(u => u.role === 'admin');
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone first function.

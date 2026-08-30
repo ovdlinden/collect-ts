@@ -3,7 +3,7 @@
  * Merge arrays or objects.
  */
 
-import { CoreCollection, type CollectionKind, type MethodDefinition } from '../core/index.js';
+import { type CollectionKind, CoreCollection, type MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone merge function for arrays.
@@ -30,9 +30,7 @@ export const mergeMethod: MethodDefinition<'merge'> = {
 		}
 
 		const items = this.getItems();
-		const otherItems = Array.isArray(other)
-			? Object.fromEntries(other.map((v, i) => [String(i), v]))
-			: other;
+		const otherItems = Array.isArray(other) ? Object.fromEntries(other.map((v, i) => [String(i), v])) : other;
 
 		return this.newInstance({ ...items, ...otherItems }, true) as CoreCollection<T, CK>;
 	},

@@ -9,7 +9,7 @@
  * collect(users).groupBy('role');
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition, ValueRetriever } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition, ValueRetriever } from '../core/index.js';
 import { toGroupKey, valueRetriever } from '../core/utils.js';
 
 /**
@@ -43,7 +43,8 @@ export function groupBy<T>(
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
 		const gk = toGroupKey(getKey(item, i));
-		(groups[gk] ??= []).push(item);
+		if (!groups[gk]) groups[gk] = [];
+		groups[gk].push(item);
 	}
 
 	return groups;
@@ -70,7 +71,8 @@ export const groupByMethod: MethodDefinition<'groupBy'> = {
 			for (let i = 0; i < arr.length; i++) {
 				const item = arr[i];
 				const gk = toGroupKey((item as Record<string, unknown>)[groupByKey]);
-				(rawGroups[gk] ??= []).push(item);
+				if (!rawGroups[gk]) rawGroups[gk] = [];
+				rawGroups[gk].push(item);
 			}
 
 			// Wrap each group in a Collection
@@ -94,7 +96,8 @@ export const groupByMethod: MethodDefinition<'groupBy'> = {
 
 			for (const k of keyArray) {
 				const gk = toGroupKey(k);
-				(groups[gk] ??= []).push(item);
+				if (!groups[gk]) groups[gk] = [];
+				groups[gk].push(item);
 			}
 		}
 

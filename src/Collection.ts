@@ -1058,7 +1058,8 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 	 * @internal
 	 */
 	#executeCompiled(terminal: string, args: unknown[] = []): unknown {
-		const source = this.#arrayItems!;
+		const source = this.#arrayItems;
+		if (!source) return this.#resolveEager(terminal, args);
 
 		// Fast path: single filter with equality, no skip/take
 		if (this.#ops.length === 1 && this.#ops[0].type === 'filter') {
@@ -1253,7 +1254,6 @@ export class Collection<T, CK extends CollectionKind = 'array'> {
 				// For now, fall back to eager execution
 				// TODO: Use LazyCollection for true iterator execution
 				return this.#resolveEager(terminal, args);
-			case 'eager':
 			default:
 				return this.#resolveEager(terminal, args);
 		}

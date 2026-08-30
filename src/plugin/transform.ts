@@ -176,9 +176,7 @@ function findUsedMethods(ast: AcornNode, collectIdentifier: string): Set<string>
 
 	function isCollectCall(node: AcornNode): boolean {
 		return (
-			node.type === 'CallExpression' &&
-			node.callee?.type === 'Identifier' &&
-			node.callee.name === collectIdentifier
+			node.type === 'CallExpression' && node.callee?.type === 'Identifier' && node.callee.name === collectIdentifier
 		);
 	}
 
@@ -310,7 +308,7 @@ function rewriteImports(code: string, packageName: string, usedMethods: Set<stri
 		`import\\s*\\{[^}]*\\bcollect\\b[^}]*\\}\\s*from\\s*['"]${escapeRegex(packageName)}['"]\\s*;?`,
 	);
 
-	const newImportBlock = imports.join('\n') + '\n' + collectDecl;
+	const newImportBlock = `${imports.join('\n')}\n${collectDecl}`;
 
 	return code.replace(importRegex, newImportBlock);
 }

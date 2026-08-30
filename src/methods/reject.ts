@@ -3,7 +3,7 @@
  * Inverse of filter - removes items matching the predicate.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone reject function.

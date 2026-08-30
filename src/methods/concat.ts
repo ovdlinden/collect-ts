@@ -3,7 +3,7 @@
  * Concatenate arrays.
  */
 
-import { CoreCollection, type CollectionKind, type MethodDefinition } from '../core/index.js';
+import { type CollectionKind, CoreCollection, type MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone concat function.

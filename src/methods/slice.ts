@@ -3,7 +3,7 @@
  * Extract a slice of items.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone slice function.
@@ -18,11 +18,7 @@ export function slice<T>(items: readonly T[], start: number, length?: number): T
 export const sliceMethod: MethodDefinition<'slice'> = {
 	name: 'slice',
 	chainable: true,
-	fn<T, CK extends CollectionKind>(
-		this: CoreCollection<T, CK>,
-		start: number,
-		length?: number,
-	): CoreCollection<T, CK> {
+	fn<T, CK extends CollectionKind>(this: CoreCollection<T, CK>, start: number, length?: number): CoreCollection<T, CK> {
 		const arr = this.getArrayItems();
 		const items = arr ?? Object.values(this.getItems());
 

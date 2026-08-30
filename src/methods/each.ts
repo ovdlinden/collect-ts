@@ -9,7 +9,7 @@
  *   .map(u => u.name);
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Method definition for Collection attachment.
@@ -20,7 +20,7 @@ export const eachMethod: MethodDefinition<'each'> = {
 	chainable: true,
 	fn<T, CK extends CollectionKind>(
 		this: CoreCollection<T, CK>,
-		callback: (value: T, key: number | string) => void | false,
+		callback: (value: T, key: number | string) => undefined | false,
 	): CoreCollection<T, CK> {
 		const arr = this.getArrayItems();
 		if (arr) {

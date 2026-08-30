@@ -3,7 +3,7 @@
  * Sort by key or callback.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition, ValueRetriever } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition, ValueRetriever } from '../core/index.js';
 import { valueRetriever } from '../core/utils.js';
 
 /**

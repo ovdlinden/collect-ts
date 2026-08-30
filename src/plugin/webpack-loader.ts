@@ -3,7 +3,7 @@
  * Used internally by the webpack plugin.
  */
 
-import { transform, type TransformOptions } from './transform.js';
+import { type TransformOptions, transform } from './transform.js';
 
 interface LoaderContext {
 	getOptions(): TransformOptions & { plugin?: unknown };

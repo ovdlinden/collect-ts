@@ -3,12 +3,8 @@
  * Enables lazy evaluation and optimized execution paths.
  */
 
+import { arrayFilterByKey, arrayFilterBySetKey, arrayMapByKey } from '../arrayUtils.js';
 import type { WhereOperator } from './types.js';
-import {
-	arrayFilterByKey,
-	arrayFilterBySetKey,
-	arrayMapByKey,
-} from '../arrayUtils.js';
 
 /** @internal Execution mode for deferred pipeline */
 export type ExecutionMode = 'compiled' | 'iterator' | 'eager';
@@ -49,12 +45,7 @@ export function runPipeline<T>(ops: Operation[], source: T[], limit?: number): T
 	for (const op of ops) {
 		switch (op.type) {
 			case 'filter':
-				result = arrayFilterByKey(
-					result as T[],
-					op.key as keyof T,
-					op.value,
-					op.operator as WhereOperator | '===',
-				);
+				result = arrayFilterByKey(result as T[], op.key as keyof T, op.value, op.operator as WhereOperator | '===');
 				break;
 			case 'filterCallback':
 				result = result.filter((item, i) => op.callback(item, i));

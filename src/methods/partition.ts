@@ -3,7 +3,7 @@
  * Partition into two arrays based on predicate.
  */
 
-import type { CoreCollection, CollectionKind, MethodDefinition } from '../core/index.js';
+import type { CollectionKind, CoreCollection, MethodDefinition } from '../core/index.js';
 
 /**
  * Standalone partition function.
@@ -43,10 +43,7 @@ export const partitionMethod: MethodDefinition<'partition'> = {
 				fail.push(item);
 			}
 		}
-		return [
-			this.newInstance(pass) as CoreCollection<T, CK>,
-			this.newInstance(fail) as CoreCollection<T, CK>,
-		];
+		return [this.newInstance(pass) as CoreCollection<T, CK>, this.newInstance(fail) as CoreCollection<T, CK>];
 	},
 };
 

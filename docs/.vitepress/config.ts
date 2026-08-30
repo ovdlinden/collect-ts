@@ -2,7 +2,6 @@ import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';
 import { outputContainerPlugin } from './plugins/markdown-output.ts';
-import { outputPreprocessPlugin } from './plugins/markdown-output-preprocess.ts';
 import { transformerOutputLines } from './plugins/shiki-output.ts';
 
 const site = {

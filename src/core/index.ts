@@ -8,34 +8,31 @@
  * const collect = createCollection([filterMethod]);
  */
 
+// Core Collection
+export { CoreCollection, collectionMacros } from './Collection.js';
+// Factory
+export { createCollection, extendCollection, type MethodDefinition } from './createCollection.js';
+
+// Pipeline
+export { allOpsCompilable, chooseExecutionMode, type ExecutionMode, type Operation, runPipeline } from './pipeline.js';
 // Types
 export {
-	COLLECTION_BRAND,
-	isCollection,
-	isPlainObject,
 	type Arrayable,
+	COLLECTION_BRAND,
+	type Collapse,
 	type Collectable,
 	type CollectInput,
-	type Collapse,
 	type CollectionKey,
 	type CollectionKind,
 	type CollectionLike,
 	type CollectionParam,
 	type FlattenDepth,
+	isCollection,
+	isPlainObject,
 	type Path,
 	type PathValue,
 	type ValueRetriever,
 	type WhereOperator,
 } from './types.js';
-
 // Utils
 export { dataGet, operatorForWhere, toGroupKey, useAsCallable, valueRetriever } from './utils.js';
-
-// Pipeline
-export { allOpsCompilable, chooseExecutionMode, runPipeline, type ExecutionMode, type Operation } from './pipeline.js';
-
-// Core Collection
-export { CoreCollection, collectionMacros } from './Collection.js';
-
-// Factory
-export { createCollection, extendCollection, type MethodDefinition } from './createCollection.js';

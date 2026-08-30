@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { CoreCollection, createCollection } from '../src/core/index.js';
 import filterMethod from '../src/methods/filter.js';
-import mapMethod from '../src/methods/map.js';
-import groupByMethod from '../src/methods/groupBy.js';
 import firstMethod from '../src/methods/first.js';
+import groupByMethod from '../src/methods/groupBy.js';
+import mapMethod from '../src/methods/map.js';
 import reduceMethod from '../src/methods/reduce.js';
 
 describe('CoreCollection', () => {
