@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';
@@ -109,25 +110,14 @@ export default defineConfig({
 	},
 
 	vite: {
-<<<<<<< HEAD
-		plugins: [groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
-		optimizeDeps: {
-			include: ['monaco-editor'],
-		},
-		build: {
-			rollupOptions: {
-				output: {
-					manualChunks: {
-						monaco: ['monaco-editor'],
-					},
-				},
-			},
-		},
-||||||| 1236ece
-		plugins: [groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
-=======
-		plugins: [tailwindcss(), groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
->>>>>>> feat/tailwind-v4
+		plugins: [
+			tailwindcss(),
+			groupIconVitePlugin(),
+			llmstxt({ excludeIndexPage: false }),
+			monacoEditorPlugin({
+				languageWorkers: ['typescript'],
+			}),
+		],
 	},
 
 	ignoreDeadLinks: [/^https:\/\/laravel\.com/],

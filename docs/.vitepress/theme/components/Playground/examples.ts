@@ -8,13 +8,10 @@ export const examples: Example[] = [
 	{
 		name: 'Hello Collection',
 		category: 'Getting Started',
-		code: `// Create a collection and chain methods
-const result = collect([1, 2, 3, 4, 5])
+		code: `collect([1, 2, 3, 4, 5])
   .map(n => n * 2)
   .filter(n => n > 4)
-  .all();
-
-result`,
+  .all()`,
 	},
 	{
 		name: 'Working with Objects',
@@ -23,9 +20,8 @@ result`,
   { name: 'Taylor', role: 'admin', active: true },
   { name: 'Abigail', role: 'user', active: true },
   { name: 'James', role: 'user', active: false },
-];
+]
 
-// Filter active users and pluck names
 collect(users)
   .where('active', true)
   .pluck('name')
@@ -39,9 +35,8 @@ collect(users)
   { name: 'Desk', price: 250, inStock: false },
   { name: 'Lamp', price: 50, inStock: true },
   { name: 'Monitor', price: 300, inStock: true },
-];
+]
 
-// Find affordable products in stock
 collect(products)
   .where('inStock', true)
   .where('price', '<', 200)
@@ -55,13 +50,10 @@ collect(products)
   { id: 2, status: 'pending', total: 50 },
   { id: 3, status: 'completed', total: 200 },
   { id: 4, status: 'cancelled', total: 75 },
-  { id: 5, status: 'pending', total: 150 },
-];
+]
 
-// Group orders by status
-const grouped = collect(orders).groupBy('status');
+const grouped = collect(orders).groupBy('status')
 
-// Get totals per status
 Object.fromEntries(
   Object.entries(grouped.all()).map(([status, items]) => [
     status,
@@ -77,17 +69,15 @@ Object.fromEntries(
   { student: 'Bob', score: 92 },
   { student: 'Charlie', score: 78 },
   { student: 'Diana', score: 95 },
-];
+]
 
-const stats = {
-  count: collect(scores).count(),
-  sum: collect(scores).sum('score'),
-  avg: collect(scores).avg('score'),
-  min: collect(scores).min('score'),
-  max: collect(scores).max('score'),
-};
-
-stats`,
+collect(scores).pipe(c => ({
+  count: c.count(),
+  sum: c.sum('score'),
+  avg: c.avg('score'),
+  min: c.min('score'),
+  max: c.max('score'),
+}))`,
 	},
 	{
 		name: 'Sort and Take',
@@ -96,11 +86,9 @@ stats`,
   { title: 'Vue 3 Guide', views: 1500 },
   { title: 'React Hooks', views: 2300 },
   { title: 'TypeScript Tips', views: 1800 },
-  { title: 'CSS Grid', views: 900 },
   { title: 'Node.js Best Practices', views: 3100 },
-];
+]
 
-// Get top 3 most viewed articles
 collect(articles)
   .sortByDesc('views')
   .take(3)
@@ -115,15 +103,9 @@ collect(articles)
   { post: 'Post 2', tag: 'typescript' },
   { post: 'Post 3', tag: 'javascript' },
   { post: 'Post 4', tag: 'vue' },
-  { post: 'Post 5', tag: 'typescript' },
-];
+]
 
-// Get unique tags
-collect(tags)
-  .pluck('tag')
-  .unique()
-  .values()
-  .all()`,
+collect(tags).pluck('tag').unique().all()`,
 	},
 	{
 		name: 'Partition',
@@ -133,15 +115,14 @@ collect(tags)
   { title: 'Fix bug', done: false },
   { title: 'Review PR', done: true },
   { title: 'Deploy', done: false },
-];
+]
 
-// Split into completed and pending
-const [completed, pending] = collect(tasks)
-  .partition(task => task.done)
+const [done, pending] = collect(tasks)
+  .partition(t => t.done)
   .map(c => c.pluck('title').all())
-  .all();
+  .all()
 
-{ completed, pending }`,
+{ done, pending }`,
 	},
 	{
 		name: 'Reduce',

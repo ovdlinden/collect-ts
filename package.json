@@ -133,6 +133,7 @@
 		"tsx": "^4.23.12",
 		"typescript": "^7.0.2",
 		"vite": "^8.2.2",
+		"vite-plugin-monaco-editor": "^1.1.0",
 		"vitepress": "2.0.0-alpha.19",
 		"vitepress-plugin-group-icons": "^1.7.6",
 		"vitepress-plugin-llms": "^1.13.5",
