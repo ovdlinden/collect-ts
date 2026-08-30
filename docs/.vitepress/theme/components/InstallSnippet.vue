@@ -42,35 +42,34 @@ const activeCmd = computed(() => managers.find(m => m.id === active.value)?.cmd 
 </script>
 
 <template>
-  <div class="install-snippet">
-    <div class="command-box">
-      <span class="prompt">$</span>
-      <code class="cmd">{{ activeCmd }}</code>
+  <div class="flex flex-col items-center gap-1.5 m-0">
+    <div class="command-box inline-flex items-center gap-2 py-2 px-3 bg-[var(--vp-c-bg-soft)] border border-[var(--vp-c-divider)] rounded-full transition-all duration-150 hover:border-primary hover:shadow-[0_0_0_1px_var(--color-primary)] max-[480px]:w-[calc(100%-2rem)] max-[480px]:max-w-full">
+      <span class="text-success font-mono font-semibold text-[0.9rem] select-none">$</span>
+      <code class="font-mono text-[0.9rem] text-[var(--vp-c-text-1)] bg-transparent p-0 whitespace-nowrap max-[480px]:text-xs max-[480px]:overflow-hidden max-[480px]:text-ellipsis">{{ activeCmd }}</code>
       <button
-        class="copy-btn"
-        :class="{ copied }"
+        class="flex items-center justify-center size-7 ml-1 bg-transparent border-none text-[var(--vp-c-text-3)] cursor-pointer rounded-[5px] transition-all duration-150 hover:text-[var(--vp-c-text-1)] hover:bg-[var(--vp-c-default-soft)]"
+        :class="copied && 'text-success'"
         @click="copy"
         :aria-label="copied ? 'Copied!' : 'Copy to clipboard'"
         :title="copied ? 'Copied!' : 'Copy to clipboard'"
       >
-        <!-- Copy icon (Lucide: copy) -->
         <svg v-if="!copied" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
           <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
         </svg>
-        <!-- Check icon (Lucide: check) -->
         <svg v-else xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 6 9 17l-5-5"/>
         </svg>
       </button>
     </div>
-    <div class="tabs" role="tablist">
+    <div class="flex gap-1" role="tablist">
       <button
         v-for="m in managers"
         :key="m.id"
         role="tab"
         :aria-selected="active === m.id"
-        :class="['tab', { active: active === m.id }]"
+        class="py-0.5 px-2 text-[0.7rem] font-medium bg-transparent border-none rounded cursor-pointer transition-colors duration-150"
+        :class="active === m.id ? 'text-[var(--vp-c-text-1)]' : 'text-[var(--vp-c-text-3)] hover:text-[var(--vp-c-text-2)]'"
         @click="select(m.id)"
       >
         {{ m.label }}
@@ -78,108 +77,3 @@ const activeCmd = computed(() => managers.find(m => m.id === active.value)?.cmd 
     </div>
   </div>
 </template>
-
-<style scoped>
-.install-snippet {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-}
-
-.command-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--vp-c-bg-soft);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 24px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.command-box:hover {
-  border-color: var(--vp-c-brand-1);
-  box-shadow: 0 0 0 1px var(--vp-c-brand-1);
-}
-
-.prompt {
-  color: var(--doc-c-success);
-  font-family: var(--vp-font-family-mono);
-  font-weight: 600;
-  font-size: 0.9rem;
-  user-select: none;
-}
-
-.cmd {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.9rem;
-  color: var(--vp-c-text-1);
-  background: none;
-  padding: 0;
-  white-space: nowrap;
-}
-
-.copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-left: 0.25rem;
-  background: none;
-  border: none;
-  color: var(--vp-c-text-3);
-  cursor: pointer;
-  border-radius: 5px;
-  transition: color 0.15s, background 0.15s;
-}
-
-.copy-btn:hover {
-  color: var(--vp-c-text-1);
-  background: var(--vp-c-default-soft);
-}
-
-.copy-btn.copied {
-  color: var(--doc-c-success);
-}
-
-.tabs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.tab {
-  padding: 0.15rem 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--vp-c-text-3);
-  background: none;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.tab:hover {
-  color: var(--vp-c-text-2);
-}
-
-.tab.active {
-  color: var(--vp-c-text-1);
-}
-
-@media (max-width: 480px) {
-  .command-box {
-    width: calc(100% - 2rem);
-    max-width: 100%;
-  }
-
-  .cmd {
-    font-size: 0.8rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-</style>

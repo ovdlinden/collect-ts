@@ -42,14 +42,14 @@ const activeCmd = computed(() => managers.find(m => m.id === active.value)?.cmd 
 </script>
 
 <template>
-  <div class="hero-actions">
-    <div class="actions-row">
-      <div class="command-box">
-        <span class="prompt">$</span>
-        <code class="cmd">{{ activeCmd }}</code>
+  <div class="flex flex-col gap-2.5 mt-6">
+    <div class="flex items-center gap-3 flex-wrap max-sm:flex-col max-sm:items-stretch">
+      <div class="command-box inline-flex items-center gap-2 py-2.5 px-3.5 bg-[var(--vp-c-bg-soft)] border border-[var(--vp-c-divider)] rounded-full transition-colors duration-150 hover:border-primary max-sm:justify-center">
+        <span class="text-success font-mono font-semibold text-[0.9rem] select-none">$</span>
+        <code class="font-mono text-[0.9rem] text-[var(--vp-c-text-1)] bg-transparent whitespace-nowrap">{{ activeCmd }}</code>
         <button
-          class="copy-btn"
-          :class="{ copied }"
+          class="flex items-center justify-center size-6.5 bg-transparent border-none text-[var(--vp-c-text-3)] cursor-pointer rounded transition-colors duration-150 hover:text-[var(--vp-c-text-1)]"
+          :class="copied && 'text-success'"
           @click="copy"
           :aria-label="copied ? 'Copied!' : 'Copy'"
         >
@@ -62,13 +62,16 @@ const activeCmd = computed(() => managers.find(m => m.id === active.value)?.cmd 
           </svg>
         </button>
       </div>
-      <a href="/collections/" class="docs-link">View Docs</a>
+      <a href="/collections/" class="inline-flex items-center py-2.5 px-5 text-[0.9rem] font-medium text-[var(--vp-c-text-1)] bg-[var(--vp-c-default-soft)] rounded-full no-underline transition-colors duration-150 hover:bg-[var(--vp-c-default-3)] max-sm:justify-center">
+        View Docs
+      </a>
     </div>
-    <div class="tabs">
+    <div class="flex gap-2 max-sm:justify-center">
       <button
         v-for="m in managers"
         :key="m.id"
-        :class="['tab', { active: active === m.id }]"
+        class="py-0.5 px-0 text-xs font-medium bg-transparent border-none cursor-pointer transition-colors duration-150"
+        :class="active === m.id ? 'text-[var(--vp-c-text-1)]' : 'text-[var(--vp-c-text-3)] hover:text-[var(--vp-c-text-2)]'"
         @click="select(m.id)"
       >
         {{ m.label }}
@@ -76,132 +79,3 @@ const activeCmd = computed(() => managers.find(m => m.id === active.value)?.cmd 
     </div>
   </div>
 </template>
-
-<style scoped>
-.hero-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin-top: 1.5rem;
-}
-
-.actions-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.command-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.875rem;
-  background: var(--vp-c-bg-soft);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 24px;
-  transition: border-color 0.15s;
-}
-
-.command-box:hover {
-  border-color: var(--vp-c-brand-1);
-}
-
-.prompt {
-  color: var(--doc-c-success);
-  font-family: var(--vp-font-family-mono);
-  font-weight: 600;
-  font-size: 0.9rem;
-  user-select: none;
-}
-
-.cmd {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.9rem;
-  color: var(--vp-c-text-1);
-  background: none;
-  white-space: nowrap;
-}
-
-.copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  background: none;
-  border: none;
-  color: var(--vp-c-text-3);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: color 0.15s;
-}
-
-.copy-btn:hover {
-  color: var(--vp-c-text-1);
-}
-
-.copy-btn.copied {
-  color: var(--doc-c-success);
-}
-
-.docs-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--vp-c-text-1);
-  background: var(--vp-c-default-soft);
-  border-radius: 24px;
-  text-decoration: none;
-  transition: background 0.15s;
-}
-
-.docs-link:hover {
-  background: var(--vp-c-default-3);
-}
-
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.tab {
-  padding: 0.2rem 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--vp-c-text-3);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.tab:hover {
-  color: var(--vp-c-text-2);
-}
-
-.tab.active {
-  color: var(--vp-c-text-1);
-}
-
-@media (max-width: 540px) {
-  .actions-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .command-box {
-    justify-content: center;
-  }
-
-  .docs-link {
-    justify-content: center;
-  }
-
-  .tabs {
-    justify-content: center;
-  }
-}
-</style>
