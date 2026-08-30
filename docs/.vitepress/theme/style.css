@@ -354,3 +354,76 @@ html {
 	margin-top: 3rem;
 }
 
+/* Sidebar section icons --------------------------------------------------- */
+/* Base icon styles for group headers */
+.VPSidebarItem.level-0.is-group > .item > .text::before {
+	content: '';
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	vertical-align: -2px;
+	background-color: currentColor;
+	-webkit-mask-size: contain;
+	mask-size: contain;
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	opacity: 0.6;
+}
+
+/* Guide icon - compass (first group after root links) */
+.VPSidebarItem.level-0.is-group:nth-of-type(3) > .item > .text::before {
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z'/%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z'/%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E");
+}
+
+/* Collections icon - layers (second group) */
+.VPSidebarItem.level-0.is-group:nth-of-type(4) > .item > .text::before {
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z'/%3E%3Cpath d='m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65'/%3E%3Cpath d='m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z'/%3E%3Cpath d='m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65'/%3E%3Cpath d='m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65'/%3E%3C/svg%3E");
+}
+
+/* Body scroll lock when search dialog is open ----------------------------- */
+body:has(dialog.fast-search-dialog[open]) {
+	overflow: hidden;
+}
+
+/* Hide copy-as-markdown button on home layout ---------------------------- */
+.VPHome .doc-header-actions,
+.Layout--home .doc-header-actions,
+[class*="is-home"] .doc-header-actions {
+	display: none;
+}
+
+/* Mobile code block overflow ---------------------------------------------- */
+/* Prevent code blocks from causing horizontal page scroll on mobile */
+.vp-doc div[class*="language-"] {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.vp-doc div[class*="language-"] pre {
+	min-width: 0;
+}
+
+/* Mobile: full-width code blocks ------------------------------------------ */
+/* Break out of content padding to use full viewport width */
+@media (max-width: 640px) {
+	.vp-doc div[class*="language-"] {
+		margin-left: -24px;
+		margin-right: -24px;
+		border-radius: 0;
+	}
+
+	.vp-doc div[class*="language-"] pre {
+		padding-left: 24px;
+		padding-right: 24px;
+	}
+
+	/* Ensure inline code wraps on mobile instead of overflowing */
+	.vp-doc :not(pre) > code {
+		white-space: normal;
+		word-break: break-word;
+	}
+}
+

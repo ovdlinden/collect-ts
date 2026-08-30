@@ -52,7 +52,6 @@ onMounted(async () => {
 	isLoading.value = false;
 });
 
-const searchMode = ref<'name' | 'description'>('name');
 
 // Open/close dialog when visible prop changes
 watch(
@@ -61,7 +60,6 @@ watch(
 		if (visible) {
 			dialogRef.value?.showModal();
 			selectedIndex.value = 0;
-			searchMode.value = 'name';
 			nextTick(() => {
 				inputRef.value?.focus();
 				inputRef.value?.select();
@@ -92,10 +90,7 @@ const results = computed<ProcessedResult[]>(() => {
 	const q = query.value.trim();
 	if (!miniSearch.value || !q || q.length < 2) return [];
 
-	const searchOpts =
-		searchMode.value === 'name'
-			? { fields: ['title', 'aliases'], fuzzy: 0.2, prefix: true }
-			: { fuzzy: 0.15, prefix: true };
+	const searchOpts = { fuzzy: 0.15, prefix: true };
 
 	const raw = miniSearch.value.search(q, searchOpts) as (MiniSearchResult & SearchEntry)[];
 
@@ -111,7 +106,7 @@ const results = computed<ProcessedResult[]>(() => {
 			signature: item.signature,
 			highlightedTitle: highlightTerms(item.title, q.split(/\s+/)),
 			breadcrumb: item.titles.slice(0, -1).join(' › '),
-			snippet: searchMode.value === 'description' ? getSnippet(item.text, q) : '',
+			snippet: getSnippet(item.text, q),
 		}))
 		.all();
 });
@@ -146,10 +141,6 @@ function getSnippet(text: string, query: string): string {
 	return highlightTerms(snippet, terms);
 }
 
-function toggleSearchMode() {
-	searchMode.value = searchMode.value === 'name' ? 'description' : 'name';
-	selectedIndex.value = 0;
-}
 
 // Announce result count for screen readers
 watch(
@@ -261,7 +252,7 @@ function getResultId(index: number): string {
 						ref="inputRef"
 						v-model="query"
 						type="search"
-						:placeholder="searchMode === 'name' ? 'Search methods...' : 'Search descriptions...'"
+						placeholder="Search methods..."
 						class="fast-search-input"
 						autocomplete="off"
 						aria-label="Search documentation"
@@ -269,15 +260,6 @@ function getResultId(index: number): string {
 						aria-expanded="true"
 						:aria-activedescendant="results.length > 0 ? getResultId(selectedIndex) : undefined"
 					/>
-					<button
-						class="fast-search-mode-toggle"
-						:class="{ active: searchMode === 'description' }"
-						:aria-pressed="searchMode === 'description'"
-						@click="toggleSearchMode"
-						type="button"
-					>
-						{{ searchMode === 'name' ? 'Abc' : 'Full' }}
-					</button>
 					<kbd class="fast-search-kbd" aria-hidden="true">ESC</kbd>
 				</div>
 
@@ -317,13 +299,7 @@ function getResultId(index: number): string {
 				</ul>
 
 				<div v-else-if="query.length >= 2" class="fast-search-empty" role="status">
-					<template v-if="searchMode === 'name'">
-						No methods matching "{{ query }}"
-						<div class="fast-search-hint-toggle">Try toggling to full-text search</div>
-					</template>
-					<template v-else>
-						No results for "{{ query }}"
-					</template>
+					No results for "{{ query }}"
 				</div>
 
 				<div v-else class="fast-search-hint" role="status">Type at least 2 characters to search</div>
@@ -451,30 +427,6 @@ function getResultId(index: number): string {
 	font-family: inherit;
 }
 
-.fast-search-mode-toggle {
-	font-size: 11px;
-	padding: 4px 8px;
-	border-radius: 4px;
-	background: var(--vp-c-bg-soft);
-	color: var(--vp-c-text-2);
-	border: 1px solid var(--vp-c-divider);
-	cursor: pointer;
-	font-family: inherit;
-	font-weight: 500;
-	transition: all 150ms;
-}
-
-.fast-search-mode-toggle:hover {
-	border-color: var(--vp-c-brand-1);
-	color: var(--vp-c-brand-1);
-}
-
-.fast-search-mode-toggle.active {
-	background: var(--vp-c-brand-soft);
-	border-color: var(--vp-c-brand-1);
-	color: var(--vp-c-brand-1);
-}
-
 .fast-search-results {
 	overflow-y: auto;
 	max-height: 400px;
@@ -501,7 +453,9 @@ function getResultId(index: number): string {
 
 .fast-search-result.selected,
 .fast-search-result:focus {
-	background: var(--vp-c-bg-soft);
+	background: var(--vp-c-brand-soft);
+	border-left: 3px solid var(--vp-c-brand-1);
+	padding-left: 13px;
 	outline: none;
 }
 
@@ -545,12 +499,6 @@ function getResultId(index: number): string {
 .fast-search-hint {
 	padding: 32px;
 	text-align: center;
-	color: var(--vp-c-text-3);
-}
-
-.fast-search-hint-toggle {
-	font-size: 12px;
-	margin-top: 8px;
 	color: var(--vp-c-text-3);
 }
 
