@@ -7,9 +7,9 @@ defineProps<{
 </script>
 
 <template>
-  <div class="stat-card flex flex-col items-center gap-2 py-5 px-6 border border-[var(--vp-c-divider)] border-l-3 border-l-success rounded-lg bg-[var(--vp-c-bg-soft)] text-center sm:py-4 sm:px-5 dark:bg-[var(--vp-c-bg-alt)]">
+  <div class="stat-card flex flex-col items-center gap-2 py-4 px-5 sm:py-5 sm:px-6 border border-[var(--vp-c-divider)] border-l-3 border-l-success rounded-lg bg-[var(--vp-c-bg-soft)] text-center dark:bg-[var(--vp-c-bg-alt)]">
     <div class="font-mono text-sm font-medium text-[var(--vp-c-text-2)]">{{ operation }}</div>
-    <div class="font-mono text-4xl sm:text-3xl font-bold tabular-nums tracking-tight leading-none whitespace-nowrap text-success">
+    <div class="font-mono text-3xl sm:text-4xl font-bold tabular-nums tracking-tight leading-none whitespace-nowrap text-success">
       <span>{{ speedup.toFixed(1) }}</span><span class="text-[0.65em] font-medium">×</span>
     </div>
     <div class="text-xs text-[var(--vp-c-text-3)]">{{ context }}</div>
