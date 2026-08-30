@@ -1,0 +1,158 @@
+/**
+ * Component Styles
+ * Styles for custom components that need CSS (complex selectors, masks, etc.)
+ */
+
+@layer docs {
+	/* Benchmark comparison cards */
+	.benchmark {
+		margin: 1.5rem 0;
+		border: 1px solid var(--vp-c-divider);
+		border-radius: 8px;
+		overflow: hidden;
+	}
+
+	.benchmark-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.75rem 1rem;
+		background: var(--vp-c-bg-soft);
+		border-bottom: 1px solid var(--vp-c-divider);
+	}
+
+	.benchmark-name {
+		font-weight: 600;
+		font-family: var(--font-mono);
+		color: var(--vp-c-text-1);
+	}
+
+	.benchmark-speedup {
+		font-weight: 600;
+		font-size: 0.875rem;
+		color: var(--color-success);
+		background: var(--color-success-soft);
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+	}
+
+	.benchmark-body {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.benchmark-col {
+		padding: 1rem;
+	}
+
+	.benchmark-col:first-child {
+		border-bottom: 1px solid var(--vp-c-divider);
+	}
+
+	.benchmark-label {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.5rem;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--vp-c-text-3);
+	}
+
+	.benchmark-ops {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--vp-c-text-3);
+	}
+
+	/* Code blocks inside benchmark columns */
+	.benchmark-col div[class*="language-"] {
+		margin: 0;
+		border-radius: 6px;
+	}
+
+	.benchmark-col div[class*="language-"] pre {
+		padding: 0.75rem 1rem;
+	}
+
+	/* Hide language label, copy button in benchmark code blocks */
+	.benchmark-col div[class*="language-"] > span.lang,
+	.benchmark-col div[class*="language-"] > button.copy {
+		display: none;
+	}
+
+	.benchmark-col div[class*="language-"] {
+		background: var(--vp-code-block-bg);
+	}
+
+	.benchmark-col div[class*="language-"] .line-numbers-wrapper {
+		background: var(--vp-code-block-bg);
+		border-right: 1px solid var(--vp-c-divider);
+		padding-top: 0.75rem;
+	}
+
+	/* Winner (collect-ts) emphasis */
+	.benchmark-col.winner {
+		background: var(--color-success-soft);
+		border-radius: 0 0 7px 7px;
+	}
+
+	.benchmark-col.winner .benchmark-label {
+		color: var(--color-success);
+		font-weight: 600;
+	}
+
+	.benchmark-col.winner .benchmark-ops {
+		color: var(--color-success);
+		font-weight: 600;
+	}
+
+	/* Sidebar section icons */
+	.VPSidebarItem.level-0.is-group > .item > .text::before {
+		content: '';
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		margin-right: 8px;
+		vertical-align: -2px;
+		background-color: currentColor;
+		-webkit-mask-size: contain;
+		mask-size: contain;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		opacity: 0.6;
+	}
+
+	/* Guide icon - compass */
+	.VPSidebarItem.level-0.is-group:nth-of-type(3) > .item > .text::before {
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z'/%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E");
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z'/%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E");
+	}
+
+	/* Collections icon - layers */
+	.VPSidebarItem.level-0.is-group:nth-of-type(4) > .item > .text::before {
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z'/%3E%3Cpath d='m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65'/%3E%3Cpath d='m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65'/%3E%3C/svg%3E");
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z'/%3E%3Cpath d='m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65'/%3E%3Cpath d='m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65'/%3E%3C/svg%3E");
+	}
+
+	/* Hero spacing */
+	.VPHero {
+		padding-top: 4rem !important;
+		padding-bottom: 3rem !important;
+	}
+
+	@media (min-width: 640px) {
+		.VPHero {
+			padding-top: 6rem !important;
+			padding-bottom: 4rem !important;
+		}
+	}
+
+	@media (min-width: 960px) {
+		.VPHero {
+			padding-top: 8rem !important;
+			padding-bottom: 5rem !important;
+		}
+	}
+}

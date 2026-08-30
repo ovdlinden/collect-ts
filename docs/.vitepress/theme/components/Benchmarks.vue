@@ -138,26 +138,26 @@ const decisionMatrix = [
 </script>
 
 <template>
-  <div class="performance-story">
+  <div class="text-[0.9375rem]">
     <!-- Act I: The Callback Tax -->
-    <section class="story-section callback-tax">
-      <p class="intro-text">
-        Every time you write <code>.reduce((acc, x) => ...)</code>, you pay a toll. V8 can't inline
+    <section class="mb-10">
+      <p class="text-base leading-[1.7] text-[var(--vp-c-text-2)] mb-6">
+        Every time you write <code class="font-mono text-[0.9em] px-1.5 py-0.5 bg-[var(--vp-c-default-soft)] rounded">.reduce((acc, x) => ...)</code>, you pay a toll. V8 can't inline
         that arrow function — it builds a stack frame, captures closure variables, and invokes your
         callback for every single element.
       </p>
       <CallbackTaxDiagram />
-      <p class="insight-text">
-        <code>sum('value')</code> avoids 10,000 function calls. That's the entire speedup.
+      <p class="text-[0.95rem] text-success font-medium mt-4">
+        <code class="font-mono text-[0.9em] px-1.5 py-0.5 bg-[var(--vp-c-default-soft)] rounded">sum('value')</code> avoids 10,000 function calls. That's the entire speedup.
       </p>
     </section>
 
     <!-- Act II: String Keys Beat Callbacks -->
-    <section class="story-section eager-benchmarks">
-      <h3>String Keys Beat Callbacks</h3>
+    <section class="mb-16">
+      <h3 class="text-2xl font-bold mb-7 text-[var(--vp-c-text-1)]">String Keys Beat Callbacks</h3>
 
       <!-- Hero Stats -->
-      <div v-if="heroMetrics.length" class="hero-stats">
+      <div v-if="heroMetrics.length" class="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-5 mb-10 max-sm:grid-cols-1">
         <StatCard
           v-for="metric in heroMetrics"
           :key="metric.operation"
@@ -168,13 +168,13 @@ const decisionMatrix = [
       </div>
 
       <!-- Controls -->
-      <div class="controls">
-        <span class="label">Array size</span>
-        <div class="size-toggle">
+      <div class="flex items-center gap-2.5 mb-6 text-[0.8125rem] text-[var(--vp-c-text-3)] max-[480px]:flex-col max-[480px]:items-start max-[480px]:gap-2">
+        <span>Array size</span>
+        <div class="inline-flex border border-[var(--vp-c-divider)] rounded-md overflow-hidden">
           <button
             v-for="size in sizes"
             :key="size"
-            :class="['size-btn', { active: selectedSize === size }]"
+            :class="['font-mono text-[0.6875rem] py-1.5 px-2 border-none cursor-pointer size-btn', { active: selectedSize === size }]"
             @click="selectedSize = size"
           >{{ size }}</button>
         </div>
@@ -193,26 +193,26 @@ const decisionMatrix = [
         <tbody>
           <template v-for="bench in benchmarks" :key="bench.name">
             <tr class="data-row" @click="toggleExpand(bench.name)">
-              <td class="op">{{ bench.name }}</td>
-              <td class="ops">{{ bench.native.ops }}</td>
-              <td class="ops">{{ bench.collectTs.ops }}</td>
-              <td class="speedup-cell">
-                <span :class="['speedup', bench.isFaster ? 'win' : 'lose']">
+              <td class="font-mono font-medium text-sm">{{ bench.name }}</td>
+              <td class="font-mono text-[0.8125rem] text-right text-[var(--vp-c-text-2)] whitespace-nowrap">{{ bench.native.ops }}</td>
+              <td class="font-mono text-[0.8125rem] text-right text-[var(--vp-c-text-2)] whitespace-nowrap">{{ bench.collectTs.ops }}</td>
+              <td class="text-right">
+                <span :class="['font-mono font-semibold tabular-nums inline-flex items-center gap-2.5', bench.isFaster ? 'text-success' : 'text-neutral']">
                   <SpeedupBar :speedup="bench.speedupNum" />
-                  <span class="speedup-num">{{ bench.speedupNum.toFixed(1) }}×</span>
+                  <span class="w-12 text-right text-[0.9375rem]">{{ bench.speedupNum.toFixed(1) }}×</span>
                 </span>
               </td>
             </tr>
             <tr v-if="expandedOp === bench.name" class="code-row">
               <td colspan="4">
-                <div class="code-grid">
-                  <div class="code-block">
-                    <div class="code-label">Native</div>
-                    <code>{{ bench.code.native }}</code>
+                <div class="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+                  <div class="bg-[var(--vp-c-bg-soft)] rounded-md py-2 px-2.5 text-xs">
+                    <div class="text-[0.5625rem] font-semibold uppercase tracking-wide text-[var(--vp-c-text-3)] mb-1">Native</div>
+                    <code class="font-mono text-[var(--vp-c-text-2)] whitespace-nowrap">{{ bench.code.native }}</code>
                   </div>
-                  <div class="code-block">
-                    <div class="code-label">collect-ts</div>
-                    <code>{{ bench.code.collectTs }}</code>
+                  <div class="bg-[var(--vp-c-bg-soft)] rounded-md py-2 px-2.5 text-xs">
+                    <div class="text-[0.5625rem] font-semibold uppercase tracking-wide text-[var(--vp-c-text-3)] mb-1">collect-ts</div>
+                    <code class="font-mono text-[var(--vp-c-text-2)] whitespace-nowrap">{{ bench.code.collectTs }}</code>
                   </div>
                 </div>
               </td>
@@ -221,15 +221,15 @@ const decisionMatrix = [
         </tbody>
       </table>
 
-      <div class="footer">
+      <div class="mt-5 pt-3 text-xs text-[var(--vp-c-text-3)] flex justify-between">
         <span>Click row for code</span>
-        <span>Vitest · Node v22 · <code>pnpm bench:docs</code></span>
+        <span>Vitest · Node v22 · <code class="font-mono text-[0.6875rem] px-1.5 py-0.5 bg-[var(--vp-c-bg-soft)] rounded">pnpm bench:docs</code></span>
       </div>
     </section>
 
     <!-- Act III: When Lazy Changes Everything -->
-    <section v-if="earlyExitData" class="story-section lazy-benchmarks">
-      <h3>When Lazy Changes Everything</h3>
+    <section v-if="earlyExitData" class="mb-16 pt-8 border-t border-[var(--vp-c-divider)]">
+      <h3 class="text-2xl font-bold mb-7 text-[var(--vp-c-text-1)]">When Lazy Changes Everything</h3>
 
       <LazySpotlight
         :title="earlyExitData.title"
@@ -242,15 +242,15 @@ const decisionMatrix = [
         :speedup="earlyExitData.speedup"
       />
 
-      <div class="lazy-insight">
-        LazyCollection uses <code>function*</code> under the hood. Same performance as
+      <div class="mt-5 text-[0.9375rem] text-[var(--vp-c-text-2)] p-4 bg-[var(--vp-c-bg-soft)] rounded-lg leading-relaxed">
+        LazyCollection uses <code class="font-mono text-[0.9em] px-1.5 py-0.5 bg-[var(--vp-c-default-soft)] rounded">function*</code> under the hood. Same performance as
         hand-written generators, less code. Zero dependencies.
       </div>
     </section>
 
     <!-- Act IV: Choosing Your Tool -->
-    <section class="story-section decision-guide">
-      <h3>Choosing Your Tool</h3>
+    <section class="mb-16 pt-8 border-t border-[var(--vp-c-divider)]">
+      <h3 class="text-2xl font-bold mb-7 text-[var(--vp-c-text-1)]">Choosing Your Tool</h3>
 
       <table class="decision-matrix">
         <thead>
@@ -273,308 +273,49 @@ const decisionMatrix = [
 </template>
 
 <style scoped>
-.performance-story {
-  font-size: 0.9375rem;
-}
+/* Table base styles */
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+thead { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vp-c-text-3); }
+th { font-weight: 500; text-align: left; padding: 0.625rem 1rem; border-bottom: 1px solid var(--vp-c-divider); white-space: nowrap; }
+th:first-child { width: 100%; }
+th:nth-child(2), th:nth-child(3) { text-align: right; }
+th:last-child { text-align: right; }
+td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--vp-c-divider); vertical-align: middle; }
+td:first-child { width: 100%; }
 
-/* Story sections */
-.story-section {
-  margin-bottom: 4rem;
-}
-
-.story-section h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1.75rem;
-  color: var(--vp-c-text-1);
-}
-
-/* Act I: Callback Tax */
-.callback-tax {
-  margin-bottom: 2.5rem;
-}
-
-.intro-text {
-  font-size: 1rem;
-  line-height: 1.7;
-  color: var(--vp-c-text-2);
-  margin-bottom: 1.5rem;
-}
-
-.intro-text code {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.9em;
-  padding: 0.15em 0.4em;
-  background: var(--vp-c-default-soft);
-  border-radius: 4px;
-}
-
-.insight-text {
-  font-size: 0.95rem;
-  color: var(--doc-c-success);
-  font-weight: 500;
-  margin-top: 1rem;
-}
-
-.insight-text code {
-  font-family: var(--vp-font-family-mono);
-  background: var(--doc-c-success-soft);
-  padding: 0.15em 0.4em;
-  border-radius: 4px;
-}
-
-/* Hero Stats */
-.hero-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 2.5rem;
-}
-
-/* Controls */
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.8125rem;
-  color: var(--vp-c-text-3);
-}
-
-.size-toggle {
-  display: inline-flex;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.size-btn {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.6875rem;
-  padding: 0.375rem 0.5rem;
-  border: none;
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-3);
-  cursor: pointer;
-  border-right: 1px solid var(--vp-c-divider);
-  transition: background var(--bench-duration-fast) ease,
-              color var(--bench-duration-fast) ease;
-}
-
-.size-btn:last-child {
-  border-right: none;
-}
-
-.size-btn:hover {
-  color: var(--vp-c-text-1);
-}
-
-.size-btn.active {
-  background: var(--vp-c-text-1);
-  color: var(--vp-c-bg);
-}
-
-/* Table */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-thead {
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--vp-c-text-3);
-}
-
-th {
-  font-weight: 500;
-  text-align: left;
-  padding: 0.625rem 1rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-  white-space: nowrap;
-}
-
-th:first-child {
-  width: 100%;
-}
-
-th:nth-child(2),
-th:nth-child(3) {
-  text-align: right;
-}
-
-th:last-child {
-  text-align: right;
-}
-
-td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-  vertical-align: middle;
-}
-
-td:first-child {
-  width: 100%;
-}
-
+/* Interactive row */
 .data-row {
   cursor: pointer;
-  transition: background var(--bench-duration-fast) ease,
-              box-shadow var(--bench-duration-fast) ease;
+  transition: background var(--bench-duration-fast) ease, box-shadow var(--bench-duration-fast) ease;
 }
-
 .data-row:hover {
   background: var(--vp-c-bg-soft);
   box-shadow: inset 3px 0 0 var(--doc-c-success);
 }
 
-.op {
-  font-family: var(--vp-font-family-mono);
-  font-weight: 500;
-  font-size: 0.875rem;
+/* Size button states */
+.size-btn {
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-3);
+  border-right: 1px solid var(--vp-c-divider);
+  transition: background var(--bench-duration-fast) ease, color var(--bench-duration-fast) ease;
 }
+.size-btn:last-child { border-right: none; }
+.size-btn:hover { color: var(--vp-c-text-1); }
+.size-btn.active { background: var(--vp-c-text-1); color: var(--vp-c-bg); }
 
-.ops {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8125rem;
-  text-align: right;
-  color: var(--vp-c-text-2);
-  white-space: nowrap;
-}
-
-.speedup-cell {
-  text-align: right;
-}
-
-.speedup {
-  font-family: var(--vp-font-family-mono);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.625rem;
-}
-
-.speedup.win {
-  color: var(--doc-c-success);
-}
-
-.speedup.lose {
-  color: var(--doc-c-neutral);
-}
-
-.speedup-num {
-  width: 3rem;
-  text-align: right;
-  font-size: 0.9375rem;
-}
-
-/* Code row */
+/* Code row cell override */
 .code-row td {
   padding: 0 0 0.625rem 0;
   border-bottom: 1px solid var(--vp-c-divider);
 }
 
-.code-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.code-block {
-  background: var(--vp-c-bg-soft);
-  border-radius: 6px;
-  padding: 0.5rem 0.625rem;
-  font-size: 0.75rem;
-}
-
-.code-label {
-  font-size: 0.5625rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--vp-c-text-3);
-  margin-bottom: 0.25rem;
-}
-
-.code-block code {
-  font-family: var(--vp-font-family-mono);
-  color: var(--vp-c-text-2);
-  white-space: nowrap;
-}
-
-/* Footer */
-.footer {
-  margin-top: 1.25rem;
-  padding-top: 0.75rem;
-  font-size: 0.75rem;
-  color: var(--vp-c-text-3);
-  display: flex;
-  justify-content: space-between;
-}
-
-.footer code {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.6875rem;
-  padding: 0.125rem 0.375rem;
-  background: var(--vp-c-bg-soft);
-  border-radius: 4px;
-}
-
-/* Lazy Section */
-.lazy-benchmarks {
-  padding-top: 2rem;
-  border-top: 1px solid var(--vp-c-divider);
-}
-
-.lazy-insight {
-  margin-top: 1.25rem;
-  font-size: 0.9375rem;
-  color: var(--vp-c-text-2);
-  padding: 1rem;
-  background: var(--vp-c-bg-soft);
-  border-radius: 8px;
-  line-height: 1.6;
-}
-
-.lazy-insight code {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.9em;
-  padding: 0.125rem 0.375rem;
-  background: var(--vp-c-bg-alt);
-  border-radius: 4px;
-}
-
-/* Decision Matrix */
-.decision-guide {
-  padding-top: 2rem;
-  border-top: 1px solid var(--vp-c-divider);
-}
-
-/* Override generic table styles for decision matrix - needs balanced columns */
-.decision-matrix th:first-child,
-.decision-matrix td:first-child {
-  width: auto;
-}
-
-.decision-matrix th {
-  white-space: nowrap;
-}
-
-.decision-matrix td {
-  vertical-align: top;
-}
-
-.decision-matrix td:first-child {
-  min-width: 200px;
-}
-
-.decision-matrix .choice {
-  white-space: nowrap;
-}
-
+/* Decision matrix overrides */
+.decision-matrix th:first-child, .decision-matrix td:first-child { width: auto; }
+.decision-matrix th { white-space: nowrap; }
+.decision-matrix td { vertical-align: top; }
+.decision-matrix td:first-child { min-width: 200px; }
+.decision-matrix .choice { white-space: nowrap; }
 .decision-matrix .choice code {
   font-family: var(--vp-font-family-mono);
   font-size: 0.85em;
@@ -584,29 +325,5 @@ td:first-child {
   border-radius: 4px;
   font-weight: 500;
 }
-
-.decision-matrix .reason {
-  color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  min-width: 140px;
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-  .hero-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .code-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .controls {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
+.decision-matrix .reason { color: var(--vp-c-text-2); font-size: 0.85rem; min-width: 140px; }
 </style>

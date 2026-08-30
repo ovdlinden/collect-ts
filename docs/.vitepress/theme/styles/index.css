@@ -1,0 +1,23 @@
+/**
+ * Docs Theme - Main Stylesheet
+ *
+ * Layer Architecture (priority low → high):
+ * @layer base    - Resets and base element styles
+ * @layer docs    - Documentation typography and layout
+ * (unlayered)    - Tailwind utilities (highest priority)
+ */
+
+/* Define explicit cascade layer order */
+@layer base, docs;
+
+/* 1. Design tokens and Tailwind */
+@import './tokens.css';
+
+/* 2. Base styles (@layer base) */
+@import './base.css';
+
+/* 3. Documentation styles (@layer docs) */
+@import './docs.css';
+
+/* 4. Component-specific styles (@layer docs) */
+@import './components.css';

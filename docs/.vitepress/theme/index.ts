@@ -5,7 +5,7 @@ import DefaultTheme from 'vitepress/theme';
 import { defineAsyncComponent, h, nextTick, onMounted, watch } from 'vue';
 
 import 'virtual:group-icons.css';
-import './style.css';
+import './styles/index.css';
 
 // Lazy load heavy, page-specific components
 const Benchmarks = defineAsyncComponent(() => import('./components/Benchmarks.vue'));

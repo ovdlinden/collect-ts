@@ -228,17 +228,17 @@ function getResultId(index: number): string {
 			@click="handleDialogClick"
 			@keydown="handleKeydown"
 		>
-			<div class="fast-search-modal">
-				<h2 id="search-title" class="visually-hidden">Search documentation</h2>
+			<div class="flex flex-col overflow-hidden rounded-xl shadow-2xl bg-(--vp-c-bg) w-[min(600px,90vw)] max-h-[70vh]">
+				<h2 id="search-title" class="sr-only">Search documentation</h2>
 
 				<!-- Live region for screen reader announcements -->
-				<div aria-live="polite" aria-atomic="true" class="visually-hidden">
+				<div aria-live="polite" aria-atomic="true" class="sr-only">
 					{{ announceText }}
 				</div>
 
-				<div class="fast-search-input-wrapper">
+				<div class="flex items-center gap-3 p-4 border-b border-(--vp-c-divider)">
 					<svg
-						class="fast-search-icon"
+						class="w-5 h-5 shrink-0 text-(--vp-c-text-3)"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -253,18 +253,18 @@ function getResultId(index: number): string {
 						v-model="query"
 						type="search"
 						placeholder="Search methods..."
-						class="fast-search-input"
+						class="fast-search-input flex-1 border-none bg-transparent text-base outline-none text-(--vp-c-text-1) placeholder:text-(--vp-c-text-3)"
 						autocomplete="off"
 						aria-label="Search documentation"
 						aria-controls="search-results"
 						aria-expanded="true"
 						:aria-activedescendant="results.length > 0 ? getResultId(selectedIndex) : undefined"
 					/>
-					<kbd class="fast-search-kbd" aria-hidden="true">ESC</kbd>
+					<kbd class="text-xs px-1.5 py-0.5 rounded border font-[inherit] bg-(--vp-c-bg-soft) text-(--vp-c-text-3) border-(--vp-c-divider)" aria-hidden="true">ESC</kbd>
 				</div>
 
-				<div v-if="isLoading" class="fast-search-loading" role="status">
-					<span class="visually-hidden">Loading</span>
+				<div v-if="isLoading" class="p-8 text-center text-(--vp-c-text-3)" role="status">
+					<span class="sr-only">Loading</span>
 					Loading search index...
 				</div>
 
@@ -272,7 +272,7 @@ function getResultId(index: number): string {
 					v-else-if="results.length > 0"
 					id="search-results"
 					ref="listRef"
-					class="fast-search-results"
+					class="overflow-y-auto max-h-[400px] list-none m-0 p-0"
 					role="listbox"
 					aria-label="Search results"
 				>
@@ -282,34 +282,34 @@ function getResultId(index: number): string {
 						:key="result.id"
 						role="option"
 						:aria-selected="i === selectedIndex"
-						class="fast-search-result"
+						class="fast-search-result flex flex-col w-full py-3 px-4 text-left bg-transparent cursor-pointer border-b border-(--vp-c-divider) last:border-b-0"
 						:class="{ selected: i === selectedIndex }"
 						@click="navigate(result)"
 						@mouseenter="selectedIndex = i"
 					>
-						<span v-if="result.breadcrumb" class="fast-search-result-breadcrumb" aria-hidden="true">
+						<span v-if="result.breadcrumb" class="text-xs mb-0.5 text-(--vp-c-text-3)" aria-hidden="true">
 							{{ result.breadcrumb }}
 						</span>
-						<span class="fast-search-result-title" v-html="result.highlightedTitle" />
-						<span v-if="result.snippet" class="fast-search-result-snippet" v-html="result.snippet" />
-						<span class="visually-hidden">
+						<span class="fast-search-result-title text-sm text-(--vp-c-text-1)" v-html="result.highlightedTitle" />
+						<span v-if="result.snippet" class="fast-search-result-snippet text-[13px] mt-1.5 leading-relaxed line-clamp-2 text-(--vp-c-text-2)" v-html="result.snippet" />
+						<span class="sr-only">
 							{{ result.breadcrumb ? `in ${result.breadcrumb}` : '' }}
 						</span>
 					</li>
 				</ul>
 
-				<div v-else-if="query.length >= 2" class="fast-search-empty" role="status">
+				<div v-else-if="query.length >= 2" class="p-8 text-center text-(--vp-c-text-3)" role="status">
 					No results for "{{ query }}"
 				</div>
 
-				<div v-else class="fast-search-hint" role="status">Type at least 2 characters to search</div>
+				<div v-else class="p-8 text-center text-(--vp-c-text-3)" role="status">Type at least 2 characters to search</div>
 
-				<div class="fast-search-footer" aria-hidden="true">
-					<span><kbd>↑↓</kbd> Navigate</span>
-					<span><kbd>↵</kbd> Select</span>
-					<span><kbd>Esc</kbd> Close</span>
-					<span class="fast-search-powered">
-						Powered by <strong>collect-ts</strong>
+				<div class="flex flex-wrap gap-3 py-3 px-4 border-t text-xs border-(--vp-c-divider) text-(--vp-c-text-3)" aria-hidden="true">
+					<span><kbd class="text-[11px] px-1 py-px rounded-sm mr-1 border font-[inherit] bg-(--vp-c-bg-soft) border-(--vp-c-divider)">↑↓</kbd> Navigate</span>
+					<span><kbd class="text-[11px] px-1 py-px rounded-sm mr-1 border font-[inherit] bg-(--vp-c-bg-soft) border-(--vp-c-divider)">↵</kbd> Select</span>
+					<span><kbd class="text-[11px] px-1 py-px rounded-sm mr-1 border font-[inherit] bg-(--vp-c-bg-soft) border-(--vp-c-divider)">Esc</kbd> Close</span>
+					<span class="ml-auto">
+						Powered by <strong class="text-(--vp-c-brand-1)">collect-ts</strong>
 					</span>
 				</div>
 			</div>
@@ -318,18 +318,7 @@ function getResultId(index: number): string {
 </template>
 
 <style scoped>
-.visually-hidden {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border: 0;
-}
-
+/* Dialog positioning and backdrop */
 .fast-search-dialog {
 	padding: 0;
 	border: none;
@@ -344,6 +333,7 @@ function getResultId(index: number): string {
 	background: rgba(0, 0, 0, 0.5);
 }
 
+/* Animations */
 @media (prefers-reduced-motion: no-preference) {
 	.fast-search-dialog[open] {
 		animation: dialog-fade-in 150ms ease;
@@ -366,91 +356,11 @@ function getResultId(index: number): string {
 }
 
 @keyframes backdrop-fade-in {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
+	from { opacity: 0; }
+	to { opacity: 1; }
 }
 
-.fast-search-modal {
-	background: var(--vp-c-bg);
-	border-radius: 12px;
-	width: min(600px, 90vw);
-	max-height: 70vh;
-	overflow: hidden;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-	display: flex;
-	flex-direction: column;
-}
-
-.fast-search-input-wrapper {
-	display: flex;
-	align-items: center;
-	padding: 16px;
-	border-bottom: 1px solid var(--vp-c-divider);
-	gap: 12px;
-}
-
-.fast-search-icon {
-	width: 20px;
-	height: 20px;
-	color: var(--vp-c-text-3);
-	flex-shrink: 0;
-}
-
-.fast-search-input {
-	flex: 1;
-	border: none;
-	background: transparent;
-	font-size: 16px;
-	color: var(--vp-c-text-1);
-	outline: none;
-}
-
-.fast-search-input::placeholder {
-	color: var(--vp-c-text-3);
-}
-
-.fast-search-input::-webkit-search-cancel-button {
-	display: none;
-}
-
-.fast-search-kbd {
-	font-size: 12px;
-	padding: 2px 6px;
-	border-radius: 4px;
-	background: var(--vp-c-bg-soft);
-	color: var(--vp-c-text-3);
-	border: 1px solid var(--vp-c-divider);
-	font-family: inherit;
-}
-
-.fast-search-results {
-	overflow-y: auto;
-	max-height: 400px;
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.fast-search-result {
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-	padding: 12px 16px;
-	text-align: left;
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	border-bottom: 1px solid var(--vp-c-divider);
-}
-
-.fast-search-result:last-child {
-	border-bottom: none;
-}
-
+/* Selected/focus state */
 .fast-search-result.selected,
 .fast-search-result:focus {
 	background: var(--vp-c-brand-soft);
@@ -464,17 +374,7 @@ function getResultId(index: number): string {
 	outline-offset: -2px;
 }
 
-.fast-search-result-breadcrumb {
-	font-size: 12px;
-	color: var(--vp-c-text-3);
-	margin-bottom: 2px;
-}
-
-.fast-search-result-title {
-	font-size: 14px;
-	color: var(--vp-c-text-1);
-}
-
+/* Deep selectors for highlighted marks */
 .fast-search-result-title :deep(mark),
 .fast-search-result-snippet :deep(mark) {
 	background: var(--vp-c-brand-soft);
@@ -483,54 +383,12 @@ function getResultId(index: number): string {
 	padding: 0 2px;
 }
 
-.fast-search-result-snippet {
-	font-size: 13px;
-	color: var(--vp-c-text-2);
-	margin-top: 6px;
-	line-height: 1.5;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+/* Webkit search cancel button */
+.fast-search-input::-webkit-search-cancel-button {
+	display: none;
 }
 
-.fast-search-loading,
-.fast-search-empty,
-.fast-search-hint {
-	padding: 32px;
-	text-align: center;
-	color: var(--vp-c-text-3);
-}
-
-.fast-search-footer {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 12px;
-	padding: 12px 16px;
-	border-top: 1px solid var(--vp-c-divider);
-	font-size: 12px;
-	color: var(--vp-c-text-3);
-}
-
-.fast-search-footer kbd {
-	font-size: 11px;
-	padding: 1px 4px;
-	border-radius: 3px;
-	background: var(--vp-c-bg-soft);
-	border: 1px solid var(--vp-c-divider);
-	margin-right: 4px;
-	font-family: inherit;
-}
-
-.fast-search-powered {
-	margin-left: auto;
-}
-
-.fast-search-powered strong {
-	color: var(--vp-c-brand-1);
-}
-
-/* High contrast mode support */
+/* High contrast mode */
 @media (forced-colors: active) {
 	.fast-search-result.selected {
 		outline: 2px solid CanvasText;

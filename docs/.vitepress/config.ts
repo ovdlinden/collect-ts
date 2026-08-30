@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';
@@ -57,7 +58,6 @@ const nav = [
 	{ text: 'Quick Start', link: '/00-quickstart' },
 	{ text: 'Collections', link: '/collections/' },
 	{ text: 'Playground', link: '/playground' },
-	{ text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
 ] satisfies DefaultTheme.NavItem[];
 
 export default defineConfig({
@@ -109,6 +109,7 @@ export default defineConfig({
 	},
 
 	vite: {
+<<<<<<< HEAD
 		plugins: [groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
 		optimizeDeps: {
 			include: ['monaco-editor'],
@@ -122,6 +123,11 @@ export default defineConfig({
 				},
 			},
 		},
+||||||| 1236ece
+		plugins: [groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
+=======
+		plugins: [tailwindcss(), groupIconVitePlugin(), llmstxt({ excludeIndexPage: false })],
+>>>>>>> feat/tailwind-v4
 	},
 
 	ignoreDeadLinks: [/^https:\/\/laravel\.com/],

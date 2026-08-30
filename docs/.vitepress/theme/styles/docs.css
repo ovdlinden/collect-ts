@@ -1,0 +1,209 @@
+/**
+ * Documentation Layout Styles
+ * Typography, code blocks, and doc-specific components
+ */
+
+@layer docs {
+	/* Typography niceties */
+	.vp-doc {
+		text-wrap: pretty;
+		overflow-wrap: anywhere;
+		hyphens: manual;
+	}
+
+	.vp-doc table {
+		text-wrap: auto;
+		hyphens: none;
+	}
+
+	.vp-doc h1,
+	.vp-doc h2,
+	.vp-doc h3,
+	.vp-doc h4 {
+		text-wrap: balance;
+		hyphens: none;
+	}
+
+	/* Inline code - lighter styling for better reading flow */
+	.vp-doc :not(pre) > code {
+		white-space: nowrap;
+		background: var(--vp-c-default-soft);
+		padding: 0.15em 0.4em;
+		border-radius: 4px;
+		font-size: 0.9em;
+	}
+
+	/* Linked code - visually distinct from plain inline code */
+	.vp-doc a > code {
+		text-decoration: underline;
+		text-decoration-color: var(--color-primary-soft);
+		text-underline-offset: 3px;
+		transition: text-decoration-color 0.15s, background 0.15s;
+	}
+
+	.vp-doc a:hover > code {
+		text-decoration-color: var(--color-primary);
+		background: var(--color-primary-soft);
+	}
+
+	/* Collection method headings */
+	.vp-doc h4.collection-method {
+		margin-top: 2.5rem;
+		padding-left: 0.75rem;
+		border-left: 3px solid var(--color-primary);
+	}
+
+	.vp-doc h4.first-collection-method {
+		margin-top: 1.5rem;
+	}
+
+	.vp-doc h4.collection-method code {
+		color: var(--color-primary);
+		background: var(--color-primary-soft);
+	}
+
+	/* Prose links - subtle by default, brand color on hover */
+	.vp-doc a:not(.header-anchor):not([class*="VPNav"]):not([class*="VPSidebar"]):not([class*="outline-link"]) {
+		color: var(--vp-c-text-1);
+		text-decoration: underline;
+		text-decoration-color: var(--color-primary-soft);
+		text-underline-offset: 2px;
+		transition: color 0.15s, text-decoration-color 0.15s;
+	}
+
+	.vp-doc a:not(.header-anchor):not([class*="VPNav"]):not([class*="VPSidebar"]):not([class*="outline-link"]):hover {
+		color: var(--color-primary);
+		text-decoration-color: var(--color-primary);
+	}
+
+	/* Breathing room between method sections */
+	.vp-doc hr {
+		margin: 2.5rem 0;
+		border-color: var(--vp-c-divider);
+	}
+
+	.vp-doc h3:not(:first-child) {
+		margin-top: 3rem;
+	}
+
+	/* CSS counter-based line numbers */
+	.vp-doc div[class*="language-"] pre code {
+		counter-reset: line-number;
+		display: flex;
+		flex-direction: column;
+		padding-left: 48px;
+	}
+
+	.vp-doc div[class*="language-"] .line {
+		display: block;
+	}
+
+	.vp-doc div[class*="language-"] .line::before {
+		counter-increment: line-number;
+		content: counter(line-number);
+		display: inline-block;
+		width: 32px;
+		margin-left: -48px;
+		margin-right: 16px;
+		text-align: center;
+		color: var(--vp-code-line-number-color);
+		font-family: var(--font-mono);
+		font-size: var(--vp-code-font-size);
+		line-height: var(--vp-code-line-height);
+	}
+
+	/* Output lines don't get line numbers */
+	.vp-doc div[class*="language-"] .line.output-line::before {
+		counter-increment: none;
+		content: none;
+	}
+
+	/* Output line styling - gradient fade with accent color */
+	.vp-doc div[class*="language-"] .line.output-line {
+		background: linear-gradient(90deg, var(--color-accent-soft) 0%, transparent 70%);
+		border-left: 3px solid var(--color-accent);
+		margin-left: -48px;
+		margin-right: -24px;
+		padding: 0 24px 0 96px;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+
+	.vp-doc div[class*="language-"] .code-output .output-arrow {
+		color: var(--vp-c-text-3);
+		margin-right: 0.5em;
+	}
+
+	.vp-doc div[class*="language-"] .code-output .output-value {
+		color: var(--color-accent);
+	}
+
+	.vp-doc div[class*="language-"] .code-output .output-indent {
+		color: var(--vp-c-text-3);
+		margin-right: 0.5em;
+		display: inline-block;
+		width: 1.5em;
+	}
+
+	/* Mobile code block overflow */
+	.vp-doc div[class*="language-"] {
+		max-width: 100%;
+		overflow-x: auto;
+	}
+
+	.vp-doc div[class*="language-"] pre {
+		min-width: 0;
+	}
+
+	/* Mobile: full-width code blocks */
+	@media (max-width: 640px) {
+		.vp-doc div[class*="language-"] {
+			margin-left: -24px;
+			margin-right: -24px;
+			border-radius: 0;
+		}
+
+		.vp-doc div[class*="language-"] pre {
+			padding-left: 24px;
+			padding-right: 24px;
+		}
+
+		.vp-doc :not(pre) > code {
+			white-space: normal;
+			word-break: break-word;
+		}
+	}
+
+	/* Doc header actions (copy button) */
+	.doc-header-actions {
+		text-align: right;
+		margin-bottom: 8px;
+	}
+
+	/* Hide copy-as-markdown button on home layout */
+	.VPHome .doc-header-actions,
+	.Layout--home .doc-header-actions,
+	[class*="is-home"] .doc-header-actions {
+		display: none;
+	}
+
+	/* Body scroll lock when search dialog is open */
+	body:has(dialog.fast-search-dialog[open]) {
+		overflow: hidden;
+	}
+}
+
+/**
+ * Code block overrides (unlayered to beat Tailwind preflight)
+ * Preflight resets margin/padding on ::before, breaking our line numbers
+ */
+.vp-doc div[class*="language-"] .line::before {
+	margin-left: -48px;
+	margin-right: 16px;
+}
+
+.vp-doc div[class*="language-"] .line.output-line {
+	margin-left: -48px;
+	margin-right: -24px;
+	padding: 0 24px 0 96px;
+}
