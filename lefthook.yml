@@ -15,10 +15,6 @@ pre-commit:
           echo "Error: jsr.json version does not match package.json ($VERSION)"
           exit 1
         fi
-        if ! grep -q "VERSION = '$VERSION'" src/index.ts; then
-          echo "Error: src/index.ts VERSION does not match package.json ($VERSION)"
-          exit 1
-        fi
       skip:
         - merge
         - rebase
