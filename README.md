@@ -189,6 +189,32 @@ collect(items).groupBy('category').keyBy('id').partition(fn)
 - **Zero dependencies** — Nothing to audit
 - **TypeScript 5** — Latest type system features
 
+### Tree-Shaking
+
+Minimize bundle size with automatic or manual tree-shaking:
+
+```typescript
+// Option 1: Automatic with plugin (recommended)
+// vite.config.ts
+import { vite as collectionPlugin } from 'collect-ts/plugin';
+export default { plugins: [collectionPlugin()] };
+
+// Then write normal code - only used methods are bundled
+import { collect } from 'collect-ts';
+collect(users).filter().map().groupBy(); // ~6KB instead of 56KB
+```
+
+```typescript
+// Option 2: Standalone functions for smallest bundles
+import { filter, map, groupBy } from 'collect-ts/fn';
+
+const active = filter(users, u => u.active);     // ~200B
+const names = map(active, u => u.name);          // ~200B
+const byRole = groupBy(users, 'role');           // ~200B
+```
+
+[Tree-Shaking Guide →](https://collect-ts.dev/guide/tree-shaking)
+
 ## API Reference
 
 <details>
