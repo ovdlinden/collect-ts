@@ -5,14 +5,11 @@ hero:
   name: Laravel Collection
   text: for TypeScript
   tagline: Same API. Faster than native. Zero dependencies.
-  actions:
-    - theme: brand
-      text: Get Started
-      link: /00-quickstart
-    - theme: alt
-      text: View Docs
-      link: /collections/
 ---
+
+<script setup>
+import PluginSpotlight from './.vitepress/theme/components/PluginSpotlight.vue'
+</script>
 
 <div class="showcase">
 
@@ -59,6 +56,8 @@ collect(users)
   </div>
 </div>
 
+<PluginSpotlight />
+
 <HomepageLazyDemo />
 
 <div class="quick-links">
@@ -72,7 +71,7 @@ collect(users)
   </a>
   <a href="/05-benchmarks" class="quick-link">
     <span class="link-title">Benchmarks</span>
-    <span class="link-desc">Performance deep dive</span>
+    <span class="link-desc">Performance</span>
   </a>
 </div>
 

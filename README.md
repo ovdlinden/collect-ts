@@ -1,6 +1,6 @@
 # collect-ts
 
-**Laravel Collection for TypeScript — always in sync, TypeScript-first, modern.**
+**Laravel Collection for TypeScript. Always in sync. TypeScript-first.**
 
 [![CI](https://github.com/ovdlinden/collect-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/ovdlinden/collect-ts/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/collect-ts)](https://www.npmjs.com/package/collect-ts)
@@ -16,7 +16,7 @@
 
 > **Fast**: Matches native for simple ops, up to 2.5× faster for chained operations. [See live benchmarks →](https://collect-ts.dev/05-benchmarks)
 
-## Why collect-ts?
+## What it does
 
 | What you're doing | Native JavaScript | collect-ts |
 |-------------------|-------------------|------------|
@@ -112,7 +112,7 @@ export default function ProductList() {
 }
 ```
 
-Same methods. Same arguments. Same behavior. No new paradigm to learn.
+Same methods, same arguments, same behavior. Nothing new to learn.
 
 ## Features
 
@@ -184,10 +184,10 @@ collect(items).groupBy('category').keyBy('id').partition(fn)
 
 ### Modern Stack
 
-- **ESM-only** — No CommonJS baggage
-- **Node 18+** — Modern JavaScript features
-- **Zero dependencies** — Nothing to audit
-- **TypeScript 5** — Latest type system features
+- **ESM-only**: no CommonJS
+- **Node 18+**: top-level await, native fetch
+- **Zero dependencies**: nothing to audit
+- **TypeScript 5**: const type parameters, satisfies
 
 ### Tree-Shaking
 

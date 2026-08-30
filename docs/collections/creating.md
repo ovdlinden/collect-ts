@@ -1,11 +1,11 @@
 # Creating
 
 <!-- This file is auto-generated from JSDoc. Do not edit directly. -->
-<!-- Run: npm run docs:guides -->
+<!-- Run: bun run docs:guides -->
 
 ### make()
 
-The `make` method creates a new collection instance from the given items.
+Creates a new collection instance from the given items.
 This is equivalent to calling `new Collection()` or the `collect()` helper.
 
 ```typescript
@@ -20,13 +20,13 @@ Collection.make({ name: 'Taylor', role: 'admin' })
 // → Collection { name: 'Taylor', role: 'admin' }
 ```
 
-For wrapping non-collection values, use [`wrap`](#wrap). For creating an empty collection, use [`empty`](#empty).
+To wrapping non-collection values, use [`wrap`](#wrap). To creating an empty collection, use [`empty`](#empty).
 
 ---
 
 ### wrap()
 
-The `wrap` method wraps the given value in a collection when applicable.
+Wraps the given value in a collection when applicable.
 Arrays and iterables are converted directly, single values become a
 one-element collection, and existing collections pass through unchanged.
 
@@ -51,13 +51,13 @@ Collection.wrap(collect([1, 2]))
 // → Collection [1, 2]
 ```
 
-For extracting the underlying array, use [`unwrap`](#unwrap). For creating from items directly, use [`make`](#make).
+To extracting the underlying array, use [`unwrap`](#unwrap). To creating from items directly, use [`make`](#make).
 
 ---
 
 ### unwrap()
 
-The `unwrap` method returns the underlying array from the given value
+Returns the underlying array from the given value
 when possible. If the value is already an array, it is returned as-is.
 If the value is a collection, the underlying array is extracted.
 
@@ -75,13 +75,13 @@ Collection.unwrap([1, 2, 3])
 // → [1, 2, 3]
 ```
 
-For wrapping a value in a collection, use [`wrap`](#wrap). For getting items from an instance, use [`all`](/collections/finding#all).
+To wrapping a value in a collection, use [`wrap`](#wrap). To getting items from an instance, use [`all`](/collections/finding#all).
 
 ---
 
 ### empty()
 
-The `empty` method creates an empty collection. This is useful when you
+Creates an empty collection. This is useful when you
 need a typed empty collection as a starting point for building up items.
 
 ```typescript
@@ -96,13 +96,13 @@ Collection.empty<User>()
 // → Collection<User> []
 ```
 
-For creating with items, use [`make`](#make). For checking if a collection is empty, use [`isEmpty`](/collections/checking#isempty).
+To creating with items, use [`make`](#make). To checking if a collection is empty, use [`isEmpty`](/collections/checking#isempty).
 
 ---
 
 ### fromJson()
 
-The `fromJson` method creates a collection from a JSON string. The string
+Creates a collection from a JSON string. The string
 must be valid JSON representing either an array or an object.
 
 From JSON array:
@@ -119,6 +119,6 @@ Collection.fromJson('{"a": 1, "b": 2}')
 // → Collection {a: 1, b: 2}
 ```
 
-For converting collection to JSON, use [`toJson`](/collections/aggregating#tojson).
+To converting collection to JSON, use [`toJson`](/collections/finding#tojson).
 
 ---

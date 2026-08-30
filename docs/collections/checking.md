@@ -1,40 +1,43 @@
 # Checking
 
 <!-- This file is auto-generated from JSDoc. Do not edit directly. -->
-<!-- Run: npm run docs:guides -->
+<!-- Run: bun run docs:guides -->
 
 ### containsStrict()
 
-The `containsStrict` method determines whether the collection contains a given item
+Determines if the collection contains a given item
 using strict comparison (`===`).
 
-Unlike `contains` which uses loose equality, this method distinguishes between types.
-For example, `1` and `'1'` are not equal under strict comparison.
-
 ```typescript
-collect([1, '1'])
-    .containsStrict(1)
+collect([1, 2, 3])
+    .containsStrict(2)
 // → true
 ```
 
-You may also use key/value with strict comparison:
+Strict comparison:
 
 ```typescript
-collect([{ id: 1 }, { id: '1' }])
-    .containsStrict('id', 1)
-// → true (first item matches, second does not)
+collect([1, 2, 3])
+    .containsStrict('2')
+// → false (strict: 2 !== '2')
 ```
 
-For loose equality (`==`), use [`contains`](/collections/filtering#contains). For the inverse (true if not found), use [`doesntContainStrict`](#doesntcontainstrict).
+With key/value:
+
+```typescript
+collect([{ id: 1 }, { id: 2 }])
+    .containsStrict('id', 1)
+// → true
+```
+
+To loose equality, use [`contains`](/collections/filtering#contains). To negation, use [`doesntContain`](#doesntcontain).
 
 ---
 
 ### doesntContain()
 
-The `doesntContain` method determines whether the collection does not contain a given item.
-
-This method is the inverse of `contains` and uses loose equality (`==`) for comparison.
-It returns `true` when the item is NOT found in the collection.
+Determines if the collection does not contain a given item.
+This is the inverse of {@link contains}.
 
 ```typescript
 collect([1, 2, 3])
@@ -42,92 +45,108 @@ collect([1, 2, 3])
 // → true
 ```
 
-You may also pass a callback:
+Item exists:
 
 ```typescript
-collect([
-  { name: 'Taylor', role: 'editor' },
-  { name: 'Abigail', role: 'editor' },
-])
-  .doesntContain(u => u.role === 'admin')
+collect([1, 2, 3])
+    .doesntContain(2)
+// → false
+```
+
+With key/value:
+
+```typescript
+collect([{ id: 1 }, { id: 2 }])
+    .doesntContain('id', 3)
 // → true
 ```
 
-For the inverse (true if found), use [`contains`](/collections/filtering#contains). For strict equality (`===`), use [`doesntContainStrict`](#doesntcontainstrict).
+To check if item exists, use [`contains`](/collections/filtering#contains). To strict equality check, use [`containsStrict`](#containsstrict).
 
 ---
 
 ### doesntContainStrict()
 
-The `doesntContainStrict` method determines whether the collection does not contain a given
-item using strict comparison (`===`).
-
-This method is the inverse of `containsStrict` and returns `true` when the item is NOT found.
+Determines if the collection does not contain
+a given item using strict comparison.
 
 ```typescript
 collect([1, 2, 3])
     .doesntContainStrict('1')
-// → true (string '1' is not strictly equal to number 1)
+// → true (strict comparison: '1' !== 1)
 ```
 
-For the inverse with strict equality, use [`containsStrict`](#containsstrict). For loose equality (`==`), use [`doesntContain`](#doesntcontain).
+To loose comparison, use [`doesntContain`](#doesntcontain). To inverse check, use [`containsStrict`](#containsstrict).
 
 ---
 
 ### has()
 
-The `has` method determines if a given key exists in the collection.
+Determines if one or more keys exist in the collection.
+When checking multiple keys, all must exist for the method to return true.
 
-When an array of keys is passed, returns `true` only if ALL keys exist.
-
-For a single key:
+Single key:
 
 ```typescript
-collect({ a: 1, b: 2 })
-    .has('a')
+collect({ name: 'Taylor', age: 25 })
+    .has('name')
 // → true
 ```
 
-For multiple keys (all must exist):
+Multiple keys (all must exist):
 
 ```typescript
-collect({ a: 1, b: 2 })
-    .has(['a', 'c'])
-// → false (c does not exist)
+collect({ name: 'Taylor', age: 25 })
+    .has(['name', 'age'])
+// → true
 ```
 
-For checking if any key exists, use [`hasAny`](#hasany). For Check if a value exists, use [`contains`](/collections/filtering#contains).
+Missing key:
+
+```typescript
+collect({ name: 'Taylor' })
+    .has('age')
+// → false
+```
+
+With dot notation:
+
+```typescript
+collect({ user: { name: 'Taylor' } })
+    .has('user.name')
+// → true
+```
+
+To true if ANY key exists, use [`hasAny`](#hasany). To get value at key, use [`get`](/collections/finding#get).
 
 ---
 
 ### hasAny()
 
-The `hasAny` method determines if any of the given keys exist in the collection.
-
-Returns `true` if at least one of the provided keys exists. Returns `false` for
-empty collections regardless of the keys provided.
+Determines if any of the given keys exist in the collection.
+Returns true if at least one key exists.
 
 ```typescript
-collect({ a: 1, b: 2 })
-    .hasAny(['b', 'c', 'd'])
-// → true (b exists)
+collect({ name: 'Taylor', age: 25 })
+    .hasAny(['name', 'email'])
+// → true (name exists)
 ```
 
-If no keys match:
+None exist:
 
 ```typescript
-collect({ a: 1, b: 2 })
-    .hasAny(['c', 'd'])
+collect({ name: 'Taylor' })
+    .hasAny(['age', 'email'])
 // → false
 ```
 
-For checking if all keys exist, use [`has`](#has). For Check if a value exists, use [`contains`](/collections/filtering#contains).
+To true only if ALL keys exist, use [`has`](#has). To check if value exists, use [`contains`](/collections/filtering#contains).
 
 ---
 
 ### isEmpty()
 
-The `isEmpty` method returns `true` if the collection is empty.
+Returns `true` if the collection is empty; otherwise, `false` is returned.
 
 ```typescript
 collect([])
@@ -135,7 +154,7 @@ collect([])
 // → true
 ```
 
-For a non-empty collection:
+Non-empty:
 
 ```typescript
 collect([1, 2, 3])
@@ -143,13 +162,21 @@ collect([1, 2, 3])
 // → false
 ```
 
-For the inverse (true if has items), use [`isNotEmpty`](#isnotempty). For Get the number of items, use [`count`](/collections/aggregating#count).
+With objects:
+
+```typescript
+collect({})
+    .isEmpty()
+// → true
+```
+
+To inverse check, use [`isNotEmpty`](#isnotempty). To get number of items, use [`count`](/collections/aggregating#count).
 
 ---
 
 ### isNotEmpty()
 
-The `isNotEmpty` method returns `true` if the collection is not empty.
+Returns `true` if the collection is not empty; otherwise, `false` is returned.
 
 ```typescript
 collect([1, 2, 3])
@@ -157,7 +184,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-For an empty collection:
+Empty:
 
 ```typescript
 collect([])
@@ -165,93 +192,118 @@ collect([])
 // → false
 ```
 
-For the inverse (true if empty), use [`isEmpty`](#isempty). For Get the number of items, use [`count`](/collections/aggregating#count).
+To inverse check, use [`isEmpty`](#isempty). To get number of items, use [`count`](/collections/aggregating#count).
 
 ---
 
 ### containsOneItem()
 
-The `containsOneItem` method returns `true` if the collection contains exactly one item.
-
-When a callback is provided, returns `true` only if exactly one item passes the test.
+Returns `true` if the collection contains exactly one item.
 
 ```typescript
-collect(['a'])
+collect([1])
     .containsOneItem()
 // → true
 ```
 
-You may also pass a callback:
+Multiple items:
 
 ```typescript
-collect([1, 2, 3, 4, 5])
-    .containsOneItem(n => n > 4)
-// → true (only 5 passes)
+collect([1, 2])
+    .containsOneItem()
+// → false
 ```
 
-For checking if more than one item, use [`hasMany`](#hasmany). For Similar but throws if not exactly one, use [`hasSole`](#hassole).
+Empty:
+
+```typescript
+collect([])
+    .containsOneItem()
+// → false
+```
+
+To get number of items, use [`count`](/collections/aggregating#count). To check if empty, use [`isEmpty`](#isempty).
 
 ---
 
 ### hasMany()
 
-The `hasMany` method returns `true` if the collection contains more than one item.
-
-When a callback or key/value pair is provided, returns `true` only if more than one
-item passes the test.
+Determines if multiple items exist in the collection
+that match the given criteria.
 
 ```typescript
-collect([1, 2, 3])
+collect([1, 2, 3, 4, 5])
     .hasMany()
 // → true
 ```
 
-You may also pass a callback:
+With callback:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
     .hasMany(n => n > 3)
-// → true (4 and 5 pass)
+// → true (4 and 5)
 ```
 
-For checking if exactly one item, use [`containsOneItem`](#containsoneitem). For checking if exactly one matching item, use [`hasSole`](#hassole).
+With key/value:
+
+```typescript
+collect([
+  { role: 'admin' },
+  { role: 'user' },
+  { role: 'user' },
+])
+  .hasMany('role', 'user')
+// → true
+```
+
+To check for exactly one, use [`hasSole`](#hassole). To get exact count, use [`count`](/collections/aggregating#count).
 
 ---
 
 ### hasSole()
 
-The `hasSole` method returns `true` if the collection contains exactly one item
-that passes the given truth test.
+Determines if exactly one item exists in the collection
+that matches the given criteria.
 
-Unlike `sole`, this method returns a boolean instead of throwing an exception
-when zero or multiple items match.
+```typescript
+collect([1])
+    .hasSole()
+// → true
+```
+
+With callback:
 
 ```typescript
 collect([1, 2, 3, 4, 5])
     .hasSole(n => n > 4)
-// → true (only 5 passes)
+// → true (only 5)
 ```
 
-For multiple matches:
+With key/value:
 
 ```typescript
-collect([1, 2, 3, 4, 5])
-    .hasSole(n => n > 3)
-// → false (4 and 5 both pass)
+collect([
+  { role: 'admin' },
+  { role: 'user' },
+  { role: 'user' },
+])
+  .hasSole('role', 'admin')
+// → true
 ```
 
-For getting the item (throws if not exactly one), use [`sole`](/collections/finding#sole). For Check without filter, use [`containsOneItem`](#containsoneitem).
+To get the sole item (throws if not exactly one), use [`sole`](/collections/finding#sole). To check for more than one, use [`hasMany`](#hasmany).
 
 ---
 
 ### every()
 
-The `every` method verifies that all elements of the collection pass a given truth test.
+Verifies that all elements of the collection pass a given truth test.
 
 Returns `true` if the callback returns truthy for every item. If the collection is
-empty, `every` returns `true` (vacuous truth).
+empty, **every** returns `true` (vacuous truth).
 
-You may also pass a callback:
+Pass a callback:
 
 ```typescript
 collect([1, 2, 3])
@@ -259,7 +311,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-You may also pass a property key:
+Pass a property key:
 
 ```typescript
 collect([{ active: true }, { active: true }])
@@ -275,13 +327,13 @@ collect([{ qty: 5 }, { qty: 10 }])
 // → true
 ```
 
-For checking if any item passes, use [`some`](#some). For Check if a specific value exists, use [`contains`](/collections/filtering#contains).
+To checking if any item passes, use [`some`](#some). To check if a specific value exists, use [`contains`](/collections/filtering#contains).
 
 ---
 
 ### some()
 
-The `some` method is an alias for the `contains` method.
+Is an alias for the `contains` method.
 
 It determines whether the collection contains any items that pass the given truth test.
 This method is useful for developers coming from JavaScript's Array.some() convention.
@@ -292,13 +344,13 @@ collect([1, 2, 3, 4, 5])
 // → true
 ```
 
-For Primary method (identical behavior), use [`contains`](/collections/filtering#contains). For checking if all items pass, use [`every`](#every).
+To primary method (identical behavior), use [`contains`](/collections/filtering#contains). To checking if all items pass, use [`every`](#every).
 
 ---
 
 ### offsetExists()
 
-The `offsetExists` method determines if a key exists at the given offset.
+Determines if a key exists at the given offset.
 
 This method implements the ArrayAccess interface pattern, allowing bracket-style
 key existence checks. It is used internally for array-like access.
@@ -309,6 +361,57 @@ collect({ a: 1, b: 2 })
 // → true
 ```
 
-For Primary method for key existence checks, use [`has`](#has). For Get value at offset, use [`offsetGet`](/collections/finding#offsetget).
+Check numeric index:
+
+```typescript
+collect(['x', 'y', 'z'])
+    .offsetExists(1)
+// → true
+```
+
+To primary method for key existence checks, use [`has`](#has). To get value at offset, use [`offsetGet`](/collections/finding#offsetget).
+
+---
+
+### ensure()
+
+May be used to verify that all elements of a collection
+are of a given type or list of types. Otherwise, an exception will be thrown.
+
+With primitive type:
+
+```typescript
+collect([1, 2, 3])
+    .ensure('number')
+    .all()
+// → [1, 2, 3]
+```
+
+With class:
+
+```typescript
+class User {}
+collect([new User(), new User()])
+    .ensure(User)
+    .all()
+// → [User, User]
+```
+
+Multiple types:
+
+```typescript
+collect([1, 'hello', 2])
+    .ensure(['number', 'string'])
+    .all()
+// → [1, 'hello', 2]
+```
+
+Throws on mismatch:
+
+```typescript
+collect([1, 'hello'])
+    .ensure('number')
+// throws UnexpectedValueException
+```
 
 ---

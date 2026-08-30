@@ -1,14 +1,13 @@
 # Aggregating
 
 <!-- This file is auto-generated from JSDoc. Do not edit directly. -->
-<!-- Run: npm run docs:guides -->
+<!-- Run: bun run docs:guides -->
 
 ### median()
 
-The `median` method returns the median value of a given key.
-
-The median is the middle value when all values are sorted in order. For collections with
-an even number of items, it returns the average of the two middle values.
+Returns the median value of a given key.
+The median is the middle value when all values are sorted in order.
+For collections with an even number of items, it returns the average of the two middle values.
 
 ```typescript
 collect([1, 3, 3, 6, 7, 8, 9])
@@ -16,7 +15,7 @@ collect([1, 3, 3, 6, 7, 8, 9])
 // → 6
 ```
 
-For an even count, it returns the average of two middle values:
+With even count (average of middle two):
 
 ```typescript
 collect([1, 2, 3, 4])
@@ -24,37 +23,35 @@ collect([1, 2, 3, 4])
 // → 2.5
 ```
 
-By property:
+With a key:
 
 ```typescript
 collect([
-  { name: 'Desk', price: 200 },
-  { name: 'Chair', price: 100 },
-  { name: 'Lamp', price: 50 },
+  { score: 80 },
+  { score: 90 },
+  { score: 85 },
 ])
-  .median('price')
-// → 100
+  .median('score')
+// → 85
 ```
 
-For Get the arithmetic mean, use [`avg`](#avg). For Get the most frequent value(s), use [`mode`](#mode).
+To get the mean (average), use [`avg`](#avg). To get most frequent value, use [`mode`](#mode).
 
 ---
 
 ### mode()
 
-The `mode` method returns the mode value of a given key, which is the value that appears
-most frequently in the collection.
-
-If multiple values share the highest frequency, all of them are returned. Returns null
-if the collection is empty.
+Returns the mode value of a given key.
+The mode is the value that appears most often. If multiple values appear
+with the same frequency, all of them are returned.
 
 ```typescript
-collect([1, 1, 2, 4])
+collect([1, 2, 2, 3, 3, 3, 4])
     .mode()
-// → [1]
+// → [3]
 ```
 
-For multiple modes, all are returned:
+Multiple modes:
 
 ```typescript
 collect([1, 1, 2, 2, 3])
@@ -62,33 +59,34 @@ collect([1, 1, 2, 2, 3])
 // → [1, 2]
 ```
 
-By property:
+With a key:
 
 ```typescript
 collect([
-  { name: 'Desk', category: 'furniture' },
-  { name: 'Chair', category: 'furniture' },
-  { name: 'Laptop', category: 'electronics' },
+  { size: 'S' },
+  { size: 'M' },
+  { size: 'M' },
+  { size: 'L' },
 ])
-  .mode('category')
-// → ['furniture']
+  .mode('size')
+// → ['M']
 ```
 
-For Get the middle value, use [`median`](#median). For Get the arithmetic mean, use [`avg`](#avg).
+To get the middle value, use [`median`](#median). To get the mean (average), use [`avg`](#avg).
 
 ---
 
 ### count()
 
-The `count` method returns the total number of items in the collection.
+Returns the total number of items in the collection.
 
 ```typescript
-collect([1, 2, 3])
+collect([1, 2, 3, 4, 5])
     .count()
-// → 3
+// → 5
 ```
 
-For Count items grouped by key/callback, use [`countBy`](/collections/grouping#countby). For Check if collection has no items, use [`isEmpty`](/collections/checking#isempty).
+To count grouped by key, use [`countBy`](/collections/grouping#countby). To check if empty, use [`isEmpty`](/collections/checking#isempty).
 
 ---
 
@@ -113,13 +111,13 @@ collect([
 // → 150
 ```
 
-For Calculate average instead, use [`avg`](#avg). For Get minimum value, use [`min`](#min).
+To calculate average instead, use [`avg`](#avg). To get minimum value, use [`min`](#min).
 
 ---
 
 ### avg()
 
-The `avg` method returns the average value of a given key.
+Returns the average value of a given key.
 
 ```typescript
 collect([1, 2, 3])
@@ -138,21 +136,51 @@ collect([
 // → 150
 ```
 
-For Get total instead of average, use [`sum`](#sum). For Get minimum value, use [`min`](#min).
+To get total instead of average, use [`sum`](#sum). To get minimum value, use [`min`](#min).
 
 ---
 
 ### average()
 
-The `average` method is an alias for the `avg` method.
+Returns the average value of a given key.
+This is an alias for the {@link avg} method.
 
-For Primary method, use [`avg`](#avg).
+```typescript
+collect([1, 2, 3, 4, 5])
+    .average()
+// → 3
+```
+
+With a key:
+
+```typescript
+collect([
+  { name: 'Chair', price: 100 },
+  { name: 'Desk', price: 200 },
+  { name: 'Lamp', price: 50 },
+])
+  .average('price')
+// → 116.67 (rounded: 350 / 3)
+```
+
+With a callback:
+
+```typescript
+collect([
+  { quantity: 2, price: 10 },
+  { quantity: 3, price: 20 },
+])
+  .average(item => item.quantity * item.price)
+// → 40 ((20 + 60) / 2)
+```
+
+To primary method, use [`avg`](#avg). To sum all values, use [`sum`](#sum).
 
 ---
 
 ### min()
 
-The `min` method returns the minimum value of a given key.
+Returns the minimum value of a given key.
 
 ```typescript
 collect([3, 1, 2])
@@ -171,13 +199,13 @@ collect([
 // → 100
 ```
 
-For Get maximum value, use [`max`](#max). For Get average value, use [`avg`](#avg).
+To get maximum value, use [`max`](#max). To get average value, use [`avg`](#avg).
 
 ---
 
 ### max()
 
-The `max` method returns the maximum value of a given key.
+Returns the maximum value of a given key.
 
 ```typescript
 collect([1, 2, 3])
@@ -196,14 +224,14 @@ collect([
 // → 200
 ```
 
-For Get minimum value, use [`min`](#min). For Get average value, use [`avg`](#avg).
+To get minimum value, use [`min`](#min). To get average value, use [`avg`](#avg).
 
 ---
 
 ### percentage()
 
-The `percentage` method may be used to quickly determine the percentage of items in the
-collection that pass a given truth test.
+May be used to quickly determine the percentage of
+items in the collection that pass a given truth test.
 
 ```typescript
 collect([1, 1, 2, 2, 2, 3])
@@ -211,26 +239,33 @@ collect([1, 1, 2, 2, 2, 3])
 // → 33.33
 ```
 
-You may also specify precision:
+With objects:
 
 ```typescript
 collect([
-  { name: 'Desk', available: true },
-  { name: 'Chair', available: true },
-  { name: 'Lamp', available: true },
-  { name: 'Rug', available: false },
+  { product: 'Desk', active: true },
+  { product: 'Chair', active: true },
+  { product: 'Lamp', active: false },
 ])
-  .percentage(p => p.available, 1)
-// → 75.0
+  .percentage(item => item.active)
+// → 66.67
 ```
 
-For Count total items, use [`count`](#count). For Get matching items, use [`filter`](/collections/filtering#filter).
+Custom precision:
+
+```typescript
+collect([1, 2, 3, 4, 5])
+    .percentage(n => n > 3, 0)
+// → 40
+```
+
+To count items, use [`count`](#count). To filter matching items, use [`filter`](/collections/filtering#filter).
 
 ---
 
 ### implode()
 
-The `implode` method joins items in a collection.
+Joins items in a collection.
 
 Its arguments depend on the type of items in the collection. If the collection contains
 arrays or objects, pass the key of the attribute you wish to join, and the "glue" string.
@@ -256,7 +291,7 @@ collect([
 // → 'Desk, Chair, Bookcase'
 ```
 
-You may also pass a callback:
+Pass a callback:
 
 ```typescript
 collect([
@@ -267,15 +302,15 @@ collect([
 // → 'DESK, CHAIR'
 ```
 
-For Join with a final separator, use [`join`](#join). For Convert to comma-separated string, use [`toString`](#tostring).
+To join with a final separator, use [`join`](#join). To convert to comma-separated string, use [`toString`](/collections/finding#tostring).
 
 ---
 
 ### join()
 
-The `join` method joins the collection's values with a string.
+Joins the collection's values with a string.
 
-Using its second argument, you may also specify how the final element should be appended,
+Using its second argument, also specify how the final element should be appended,
 which is useful for natural-language formatting like "and" or "or".
 
 ```typescript
@@ -284,7 +319,7 @@ collect(['a', 'b', 'c'])
 // → 'a, b, c'
 ```
 
-You may specify a final glue:
+Specify a final glue:
 
 ```typescript
 collect(['a', 'b', 'c'])
@@ -300,29 +335,13 @@ collect(['Taylor', 'Abigail', 'Dayle'])
 // → 'Taylor, Abigail, and Dayle'
 ```
 
-For Join by property or callback, use [`implode`](#implode). For Convert to comma-separated string, use [`toString`](#tostring).
-
----
-
-### toString()
-
-The `toString` method returns the collection as a comma-separated string.
-
-This method is automatically called when the collection is coerced to a string.
-
-```typescript
-collect([1, 2, 3])
-    .toString()
-// → '1, 2, 3'
-```
-
-For Join with custom separator, use [`join`](#join). For Join by property or callback, use [`implode`](#implode).
+To join by property or callback, use [`implode`](#implode). To convert to comma-separated string, use [`toString`](/collections/finding#tostring).
 
 ---
 
 ### reduce()
 
-The `reduce` method reduces the collection to a single value, passing the result of each
+Reduces the collection to a single value, passing the result of each
 iteration into the subsequent iteration.
 
 The value for the accumulator on the first iteration is the initial value; on subsequent
@@ -348,37 +367,37 @@ collect([
 // → { 1: 'Taylor', 2: 'Abigail' }
 ```
 
-For Reduce with spread arguments, use [`reduceSpread`](#reducespread). For Same as reduce (keys always available), use [`reduceWithKeys`](#reducewithkeys).
+To reduce with spread arguments, use [`reduceSpread`](#reducespread). To same as reduce (keys always available), use [`reduceWithKeys`](#reducewithkeys).
 
 ---
 
 ### reduceSpread()
 
-The `reduceSpread` method reduces the collection to multiple values using spread arguments.
+Reduces the collection to multiple values using spread arguments.
 
-The callback receives the accumulated values spread as individual arguments, followed by
-the current item and key. It must return an array of the same shape as the initial values.
-
-To track multiple values:
+Calculate sum and product together:
 
 ```typescript
-collect([1, 2, 3, 4, 5])
-    .reduceSpread((sum, product, item) => [sum + item, product * item], 0, 1)
-// → [15, 120] (sum=15, product=120)
+collect([1, 2, 3, 4])
+    .reduceSpread(
+        (sum, product, item) => [sum + item, product * item],
+        0, 1
+    )
+// → [10, 24]
 ```
 
-For Reduce to a single value, use [`reduce`](#reduce). For Reduce by mutating an object, use [`reduceInto`](#reduceinto).
+To single accumulator, use [`reduce`](#reduce). To reduce by mutating an object, use [`reduceInto`](#reduceinto).
 
 ---
 
 ### reduceWithKeys()
 
-The `reduceWithKeys` method reduces the collection with access to both value and key.
+Reduces the collection with access to both value and key.
 
 This method works identically to `reduce` since the key is always provided as the third
 argument. It exists for API compatibility with Laravel.
 
-To build a keyed object:
+Build a keyed object:
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -389,18 +408,16 @@ collect({ a: 1, b: 2, c: 3 })
 // → { a: 2, b: 4, c: 6 }
 ```
 
-For Primary reduce method, use [`reduce`](#reduce).
+To primary reduce method, use [`reduce`](#reduce).
 
 ---
 
 ### reduceInto()
 
-The `reduceInto` method reduces the collection into an existing object, mutating it.
+Reduces the collection into an existing object, mutating it.
 
 Unlike `reduce`, the callback does not return a value. Instead, it modifies the carry
 object directly. The same object is returned at the end.
-
-To build an object by mutation:
 
 ```typescript
 collect([1, 2, 3])
@@ -410,7 +427,7 @@ collect([1, 2, 3])
 // → { total: 6 }
 ```
 
-To populate an existing array:
+Populate an existing array:
 
 ```typescript
 collect([
@@ -424,69 +441,6 @@ collect([
 // → ['Taylor', 'Abigail']
 ```
 
-For Reduce with immutable accumulator, use [`reduce`](#reduce). For Reduce to multiple values, use [`reduceSpread`](#reducespread).
-
----
-
-### toArray()
-
-The `toArray` method converts the collection into a plain array.
-
-For associative collections (keyed objects), it returns a record instead. Nested
-collections are also recursively converted to arrays/records.
-
-```typescript
-collect([1, 2, 3])
-    .toArray()
-// → [1, 2, 3]
-```
-
-For an associative collection:
-
-```typescript
-collect({ a: 1, b: 2 })
-    .toArray()
-// → { a: 1, b: 2 }
-```
-
-For nested collections:
-
-```typescript
-collect([collect([1, 2]), collect([3, 4])])
-    .toArray()
-// → [[1, 2], [3, 4]]
-```
-
-For Get raw items without recursion, use [`all`](/collections/finding#all). For Get values as new collection, use [`values`](/collections/finding#values).
-
----
-
-### toJson()
-
-The `toJson` method converts the collection into a JSON serialized string.
-
-```typescript
-collect({ name: 'Desk', price: 200 })
-    .toJson()
-// → '{"name":"Desk","price":200}'
-```
-
-For JSON with indentation, use [`toPrettyJson`](#toprettyjson). For Convert to array/record, use [`toArray`](#toarray).
-
----
-
-### toPrettyJson()
-
-The `toPrettyJson` method converts the collection into a pretty-printed JSON string.
-
-Uses 2-space indentation for readability.
-
-```typescript
-collect({ name: 'Desk', price: 200 })
-    .toPrettyJson()
-// → '{\n  "name": "Desk",\n  "price": 200\n}'
-```
-
-For Compact JSON string, use [`toJson`](#tojson). For Convert to array/record, use [`toArray`](#toarray).
+To reduce with immutable accumulator, use [`reduce`](#reduce). To reduce to multiple values, use [`reduceSpread`](#reducespread).
 
 ---

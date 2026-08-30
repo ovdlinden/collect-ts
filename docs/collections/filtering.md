@@ -1,11 +1,11 @@
 # Filtering
 
 <!-- This file is auto-generated from JSDoc. Do not edit directly. -->
-<!-- Run: npm run docs:guides -->
+<!-- Run: bun run docs:guides -->
 
 ### filter()
 
-The `filter` method filters the collection using the given callback, keeping only
+Filters the collection using the given callback, keeping only
 items that pass a given truth test. If no callback is supplied, all falsy values
 (`false`, `null`, `undefined`, `0`, `''`) are removed.
 
@@ -23,13 +23,13 @@ collect([0, 1, '', 'hello', null])
 // → [1, 'hello']
 ```
 
-For the inverse (keeps items that fail), use [`reject`](#reject). For Filter by key/value instead of callback, use [`where`](#where).
+To the inverse (keeps items that fail), use [`reject`](#reject). To filter by key/value instead of callback, use [`where`](#where).
 
 ---
 
 ### reject()
 
-The `reject` method filters the collection using the given callback, removing
+Filters the collection using the given callback, removing
 items that pass the truth test. It is the inverse of the `filter` method.
 
 ```typescript
@@ -38,7 +38,7 @@ collect([1, 2, 3, 4])
 // → [1, 2]
 ```
 
-You may also pass a value directly to reject by loose equality:
+Pass a value directly to reject by loose equality:
 
 ```typescript
 collect([1, null, 3])
@@ -46,13 +46,13 @@ collect([1, null, 3])
 // → [1, 3]
 ```
 
-For the inverse (keeps items that pass), use [`filter`](#filter). For excluding items in an array, use [`whereNotIn`](#wherenotin).
+To the inverse (keeps items that pass), use [`filter`](#filter). To excluding items in an array, use [`whereNotIn`](#wherenotin).
 
 ---
 
 ### contains()
 
-The `contains` method determines whether the collection contains a given item.
+Determines whether the collection contains a given item.
 
 Uses loose equality (`==`) to match Laravel behavior. Note that JS differs from PHP:
 `0 == false`, `null == undefined`, `"" == 0`.
@@ -63,7 +63,7 @@ collect([1, 2, 3])
 // → true
 ```
 
-You may pass a callback to check for a matching item:
+Pass a callback to check for a matching item:
 
 ```typescript
 collect([
@@ -74,7 +74,7 @@ collect([
 // → true
 ```
 
-You may also use key/value syntax:
+Also use key/value syntax:
 
 ```typescript
 collect([
@@ -85,44 +85,85 @@ collect([
 // → true
 ```
 
-For strict equality (`===`), use [`containsStrict`](/collections/checking#containsstrict). For the inverse (true if not found), use [`doesntContain`](/collections/checking#doesntcontain).
+To strict equality (`===`), use [`containsStrict`](/collections/checking#containsstrict). To the inverse (true if not found), use [`doesntContain`](/collections/checking#doesntcontain).
 
 ---
 
 ### duplicates()
 
-The `duplicates` method retrieves and returns duplicate values from the collection.
-By default, the method uses loose comparison.
+Retrieves and returns duplicate values from the collection.
 
 ```typescript
-collect([1, 2, 2, 3, 3, 3])
+collect(['a', 'b', 'a', 'c', 'b'])
     .duplicates()
-// → [2, 3, 3]
+    .all()
+// → { '2': 'a', '4': 'b' }
 ```
 
-You may also pass a key to compare by a derived value:
+With key:
 
 ```typescript
-collect([{ email: 'a@b.com' }, { email: 'c@d.com' }, { email: 'a@b.com' }])
-    .duplicates('email')
-// → [{ email: 'a@b.com' }]
+collect([
+  { email: 'alice@example.com', name: 'Alice' },
+  { email: 'bob@example.com', name: 'Bob' },
+  { email: 'alice@example.com', name: 'Alice 2' },
+])
+  .duplicates('email')
+  .all()
+// → { '2': { email: 'alice@example.com', name: 'Alice 2' } }
 ```
 
-For strict equality (`===`), use [`duplicatesStrict`](#duplicatesstrict). For get unique items instead, use [`unique`](#unique).
+To strict comparison, use [`duplicatesStrict`](#duplicatesstrict). To get unique items, use [`unique`](#unique).
 
 ---
 
 ### duplicatesStrict()
 
-The `duplicatesStrict` method retrieves duplicate values using strict equality (`===`).
+Retrieves duplicate values from the collection using strict
+equality (`===`). Unlike `duplicates`, this method distinguishes between values like `1` and `'1'`.
 
-For loose equality (`==`), use [`duplicates`](#duplicates).
+```typescript
+collect([1, 2, 2, '2', 3, 3])
+    .duplicatesStrict()
+    .all()
+// → [2, 3]
+```
+
+With a key:
+
+```typescript
+collect([
+  { id: 1, email: 'a@test.com' },
+  { id: 2, email: 'b@test.com' },
+  { id: 3, email: 'a@test.com' },
+])
+  .duplicatesStrict('email')
+  .all()
+// → [{ id: 3, email: 'a@test.com' }]
+```
+
+Strict vs loose comparison:
+// duplicatesStrict: 1 !== '1'
+
+```typescript
+collect([1, '1', 1])
+    .duplicatesStrict()
+    .all()
+// → [1]
+// duplicates (loose): 1 == '1'
+collect([1, '1', 1])
+    .duplicates()
+    .all()
+// → ['1', 1]
+```
+
+To loose equality comparison, use [`duplicates`](#duplicates). To remove duplicates, use [`unique`](#unique).
 
 ---
 
 ### except()
 
-The `except` method returns all items in the collection except for those with the specified keys.
+Returns all items in the collection except for those with the specified keys.
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -130,13 +171,13 @@ collect({ a: 1, b: 2, c: 3 })
 // → Collection { b: 2 }
 ```
 
-For Include only specified keys, use [`only`](#only). For Filter by custom callback, use [`filter`](#filter).
+To include only specified keys, use [`only`](#only). To filter by custom callback, use [`filter`](#filter).
 
 ---
 
 ### only()
 
-The `only` method returns the items in the collection with the specified keys.
+Returns the items in the collection with the specified keys.
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
@@ -144,13 +185,13 @@ collect({ a: 1, b: 2, c: 3 })
 // → Collection { a: 1, c: 3 }
 ```
 
-For Exclude specified keys, use [`except`](#except). For Pick specific properties from each item, use [`select`](/collections/finding#select).
+To exclude specified keys, use [`except`](#except). To pick specific properties from each item, use [`select`](/collections/transforming#select).
 
 ---
 
 ### skip()
 
-The `skip` method returns a new collection without the first N items.
+Returns a new collection without the first N items.
 
 ```typescript
 collect([1, 2, 3, 4, 5])
@@ -158,54 +199,55 @@ collect([1, 2, 3, 4, 5])
 // → [3, 4, 5]
 ```
 
-For Take the first N items, use [`take`](#take). For Skip and take in one call, use [`slice`](/collections/finding#slice).
+To take the first N items, use [`take`](#take). To skip and take in one call, use [`slice`](/collections/finding#slice).
 
 ---
 
 ### skipUntil()
 
-The `skipUntil` method skips items until the given callback returns true.
-The matching item and all remaining items are returned as a new collection.
-You may also pass a value instead of a callback.
+Skips items until the given callback returns true,
+then returns the remaining items.
 
 ```typescript
 collect([1, 2, 3, 4])
-    .skipUntil(number => number >= 3)
+    .skipUntil(3)
+    .all()
 // → [3, 4]
 ```
 
-You may also pass a value:
+With callback:
 
 ```typescript
-collect(['a', 'b', 'c', 'd'])
-    .skipUntil('c')
-// → ['c', 'd']
+collect([1, 2, 3, 4])
+    .skipUntil(item => item >= 3)
+    .all()
+// → [3, 4]
 ```
 
-For Skip while condition is true, use [`skipWhile`](#skipwhile). For Take items until condition is met, use [`takeUntil`](#takeuntil).
+To skip while condition is true, use [`skipWhile`](#skipwhile). To take until condition, use [`takeUntil`](#takeuntil).
 
 ---
 
 ### skipWhile()
 
-The `skipWhile` method skips items while the given callback returns true.
-Once the callback returns false, all remaining items are returned as a
-new collection.
+Skips items while the given callback returns true,
+then returns the remaining items.
 
 ```typescript
-collect([1, 1, 2, 3, 1])
-    .skipWhile(number => number < 2)
-// → [2, 3, 1]
+collect([1, 2, 3, 4])
+    .skipWhile(item => item < 3)
+    .all()
+// → [3, 4]
 ```
 
-For Skip until condition becomes true, use [`skipUntil`](#skipuntil). For Take while condition is true, use [`takeWhile`](#takewhile).
+To skip until condition is true, use [`skipUntil`](#skipuntil). To take while condition, use [`takeWhile`](#takewhile).
 
 ---
 
 ### take()
 
-The `take` method returns a new collection with the specified number of
-items. You may pass a negative integer to take that many items from the
+Returns a new collection with the specified number of
+items. Pass a negative integer to take that many items from the
 end of the collection.
 
 ```typescript
@@ -222,76 +264,53 @@ collect([1, 2, 3, 4, 5])
 // → [4, 5]
 ```
 
-For Skip the first N items, use [`skip`](#skip). For Skip and take in one call, use [`slice`](/collections/finding#slice).
+To skip the first N items, use [`skip`](#skip). To skip and take in one call, use [`slice`](/collections/finding#slice).
 
 ---
 
 ### takeUntil()
 
-The `takeUntil` method returns items until the given callback returns true.
-The item that matches is not included in the result. You may also pass a
-value instead of a callback.
+Returns items until the given callback returns true.
 
 ```typescript
 collect([1, 2, 3, 4])
-    .takeUntil(number => number >= 3)
+    .takeUntil(3)
+    .all()
 // → [1, 2]
 ```
 
-You may also pass a value:
+With callback:
 
 ```typescript
-collect(['a', 'b', 'c', 'd'])
-    .takeUntil('c')
-// → ['a', 'b']
+collect([1, 2, 3, 4])
+    .takeUntil(item => item >= 3)
+    .all()
+// → [1, 2]
 ```
 
-For Take while condition is true, use [`takeWhile`](#takewhile). For Skip items until condition is met, use [`skipUntil`](#skipuntil).
+To take while condition is true, use [`takeWhile`](#takewhile). To skip until condition, use [`skipUntil`](#skipuntil).
 
 ---
 
 ### takeWhile()
 
-The `takeWhile` method returns items while the given callback returns true.
-Once the callback returns false, the method stops and returns what it
-collected so far.
+Returns items while the given callback returns true.
+Once the callback returns false, it stops.
 
 ```typescript
 collect([1, 2, 3, 4])
-    .takeWhile(number => number < 3)
+    .takeWhile(item => item < 3)
+    .all()
 // → [1, 2]
 ```
 
-For Take until condition becomes true, use [`takeUntil`](#takeuntil). For Skip while condition is true, use [`skipWhile`](#skipwhile).
-
----
-
-### nth()
-
-The `nth` method creates a new collection containing every n-th element.
-You may optionally pass an offset as the second argument.
-
-```typescript
-collect(['a', 'b', 'c', 'd', 'e', 'f'])
-    .nth(2)
-// → ['a', 'c', 'e']
-```
-
-You may also pass an offset:
-
-```typescript
-collect(['a', 'b', 'c', 'd', 'e', 'f'])
-    .nth(2, 1)
-// → ['b', 'd', 'f']
-```
-
-For filtering with a custom callback, use [`filter`](#filter).
+To take until condition is true, use [`takeUntil`](#takeuntil). To skip while condition, use [`skipWhile`](#skipwhile).
 
 ---
 
 ### unique()
 
-The `unique` method returns all of the unique items in the collection.
+Returns all of the unique items in the collection.
 
 When dealing with nested objects, you may specify a key used to determine uniqueness.
 
@@ -316,35 +335,44 @@ collect([
 //   ]
 ```
 
-For strict equality (always), use [`uniqueStrict`](#uniquestrict). For Get the duplicate items instead, use [`duplicates`](#duplicates).
+To strict equality (always), use [`uniqueStrict`](#uniquestrict). To get the duplicate items instead, use [`duplicates`](#duplicates).
 
 ---
 
 ### uniqueStrict()
 
-The `uniqueStrict` method removes duplicate items using strict equality (`===`).
-Unlike `unique`, which uses loose comparison, this method distinguishes between
-values like `1` and `'1'`.
+Has the same signature as the `unique` method
+but uses strict comparison (`===`) to filter unique values.
 
 ```typescript
-collect([1, '1', 2, '2', 2])
+collect([1, '1', 2, '2', 3])
     .uniqueStrict()
-// → [1, '1', 2, '2']
+    .all()
+// → [1, '1', 2, '2', 3]
 ```
 
-For loose equality, use [`unique`](#unique). For Get duplicates using strict equality, use [`duplicatesStrict`](#duplicatesstrict).
+Compare with loose unique:
+
+```typescript
+collect([1, '1', 2, '2', 3])
+    .unique()
+    .all()
+// → [1, 2, 3] (loose comparison treats 1 and '1' as equal)
+```
+
+To loose equality comparison, use [`unique`](#unique). To find duplicates using strict comparison, use [`duplicatesStrict`](#duplicatesstrict).
 
 ---
 
 ### where()
 
-The `where` method filters the collection by a given key/value pair.
+Filters the collection by a given key/value pair.
 
 The method uses "loose" comparisons when checking item values, meaning
 a string with an integer value will be considered equal to an integer
 of the same value. Use the `whereStrict` method for strict comparisons.
 
-You may optionally pass a comparison operator as the second argument.
+Optionally, pass a comparison operator as the second argument.
 Supported operators: `=`, `==`, `!=`, `<>`, `<`, `>`, `<=`, `>=`.
 
 ```typescript
@@ -356,7 +384,7 @@ collect([
 // → [{ product: 'Chair', price: 100 }]
 ```
 
-You may also pass a comparison operator:
+Pass a comparison operator:
 
 ```typescript
 collect([
@@ -379,22 +407,47 @@ collect([
 // → [{ name: 'Taylor', address: { city: 'Amsterdam' } }]
 ```
 
-For strict type comparisons, use [`whereStrict`](#wherestrict). For matching against an array of values, use [`whereIn`](#wherein).
+To strict type comparisons, use [`whereStrict`](#wherestrict). To matching against an array of values, use [`whereIn`](#wherein).
 
 ---
 
 ### whereStrict()
 
-The `whereStrict` method filters the collection by a given key/value pair using strict
+Filters the collection by a given key/value pair using strict
 comparison (`===`). Unlike `where`, this method distinguishes between values like `1` and `'1'`.
 
-For loose equality, use [`where`](#where).
+```typescript
+collect([
+  { name: 'Jim', age: 27 },
+  { name: 'Anna', age: '27' },
+  { name: 'Mark', age: 27 },
+])
+  .whereStrict('age', 27)
+  .pluck('name')
+  .all()
+// → ['Jim', 'Mark']
+```
+
+Distinguish between null and undefined:
+
+```typescript
+collect([
+  { id: 1, value: null },
+  { id: 2, value: undefined },
+  { id: 3, value: 0 },
+])
+  .whereStrict('value', null)
+  .all()
+// → [{ id: 1, value: null }]
+```
+
+To loose equality comparison, use [`where`](#where). To match against array of values, use [`whereIn`](#wherein).
 
 ---
 
 ### whereIn()
 
-The `whereIn` method filters the collection by a given key/value contained within the given array.
+Filters the collection by a given key/value contained within the given array.
 
 ```typescript
 collect([
@@ -409,29 +462,31 @@ collect([
 //   ]
 ```
 
-For excluding items in an array, use [`whereNotIn`](#wherenotin). For Match single value, use [`where`](#where).
+To excluding items in an array, use [`whereNotIn`](#wherenotin). To match single value, use [`where`](#where).
 
 ---
 
 ### whereInStrict()
 
-The `whereInStrict` method filters the collection by a given key/value contained
-within the given array using strict comparison (`===`). Unlike `whereIn`, this
-method distinguishes between values like `1` and `'1'`.
+Filters the collection using strict comparison.
 
 ```typescript
-collect([{ id: 1 }, { id: '1' }, { id: 2 }])
-    .whereInStrict('id', [1])
-// → [{ id: 1 }]
+collect([
+  { id: 1, value: '1' },
+  { id: 2, value: 1 },
+])
+  .whereInStrict('value', [1])
+  .all()
+// → [{ id: 2, value: 1 }]
 ```
 
-For loose equality, use [`whereIn`](#wherein). For Exclude using strict equality, use [`whereNotInStrict`](#wherenotinstrict).
+To loose comparison, use [`whereIn`](#wherein). To inverse, use [`whereNotInStrict`](#wherenotinstrict).
 
 ---
 
 ### whereNotIn()
 
-The `whereNotIn` method filters the collection by a given key/value not contained within the given array.
+Filters the collection by a given key/value not contained within the given array.
 
 ```typescript
 collect([
@@ -446,126 +501,209 @@ collect([
 //   ]
 ```
 
-For Include items matching array, use [`whereIn`](#wherein). For Exclude by callback, use [`reject`](#reject).
+To include items matching array, use [`whereIn`](#wherein). To exclude by callback, use [`reject`](#reject).
 
 ---
 
 ### whereNotInStrict()
 
-The `whereNotInStrict` method filters the collection by a given key/value not
-contained within the given array using strict comparison (`===`). Unlike `whereNotIn`,
-this method distinguishes between values like `1` and `'1'`.
+Filters the collection using strict comparison.
 
 ```typescript
-collect([{ id: 1 }, { id: '1' }, { id: 2 }])
-    .whereNotInStrict('id', [1])
-// → [{ id: '1' }, { id: 2 }]
+collect([
+  { id: 1, value: '1' },
+  { id: 2, value: 1 },
+])
+  .whereNotInStrict('value', [1])
+  .all()
+// → [{ id: 1, value: '1' }]
 ```
 
-For loose equality, use [`whereNotIn`](#wherenotin). For Include using strict equality, use [`whereInStrict`](#whereinstrict).
+To loose comparison, use [`whereNotIn`](#wherenotin). To inverse, use [`whereInStrict`](#whereinstrict).
 
 ---
 
 ### whereBetween()
 
-The `whereBetween` method filters the collection by determining if a specified item value is within a given range.
+Filters the collection by determining if a specified
+item value is within a given range (inclusive).
 
 ```typescript
 collect([
-  { name: 'Chair', price: 100 },
-  { name: 'Desk', price: 200 },
-  { name: 'Lamp', price: 30 },
+  { product: 'Desk', price: 200 },
+  { product: 'Chair', price: 80 },
+  { product: 'Bookcase', price: 150 },
+  { product: 'Pencil', price: 5 },
+  { product: 'Monitor', price: 300 },
 ])
-  .whereBetween('price', [50, 150])
-// → [{ name: 'Chair', price: 100 }]
+  .whereBetween('price', [100, 200])
+  .all()
+// → [
+//     { product: 'Desk', price: 200 },
+//     { product: 'Bookcase', price: 150 },
+//   ]
 ```
 
-For excluding items outside a range, use [`whereNotBetween`](#wherenotbetween). For Filter with operators, use [`where`](#where).
+Filter by age range:
+
+```typescript
+collect([
+  { name: 'Alice', age: 25 },
+  { name: 'Bob', age: 17 },
+  { name: 'Carol', age: 65 },
+  { name: 'Dave', age: 40 },
+])
+  .whereBetween('age', [18, 64])
+  .pluck('name')
+  .all()
+// → ['Alice', 'Dave']
+```
+
+To exclude items within a range, use [`whereNotBetween`](#wherenotbetween). To filter by key/value comparison, use [`where`](#where).
 
 ---
 
 ### whereNotBetween()
 
-The `whereNotBetween` method filters the collection by determining if a specified item value
+Filters the collection by determining if a specified item value
 is outside of a given range.
 
-For Include items in range, use [`whereBetween`](#wherebetween).
+```typescript
+collect([
+  { product: 'Desk', price: 200 },
+  { product: 'Chair', price: 80 },
+  { product: 'Bookcase', price: 150 },
+  { product: 'Pencil', price: 5 },
+  { product: 'Monitor', price: 300 },
+])
+  .whereNotBetween('price', [100, 200])
+  .all()
+// → [
+//     { product: 'Chair', price: 80 },
+//     { product: 'Pencil', price: 5 },
+//     { product: 'Monitor', price: 300 },
+//   ]
+```
+
+Filter ages outside working age:
+
+```typescript
+collect([
+  { name: 'Alice', age: 25 },
+  { name: 'Bob', age: 17 },
+  { name: 'Carol', age: 65 },
+  { name: 'Dave', age: 40 },
+])
+  .whereNotBetween('age', [18, 64])
+  .pluck('name')
+  .all()
+// → ['Bob', 'Carol']
+```
+
+To include items within a range, use [`whereBetween`](#wherebetween). To filter by key/value comparison, use [`where`](#where).
 
 ---
 
 ### whereNull()
 
-The `whereNull` method filters the collection by determining if a specified item value is null or undefined.
+Filters the collection by determining if a specified
+item value is null or undefined.
 
 ```typescript
 collect([
   { name: 'Taylor', email: 'taylor@example.com' },
-  { name: 'Abigail', email: null },
+  { name: 'James', email: null },
+  { name: 'Victoria', email: undefined },
 ])
   .whereNull('email')
-// → [{ name: 'Abigail', email: null }]
+  .all()
+// → [
+//     { name: 'James', email: null },
+//     { name: 'Victoria', email: undefined },
+//   ]
 ```
 
-For Exclude null/undefined values, use [`whereNotNull`](#wherenotnull).
+Filter items that are null:
+
+```typescript
+collect([1, null, 3, undefined, 5])
+    .whereNull()
+    .all()
+// → [null, undefined]
+```
+
+To filter items that are not null, use [`whereNotNull`](#wherenotnull). To filter by key/value comparison, use [`where`](#where).
 
 ---
 
 ### whereNotNull()
 
-The `whereNotNull` method filters the collection by determining if a specified item value
-is not null or undefined.
+Filters the collection by determining if a specified
+item value is not null and not undefined.
 
 ```typescript
 collect([
-  { name: 'Taylor', verifiedAt: '2024-01-15' },
-  { name: 'Abigail', verifiedAt: null },
+  { name: 'Taylor', email: 'taylor@example.com' },
+  { name: 'James', email: null },
+  { name: 'Victoria', email: undefined },
 ])
-  .whereNotNull('verifiedAt')
-// → [{ name: 'Taylor', verifiedAt: '2024-01-15' }]
+  .whereNotNull('email')
+  .all()
+// → [{ name: 'Taylor', email: 'taylor@example.com' }]
 ```
 
-For Include null/undefined values, use [`whereNull`](#wherenull).
+Filter truthy items:
+
+```typescript
+collect([1, null, 3, undefined, 5])
+    .whereNotNull()
+    .all()
+// → [1, 3, 5]
+```
+
+To filter items that are null, use [`whereNull`](#wherenull). To filter with custom callback, use [`filter`](#filter).
 
 ---
 
 ### whereInstanceOf()
 
-The `whereInstanceOf` method filters the collection by a given class type,
-keeping only items that are instances of the specified class. This is useful
-for filtering mixed collections to a specific type.
+Filters the collection by a given class type,
+keeping only items that are instances of the specified class.
 
 ```typescript
 class User {}
 class Admin extends User {}
 collect([new User(), new Admin(), { name: 'plain' }])
     .whereInstanceOf(User)
-// → [User, Admin]
+    .count()
+// → 2 (User and Admin)
 ```
 
-For filtering with a custom callback, use [`filter`](#filter).
+To filter with a custom callback, use [`filter`](#filter).
 
 ---
 
 ### forPage()
 
-The `forPage` method returns a new collection containing the items that would
-be present on a given page number. The method accepts the page number as its
-first argument and the number of items to show per page as its second argument.
+Returns a new collection containing the items that
+would be present on a given page number.
 
 ```typescript
 collect([1, 2, 3, 4, 5, 6, 7, 8, 9])
     .forPage(2, 3)
+    .all()
 // → [4, 5, 6]
 ```
 
-For the first page:
+First page:
 
 ```typescript
-collect(['a', 'b', 'c', 'd', 'e'])
+collect([1, 2, 3, 4, 5])
     .forPage(1, 2)
-// → ['a', 'b']
+    .all()
+// → [1, 2]
 ```
 
-For Get items by offset and length, use [`slice`](/collections/finding#slice). For Take the first N items, use [`take`](#take).
+To split into fixed-size chunks, use [`chunk`](/collections/grouping#chunk). To take first N items, use [`take`](#take).
 
 ---

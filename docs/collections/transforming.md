@@ -1,11 +1,11 @@
 # Transforming
 
 <!-- This file is auto-generated from JSDoc. Do not edit directly. -->
-<!-- Run: npm run docs:guides -->
+<!-- Run: bun run docs:guides -->
 
 ### range()
 
-The `range` method creates a collection containing numbers within a specified range.
+Creates a collection containing numbers within a specified range.
 
 Works in both directions: ascending when `from < to`, descending otherwise.
 
@@ -23,18 +23,18 @@ Collection.range(5, 1)
 // → Collection [5, 4, 3, 2, 1]
 ```
 
-For Generate by calling a function N times, use [`times`](#times).
+To generate by calling a function N times, use [`times`](#times).
 
 ---
 
 ### times()
 
-The `times` method creates a new collection by invoking the given closure a specified number of times.
+Creates a new collection by invoking the given closure a specified number of times.
 
 The callback receives 1-based indices (1, 2, 3...). Without a callback,
 returns a collection of numbers 1 through N.
 
-You may also pass a callback:
+Pass a callback:
 
 ```typescript
 Collection.times(3, i => i * 2)
@@ -48,13 +48,13 @@ Collection.times(3)
 // → Collection [1, 2, 3]
 ```
 
-For Generate a range between two numbers, use [`range`](#range).
+To generate a range between two numbers, use [`range`](#range).
 
 ---
 
 ### map()
 
-The `map` method iterates over the collection and passes each value to the given callback.
+Iterates over the collection and passes each value to the given callback.
 The callback is free to modify the item and return it, thus forming a new collection of
 modified items.
 
@@ -75,69 +75,72 @@ collect([
 // → ['Taylor', 'Abigail']
 ```
 
-For Extract a single property by key, use [`pluck`](#pluck). For Transform and change keys, use [`mapWithKeys`](#mapwithkeys).
+To extract a single property by key, use [`pluck`](#pluck). To transform and change keys, use [`mapWithKeys`](#mapwithkeys).
 
 ---
 
 ### mapWithKeys()
 
-The `mapWithKeys` method iterates through the collection and passes each value to the given
-callback. The callback should return an associative array containing a single key/value pair.
+Iterates through the collection and passes each value
+to the given callback. The callback should return an associative array containing
+a single key/value pair.
 
 ```typescript
 collect([
     { name: 'John', department: 'Sales' },
     { name: 'Jane', department: 'Marketing' }
 ]).mapWithKeys(emp => [emp.name, emp.department])
+  .all()
 // → { John: 'Sales', Jane: 'Marketing' }
 ```
 
-For Transform values keeping original keys, use [`map`](#map). For Key by a property without transforming values, use [`keyBy`](/collections/grouping#keyby).
+To transform values keeping original keys, use [`map`](#map). To key by a property without transforming values, use [`keyBy`](/collections/grouping#keyby).
 
 ---
 
 ### mapToDictionary()
 
-The `mapToDictionary` method runs the given callback over each item and groups the returned
-values by their keys. Unlike `groupBy`, this method allows complete control over the grouped
-values through the callback's return tuple.
+Runs the given callback over each item and groups
+the returned values by their keys.
 
 ```typescript
 collect([
-    { name: 'John', department: 'Sales' },
-    { name: 'Jane', department: 'Sales' },
-    { name: 'Bob', department: 'Marketing' }
-]).mapToDictionary(emp => [emp.department, emp.name])
+  { name: 'John', department: 'Sales' },
+  { name: 'Jane', department: 'Sales' },
+  { name: 'Bob', department: 'Marketing' },
+])
+  .mapToDictionary(emp => [emp.department, emp.name])
+  .all()
 // → { Sales: ['John', 'Jane'], Marketing: ['Bob'] }
 ```
 
-For Similar but returns nested Collections, use [`mapToGroups`](#maptogroups). For Group by key without value transformation, use [`groupBy`](/collections/grouping#groupby).
+To similar but returns nested Collections, use [`mapToGroups`](#maptogroups). To group by key without value transformation, use [`groupBy`](/collections/grouping#groupby).
 
 ---
 
 ### mapToGroups()
 
-The `mapToGroups` method groups the collection's items by the given callback. The callback
-should return an associative array containing a single key/value pair, allowing you to
-customize both the group key and the value placed in each group.
+Groups the collection's items by the given callback.
+The callback returns a [key, value] tuple that determines the grouping.
 
 ```typescript
 collect([
-    { name: 'John', department: 'Sales' },
-    { name: 'Jane', department: 'Sales' },
-    { name: 'Bob', department: 'Marketing' }
-]).mapToGroups(emp => [emp.department, emp.name])
+  { name: 'John', department: 'Sales' },
+  { name: 'Jane', department: 'Sales' },
+  { name: 'Bob', department: 'Marketing' },
+])
+  .mapToGroups(emp => [emp.department, emp.name])
 // → { Sales: Collection(['John', 'Jane']), Marketing: Collection(['Bob']) }
 ```
 
-For Similar but returns plain arrays, use [`mapToDictionary`](#maptodictionary). For Group by key without value transformation, use [`groupBy`](/collections/grouping#groupby).
+To similar but returns plain arrays, use [`mapToDictionary`](#maptodictionary). To group by key without value transformation, use [`groupBy`](/collections/grouping#groupby).
 
 ---
 
 ### mapInto()
 
-The `mapInto` method iterates over the collection and creates a new instance of the given
-class for each item, passing the item value and key to the constructor.
+Iterates over the collection and creates a new instance
+of the given class for each item, passing the item value and key to the constructor.
 
 ```typescript
 class Currency {
@@ -147,34 +150,36 @@ class Currency {
 collect([100, 250, 50])
     .mapInto(Currency)
     .map(c => c.format())
+    .all()
 // → ['$100.00', '$250.00', '$50.00']
 ```
 
-For Transform with arbitrary callback, use [`map`](#map). For passing entire collection to a class constructor, use [`pipeInto`](#pipeinto).
+To transform with arbitrary callback, use [`map`](#map). To pass entire collection to constructor, use [`pipeInto`](#pipeinto).
 
 ---
 
 ### mapSpread()
 
-The `mapSpread` method iterates over the collection's items, passing each nested item value
-into the given callback as separate arguments. This is useful when working with nested arrays
-where each sub-array's elements should be passed as individual arguments.
+Iterates over the collection's items, passing each nested
+item value into the given callback as separate arguments.
 
 ```typescript
 collect([[1, 2], [3, 4], [5, 6]])
     .mapSpread((a, b) => a + b)
+    .all()
 // → [3, 7, 11]
 ```
 
-You may also pass a key as the final argument:
+Also access the key:
 
 ```typescript
 collect([['Taylor', 'Laravel'], ['Caleb', 'Livewire']])
     .mapSpread((name, project, key) => `${key}: ${name} - ${project}`)
+    .all()
 // → ['0: Taylor - Laravel', '1: Caleb - Livewire']
 ```
 
-For Iterate without transforming, use [`eachSpread`](#eachspread). For Map and flatten results, use [`flatMap`](#flatmap).
+To iterate without transforming, use [`eachSpread`](#eachspread). To map and flatten results, use [`flatMap`](#flatmap).
 
 ---
 
@@ -188,13 +193,13 @@ collect([[1, 2], [3, 4]])
 // → Collection [2, 4, 6, 8]
 ```
 
-For Transform without flattening, use [`map`](#map). For Flatten without mapping, use [`flatten`](#flatten).
+To transform without flattening, use [`map`](#map). To flatten without mapping, use [`flatten`](#flatten).
 
 ---
 
 ### collapse()
 
-The `collapse` method collapses a collection of arrays into a single, flat collection.
+Collapses a collection of arrays into a single, flat collection.
 It merges the elements of nested arrays or Collections into one level.
 
 ```typescript
@@ -203,7 +208,7 @@ collect([[1, 2], [3, 4], [5]])
 // → [1, 2, 3, 4, 5]
 ```
 
-You may also use nested Collections:
+Also use nested Collections:
 
 ```typescript
 collect([collect([1, 2]), collect([3, 4])])
@@ -211,38 +216,33 @@ collect([collect([1, 2]), collect([3, 4])])
 // → [1, 2, 3, 4]
 ```
 
-For Recursively flatten to any depth, use [`flatten`](#flatten). For Map then collapse, use [`flatMap`](#flatmap).
+To recursively flatten to any depth, use [`flatten`](#flatten). To map then collapse, use [`flatMap`](#flatmap).
 
 ---
 
 ### collapseWithKeys()
 
-The `collapseWithKeys` method collapses a collection of objects into a single object,
-preserving the keys from each nested object. Later objects override earlier ones when
-keys conflict.
+Collapses a collection of arrays into a single, flat
+collection while preserving the original keys.
 
 ```typescript
-collect([{ name: 'John' }, { email: 'john@example.com' }, { role: 'admin' }])
-    .collapseWithKeys()
-// → { name: 'John', email: 'john@example.com', role: 'admin' }
+collect({
+  a: { x: 1 },
+  b: { y: 2 },
+})
+  .collapseWithKeys()
+  .all()
+// → { x: 1, y: 2 }
 ```
 
-With overlapping keys, later values override:
-
-```typescript
-collect([{ a: 1 }, { a: 2, b: 3 }])
-    .collapseWithKeys()
-// → { a: 2, b: 3 }
-```
-
-For Collapse arrays into a flat array, use [`collapse`](#collapse). For Merge another collection into this one, use [`merge`](/collections/combining#merge).
+To collapse without preserving keys, use [`collapse`](#collapse). To flatten nested structures, use [`flatten`](#flatten).
 
 ---
 
 ### flatten()
 
-The `flatten` method flattens a multi-dimensional collection into a single dimension.
-You may optionally pass a depth argument to limit how many levels deep the flattening
+Flattens a multi-dimensional collection into a single dimension.
+Optionally, pass a depth argument to limit how many levels deep the flattening
 should go.
 
 To flatten all levels:
@@ -261,13 +261,13 @@ collect([[1, [2]], [3]])
 // → [1, [2], 3]
 ```
 
-For Flatten by exactly one level, use [`collapse`](#collapse). For Flatten to dot notation keys, use [`dot`](#dot).
+To flatten by exactly one level, use [`collapse`](#collapse). To flatten to dot notation keys, use [`dot`](#dot).
 
 ---
 
 ### flip()
 
-The `flip` method swaps the collection's keys with their corresponding values. Values
+Swaps the collection's keys with their corresponding values. Values
 are converted to strings since object keys must be strings.
 
 ```typescript
@@ -284,61 +284,256 @@ collect(['a', 'b', 'c'])
 // → { a: '0', b: '1', c: '2' }
 ```
 
-For Get just the keys, use [`keys`](/collections/finding#keys). For Get just the values, use [`values`](/collections/finding#values).
+To get just the keys, use [`keys`](/collections/finding#keys). To get just the values, use [`values`](/collections/finding#values).
 
 ---
 
 ### pad()
 
-The `pad` method fills the array with the given value until the array reaches the
-specified size. This method behaves like PHP's `array_pad` function. To pad to the
-left, specify a negative size. No padding occurs if the absolute value of the given
-size is less than or equal to the length of the array.
+Fills the array with the given value until the array reaches
+the specified size. This method behaves like PHP's `array_pad` function.
 
-To pad to the right:
+To pad to the left, specify a negative size. No padding occurs if the absolute
+value of the given size is less than or equal to the length of the array.
+
+Pad to the right:
 
 ```typescript
 collect([1, 2, 3])
     .pad(5, 0)
+    .all()
 // → [1, 2, 3, 0, 0]
 ```
 
-To pad to the left:
+Pad to the left:
 
 ```typescript
 collect([1, 2, 3])
     .pad(-5, 0)
+    .all()
 // → [0, 0, 1, 2, 3]
 ```
 
-For Take items from start or end, use [`take`](/collections/filtering#take). For Insert items at a position, use [`splice`](#splice).
+No padding needed:
+
+```typescript
+collect([1, 2, 3])
+    .pad(2, 0)
+    .all()
+// → [1, 2, 3]
+```
+
+To take items from start or end, use [`take`](/collections/filtering#take). To insert items at position, use [`splice`](#splice).
+
+---
+
+### put()
+
+Sets the given key and value in the collection.
+This method modifies the collection in place.
+
+```typescript
+collect({ name: 'Taylor' })
+    .put('age', 25)
+    .all()
+// → { name: 'Taylor', age: 25 }
+```
+
+Update existing key:
+
+```typescript
+collect({ name: 'Taylor', age: 25 })
+    .put('age', 26)
+    .all()
+// → { name: 'Taylor', age: 26 }
+```
+
+To append to end of array, use [`push`](#push). To add to beginning, use [`prepend`](#prepend).
+
+---
+
+### push()
+
+Appends an item to the end of the collection.
+This method modifies the collection in place.
+
+```typescript
+collect([1, 2, 3])
+    .push(4)
+    .all()
+// → [1, 2, 3, 4]
+```
+
+Multiple values:
+
+```typescript
+collect([1, 2])
+    .push(3, 4, 5)
+    .all()
+// → [1, 2, 3, 4, 5]
+```
+
+To add to beginning, use [`prepend`](#prepend). To set by key, use [`put`](#put).
+
+---
+
+### prepend()
+
+Adds an item to the beginning of the collection.
+This method modifies the collection in place.
+
+```typescript
+collect([2, 3, 4])
+    .prepend(1)
+    .all()
+// → [1, 2, 3, 4]
+```
+
+With key:
+
+```typescript
+collect({ b: 2, c: 3 })
+    .prepend(1, 'a')
+    .all()
+// → { a: 1, b: 2, c: 3 }
+```
+
+To add to end, use [`push`](#push). To remove from beginning, use [`shift`](#shift).
+
+---
+
+### unshift()
+
+Adds one or more items to the beginning of the collection.
+
+```typescript
+collect([3, 4, 5])
+    .unshift(1, 2)
+    .all()
+// → [1, 2, 3, 4, 5]
+```
+
+To add single item to beginning, use [`prepend`](#prepend). To add to end, use [`push`](#push).
+
+---
+
+### pop()
+
+Removes and returns the last item from the collection.
+This method modifies the collection in place.
+
+```typescript
+const collection = collect([1, 2, 3, 4, 5])
+collection.pop()
+// → 5
+collection.all()
+// → [1, 2, 3, 4]
+```
+
+Pop multiple items:
+
+```typescript
+const collection = collect([1, 2, 3, 4, 5])
+collection.pop(2)
+// → [4, 5]
+collection.all()
+// → [1, 2, 3]
+```
+
+To add to end, use [`push`](#push). To remove from beginning, use [`shift`](#shift).
+
+---
+
+### shift()
+
+Removes and returns the first item from the collection.
+This method modifies the collection in place.
+
+```typescript
+const collection = collect([1, 2, 3, 4, 5])
+collection.shift()
+// → 1
+collection.all()
+// → [2, 3, 4, 5]
+```
+
+Shift multiple items:
+
+```typescript
+const collection = collect([1, 2, 3, 4, 5])
+collection.shift(2)
+// → [1, 2]
+collection.all()
+// → [3, 4, 5]
+```
+
+To add to beginning, use [`prepend`](#prepend). To remove from end, use [`pop`](#pop).
+
+---
+
+### add()
+
+Appends an item to the end of the collection.
+This is an alias for {@link push}.
+
+```typescript
+collect([1, 2, 3])
+    .add(4)
+    .all()
+// → [1, 2, 3, 4]
+```
+
+To add to end, use [`push`](#push). To add to beginning, use [`prepend`](#prepend).
 
 ---
 
 ### forget()
 
-The `forget` method removes an item from the collection by its key.
+Removes an item from the collection by its key.
+This method modifies the collection in place. Unlike `except`, this method
+modifies the collection directly.
 
-Unlike `except`, this method modifies the collection in place. For numeric keys,
-the collection does not re-index the remaining items.
-
-To remove a single key:
+Remove a single key:
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
     .forget('b')
-// → Collection { a: 1, c: 3 }
+    .all()
+// → { a: 1, c: 3 }
 ```
 
-To remove multiple keys:
+Remove multiple keys:
 
 ```typescript
 collect({ a: 1, b: 2, c: 3 })
     .forget(['a', 'c'])
-// → Collection { b: 2 }
+    .all()
+// → { b: 2 }
 ```
 
-For returning new collection without specified keys, use [`except`](/collections/filtering#except). For Remove and return a single value, use [`pull`](/collections/finding#pull).
+To return new collection without keys (immutable), use [`except`](/collections/filtering#except). To remove and return value, use [`pull`](/collections/finding#pull).
+
+---
+
+### select()
+
+Selects the given keys from the collection, similar to
+an SQL SELECT statement.
+
+```typescript
+collect([
+  { id: 1, name: 'Alice', email: 'alice@example.com', role: 'admin' },
+  { id: 2, name: 'Bob', email: 'bob@example.com', role: 'user' },
+])
+  .select(['name', 'email'])
+  .all()
+// → [
+//   { name: 'Alice', email: 'alice@example.com' },
+//   { name: 'Bob', email: 'bob@example.com' },
+// ]
+```
+
+To select keys from the collection itself, use [`only`](/collections/filtering#only). To extract single key values, use [`pluck`](#pluck).
 
 ---
 
@@ -355,7 +550,7 @@ collect([
 // → ['Taylor', 'Abigail']
 ```
 
-You may also specify custom keys:
+Also specify custom keys:
 
 ```typescript
 collect([
@@ -366,24 +561,25 @@ collect([
 // → { 1: 'Taylor', 2: 'Abigail' }
 ```
 
-For Transform items with full callback control, use [`map`](#map). For Get first item's value at path, use [`value`](/collections/finding#value).
+To transform items with full callback control, use [`map`](#map). To get first item's value at path, use [`value`](/collections/finding#value).
 
 ---
 
 ### transform()
 
-The `transform` method iterates over the collection and calls the given callback with each
-item in the collection. The items in the collection will be replaced by the values returned
-by the callback. Unlike `map`, this method modifies the collection in place.
+Iterates over the collection and calls the given callback
+with each item in the collection. The items in the collection will be replaced
+by the values returned by the callback. Unlike `map`, this method modifies the
+collection in place.
 
 ```typescript
-const collection = collect([1, 2, 3]);
-collection.transform(n => n * 2);
-collection.all();
+const collection = collect([1, 2, 3])
+collection.transform(n => n * 2)
+collection.all()
 // → [2, 4, 6]
 ```
 
-You may chain after transform:
+Chain after transform:
 
 ```typescript
 collect({ price: 100, tax: 10 })
@@ -392,88 +588,117 @@ collect({ price: 100, tax: 10 })
 // → 120
 ```
 
-For Transform without mutation, use [`map`](#map). For Iterate without transforming, use [`each`](#each).
+Transform object values:
+
+```typescript
+const collection = collect({ a: 1, b: 2 })
+collection.transform(v => v * 10)
+collection.all()
+// → { a: 10, b: 20 }
+```
+
+To transform without mutation (returns new collection), use [`map`](#map). To iterate without transforming, use [`each`](#each).
+
+---
+
+### multiply()
+
+Creates multiple copies of all items in the collection.
+
+```typescript
+collect([1, 2])
+    .multiply(3)
+    .all()
+// → [1, 2, 1, 2, 1, 2]
+```
+
+To pad to a specific size, use [`pad`](#pad).
 
 ---
 
 ### splice()
 
-The `splice` method removes and returns a slice of items starting at the specified index.
-You may pass a second argument to limit the size of the removed slice, and a third argument
-containing replacement items to insert at the splice point. This method modifies the
-original collection.
+Removes and returns a slice of items starting at the
+specified index. Pass a second argument to limit the size of the
+removed slice, and a third argument containing replacement items.
+This method modifies the original collection.
 
-To remove from an index:
+Remove from an index:
 
 ```typescript
-const collection = collect([1, 2, 3, 4, 5]);
-const chunk = collection.splice(2);
+const collection = collect([1, 2, 3, 4, 5])
+const chunk = collection.splice(2)
 // chunk      → [3, 4, 5]
 // collection → [1, 2]
 ```
 
-To remove a specific length:
+Remove a specific length:
 
 ```typescript
-const collection = collect([1, 2, 3, 4, 5]);
-const chunk = collection.splice(2, 1);
+const collection = collect([1, 2, 3, 4, 5])
+const chunk = collection.splice(2, 1)
 // chunk      → [3]
 // collection → [1, 2, 4, 5]
 ```
 
-To replace items:
+Replace items:
 
 ```typescript
-const collection = collect([1, 2, 3, 4, 5]);
-collection.splice(2, 1, [10, 11]);
+const collection = collect([1, 2, 3, 4, 5])
+collection.splice(2, 1, [10, 11])
+collection.all()
 // → [1, 2, 10, 11, 4, 5]
 ```
 
-For Extract without mutation, use [`slice`](/collections/finding#slice). For Take from start or end, use [`take`](/collections/filtering#take).
+To extract without mutation, use [`slice`](/collections/finding#slice). To take from start or end, use [`take`](/collections/filtering#take).
 
 ---
 
 ### dot()
 
-The `dot` method flattens a multi-dimensional collection into a single level collection
-that uses "dot" notation to indicate depth. This is useful for working with nested
-configuration or form data.
+Flattens a multi-dimensional collection into a single level
+collection that uses "dot" notation to indicate depth. This is useful for
+working with nested configuration or form data.
 
 ```typescript
 collect({
     user: { name: 'John', address: { city: 'NYC' } }
-}).dot()
+}).dot().all()
 // → { 'user.name': 'John', 'user.address.city': 'NYC' }
 ```
 
-To flatten configuration:
+Flatten configuration:
 
 ```typescript
 collect({
     database: { host: 'localhost', port: 3306 },
     cache: { driver: 'redis' }
-}).dot()
-// → { 'database.host': 'localhost', 'database.port': 3306, 'cache.driver': 'redis' }
+}).dot().all()
+// → {
+//     'database.host': 'localhost',
+//     'database.port': 3306,
+//     'cache.driver': 'redis'
+//   }
 ```
 
-For Expand dot notation back to nested structure, use [`undot`](#undot). For Flatten nested arrays, use [`flatten`](#flatten).
+To expand dot notation back to nested structure, use [`undot`](#undot). To flatten nested arrays, use [`flatten`](#flatten).
 
 ---
 
 ### undot()
 
-The `undot` method expands a single-level collection that uses "dot" notation into a
-multi-dimensional collection. This is the inverse of the `dot` method.
+Expands a single-level collection that uses "dot" notation
+into a multi-dimensional collection. This is the inverse of the `dot` method.
 
 ```typescript
 collect({
     'user.name': 'John',
     'user.address.city': 'NYC'
-}).undot()
+}).undot().all()
 // → { user: { name: 'John', address: { city: 'NYC' } } }
 ```
 
-To expand form data:
+Expand form data:
 
 ```typescript
 collect({
@@ -481,17 +706,22 @@ collect({
     'items.0.price': 100,
     'items.1.name': 'Gadget',
     'items.1.price': 200
-}).undot()
-// → { items: { 0: { name: 'Widget', price: 100 }, 1: { name: 'Gadget', price: 200 } } }
+}).undot().all()
+// → {
+//     items: {
+//       0: { name: 'Widget', price: 100 },
+//       1: { name: 'Gadget', price: 200 }
+//     }
+//   }
 ```
 
-For Flatten to dot notation, use [`dot`](#dot).
+To flatten to dot notation, use [`dot`](#dot).
 
 ---
 
 ### each()
 
-The `each` method iterates over the items in the collection and passes each item to a closure.
+Iterates over the items in the collection and passes each item to a closure.
 
 If you would like to stop iterating through the items, you may return false from your closure.
 
@@ -513,76 +743,101 @@ collect([1, 2, 3])
 // logs: 1
 ```
 
-For Execute callback on entire collection, use [`tap`](#tap). For Transform items instead of side effects, use [`map`](#map).
+To execute callback on entire collection, use [`tap`](#tap). To transform items instead of side effects, use [`map`](#map).
 
 ---
 
 ### eachSpread()
 
-The `eachSpread` method iterates over the collection's items, passing each nested item value
-into the given callback as separate arguments. This is useful when working with nested arrays
-where each sub-array should be destructured into callback parameters.
+Iterates over the collection's items, passing each nested
+item value into the given callback as separate arguments.
 
 ```typescript
 collect([['John', 35], ['Jane', 28]])
     .eachSpread((name, age) => {
         console.log(`${name} is ${age} years old`);
-    });
+    })
 // Logs: "John is 35 years old"
 // Logs: "Jane is 28 years old"
 ```
 
-You may also pass a key as the final argument:
+Also access the key:
 
 ```typescript
 collect([['a', 'b'], ['c', 'd']])
     .eachSpread((first, second, key) => {
         console.log(`${key}: ${first}, ${second}`);
-    });
+    })
 ```
 
-For Transform with spread arguments, use [`mapSpread`](#mapspread). For Iterate without spreading, use [`each`](#each).
+Return false to stop iteration:
+
+```typescript
+collect([[1, 2], [3, 4], [5, 6]])
+    .eachSpread((a, b) => {
+        if (a > 3) return false;
+        console.log(a + b);
+    })
+// Logs: 3, 7 (stops before [5, 6])
+```
+
+To transform with spread arguments, use [`mapSpread`](#mapspread). To iterate without spreading, use [`each`](#each).
 
 ---
 
 ### collect()
 
-The `collect` method returns a new Collection instance with the current items. This is useful
-when you want to break the chain and get a fresh collection, or convert a subclass back to a
-base Collection.
+Returns a new Collection instance with the current items.
+This is useful when you want to break the chain and get a fresh collection,
+or convert a subclass back to a base Collection.
+
+Create an independent copy:
 
 ```typescript
-const original = collect([1, 2, 3]);
-const copy = original.collect();
+const original = collect([1, 2, 3])
+const copy = original.collect()
 // original and copy are separate instances
 ```
 
-For Convert subclass to base Collection, use [`toBase`](#tobase).
+Break the chain:
+
+```typescript
+collect([1, 2, 3])
+    .map(n => n * 2)
+    .collect()
+    .filter(n => n > 2)
+    .all()
+// → [4, 6]
+```
+
+To convert subclass to base Collection, use [`toBase`](#tobase).
 
 ---
 
 ### toBase()
 
-The `toBase` method returns a base Collection instance from the current collection. This is
-useful when working with collection subclasses and you need to ensure you have a standard
-Collection instance.
+Returns a base Collection instance from the current collection.
+This is useful when working with collection subclasses and you need to ensure
+you have a standard Collection instance.
+
+Convert subclass to base:
 
 ```typescript
 class CustomCollection extends Collection {}
-const custom = new CustomCollection([1, 2, 3]);
-const base = custom.toBase();
+const custom = new CustomCollection([1, 2, 3])
+const base = custom.toBase()
 // base instanceof Collection === true
 ```
 
-For Create a new collection copy, use [`collect`](#collect).
+To create a new collection copy, use [`collect`](#collect).
 
 ---
 
 ### pipe()
 
-The `pipe` method passes the collection to the given closure and returns the result of the
-executed closure. This is useful for wrapping the collection in custom logic or breaking
-out of the method chain when needed.
+Passes the collection to the given closure and returns the result
+of the executed closure. This is useful for wrapping the collection in custom logic
+or breaking out of the method chain when needed.
 
 ```typescript
 collect([1, 2, 3])
@@ -602,15 +857,24 @@ collect([
 // → '3 users'
 ```
 
-For Execute callback but return collection unchanged, use [`tap`](#tap). For passing collection to a class constructor, use [`pipeInto`](#pipeinto).
+Chain with external function:
+
+```typescript
+const formatUsers = (c) => c.pluck('name').join(', ')
+collect([{ name: 'Taylor' }, { name: 'Abigail' }])
+    .pipe(formatUsers)
+// → 'Taylor, Abigail'
+```
+
+To execute callback but return collection unchanged, use [`tap`](#tap). To pass collection to a class constructor, use [`pipeInto`](#pipeinto).
 
 ---
 
 ### pipeInto()
 
-The `pipeInto` method creates a new instance of the given class and passes the collection
-into the constructor. This is useful for wrapping the collection in domain-specific
-objects or adapters.
+Creates a new instance of the given class and passes the
+collection into the constructor. This is useful for wrapping the collection in
+domain-specific objects or adapters.
 
 ```typescript
 class Report {
@@ -623,15 +887,15 @@ collect([10, 20, 30])
 // → { total: 60, avg: 20 }
 ```
 
-For passing collection to a callback, use [`pipe`](#pipe). For Create instances from each item, use [`mapInto`](#mapinto).
+To pass collection to a callback, use [`pipe`](#pipe). To create instances from each item, use [`mapInto`](#mapinto).
 
 ---
 
 ### pipeThrough()
 
-The `pipeThrough` method passes the collection through a series of callbacks and returns
-the final result. Each callback receives the result of the previous callback, creating
-a pipeline of transformations.
+Passes the collection through a series of callbacks and
+returns the final result. Each callback receives the result of the previous callback,
+creating a pipeline of transformations.
 
 ```typescript
 collect([1, 2, 3])
@@ -646,15 +910,15 @@ collect([1, 2, 3])
 For composable transformations:
 
 ```typescript
-const addTax = (c) => c.map(p => p * 1.1);
-const round = (c) => c.map(p => Math.round(p));
+const addTax = (c) => c.map(p => p * 1.1)
+const round = (c) => c.map(p => Math.round(p))
 collect([100, 200])
     .pipeThrough([addTax, round])
     .all()
 // → [110, 220]
 ```
 
-For passing through a single callback, use [`pipe`](#pipe).
+To pass through a single callback, use [`pipe`](#pipe).
 
 ---
 
@@ -673,17 +937,17 @@ collect([1, 2, 3])
   .filter(n => n > 2)
 ```
 
-For Execute callback for each item, use [`each`](#each). For Transform and return callback result, use [`pipe`](#pipe).
+To execute callback for each item, use [`each`](#each). To transform and return callback result, use [`pipe`](#pipe).
 
 ---
 
 ### dump()
 
-The `dump` method outputs the collection's items to the console and returns the collection,
-allowing you to inspect the contents at any point in a method chain without interrupting
-the flow.
+Outputs the collection's items to the console and returns the
+collection, allowing you to inspect the contents at any point in a method chain
+without interrupting the flow.
 
-To debug mid-chain:
+Debug mid-chain:
 
 ```typescript
 collect([1, 2, 3])
@@ -694,22 +958,27 @@ collect([1, 2, 3])
 // → [4, 6]
 ```
 
-You may also pass a label:
+With a label:
 
 ```typescript
-collection.dump('after filter')
-// Logs: [items...] 'after filter'
+collect([1, 2, 3])
+    .dump('before filter')
+    .filter(n => n > 1)
+    .dump('after filter')
+    .all()
+// Logs: [1, 2, 3] 'before filter'
+// Logs: [2, 3] 'after filter'
 ```
 
-For Dump and halt execution, use [`dd`](#dd). For Execute any callback mid-chain, use [`tap`](#tap).
+To dump and halt execution, use [`dd`](#dd). To execute any callback mid-chain, use [`tap`](#tap).
 
 ---
 
 ### dd()
 
-The `dd` method outputs the collection's items to the console and then throws an error
-to halt script execution. This is useful for debugging when you want to inspect the
-collection and stop processing. The name comes from "dump and die."
+Outputs the collection's items to the console and then throws
+an error to halt script execution. This is useful for debugging when you want
+to inspect the collection and stop processing. The name comes from "dump and die."
 
 ```typescript
 collect([1, 2, 3])
@@ -718,23 +987,41 @@ collect([1, 2, 3])
     .filter(n => n > 3)  // Never reached
 ```
 
-For Dump without halting, use [`dump`](#dump).
+With a label:
+
+```typescript
+collect(users)
+    .filter(u => u.active)
+    .dd('active users')  // Logs active users, then throws
+```
+
+To dump without halting, use [`dump`](#dump).
 
 ---
 
 ### when()
 
-The `when` method will execute the given callback when the first argument given to the
-method evaluates to true. The collection instance and the resolved value are passed to
-the closure. An optional second callback is executed when the condition is falsy.
+Executes the given callback when the first argument evaluates to true.
+The collection instance and the resolved value are passed to the closure.
+An optional second callback is executed when the condition is falsy.
 
 ```typescript
 collect([1, 2, 3])
-    .when(shouldDouble, c => c.map(n => n * 2))
+    .when(true, c => c.map(n => n * 2))
     .all()
+// → [2, 4, 6]
 ```
 
-You may pass a default callback:
+Pass a callback as the condition:
+
+```typescript
+collect([1, 2, 3])
+    .when(c => c.count() > 2, c => c.take(2))
+    .all()
+// → [1, 2]
+```
+
+Pass a default callback:
 
 ```typescript
 const filterActive = true
@@ -747,25 +1034,19 @@ collect([
     c => c.where('active', true),
     c => c
   )
+  .all()
 // → [{ name: 'Desk', active: true }]
 ```
 
-You may also pass a callback as the condition:
-
-```typescript
-collect([1, 2, 3])
-    .when(c => c.count() > 2, c => c.take(2))
-```
-
-For Execute when condition is falsy, use [`unless`](#unless). For Execute when collection is empty, use [`whenEmpty`](#whenempty).
+To execute when condition is falsy, use [`unless`](#unless). To execute when collection is empty, use [`whenEmpty`](#whenempty).
 
 ---
 
 ### unless()
 
-The `unless` method will execute the given callback when the first argument given to the
-method evaluates to false. This is the inverse of the `when` method. An optional second
-callback is executed when the condition is truthy.
+Executes the given callback when the first argument evaluates to false.
+This is the inverse of the `when` method. An optional second callback is executed when
+the condition is truthy.
 
 To skip filtering for admins:
 
@@ -776,10 +1057,11 @@ collect([
   { title: 'Draft', public: false },
 ])
   .unless(isAdmin, c => c.where('public', true))
+  .all()
 // → [{ title: 'Public Post', public: true }]
 ```
 
-You may pass a default callback:
+Pass a default callback:
 
 ```typescript
 const showAll = true
@@ -792,23 +1074,24 @@ collect([
     c => c.where('published', true),
     c => c
   )
-// → both posts (showAll is true)
+  .all()
+// → both posts (showAll is true, so default runs)
 ```
 
-For Execute when condition is truthy, use [`when`](#when). For Execute when collection is empty, use [`whenEmpty`](#whenempty).
+To execute when condition is truthy, use [`when`](#when). To execute when collection is not empty, use [`unlessEmpty`](#unlessempty).
 
 ---
 
 ### whenEmpty()
 
-The `whenEmpty` method will execute the given callback when the collection is empty.
+Executes the given callback when the collection is empty.
 An optional second callback is executed when the collection is not empty.
 
 To provide defaults for an empty collection:
 
 ```typescript
 collect([])
-    .whenEmpty(c => collect(['default']))
+    .whenEmpty(c => c.push('default'))
     .all()
 // → ['default']
 ```
@@ -821,13 +1104,13 @@ collect([])
 // logs: 'No results found'
 ```
 
-For Execute when collection has items, use [`whenNotEmpty`](#whennotempty). For Execute on arbitrary condition, use [`when`](#when).
+To execute when collection has items, use [`whenNotEmpty`](#whennotempty). To execute on arbitrary condition, use [`when`](#when).
 
 ---
 
 ### whenNotEmpty()
 
-The `whenNotEmpty` method will execute the given callback when the collection is not empty.
+Executes the given callback when the collection is not empty.
 An optional second callback is executed when the collection is empty.
 
 To process only if items exist:
@@ -838,10 +1121,11 @@ collect([
   { id: 2, total: 200 },
 ])
   .whenNotEmpty(c => c.pluck('total'))
+  .all()
 // → [100, 200]
 ```
 
-You may pass an empty fallback:
+Pass an empty fallback:
 
 ```typescript
 collect([{ name: 'Taylor' }])
@@ -852,39 +1136,184 @@ collect([{ name: 'Taylor' }])
 // → { name: 'Taylor' }
 ```
 
-For Execute when collection is empty, use [`whenEmpty`](#whenempty). For Execute on arbitrary condition, use [`when`](#when).
+To execute when collection is empty, use [`whenEmpty`](#whenempty). To alias for whenNotEmpty, use [`unlessEmpty`](#unlessempty).
 
 ---
 
 ### unlessEmpty()
 
-Alias for whenNotEmpty.
+Executes the given callback when the collection is not empty.
+This is an alias for {@link whenNotEmpty}.
+
+```typescript
+collect([1, 2, 3])
+    .unlessEmpty(c => c.map(n => n * 2))
+    .all()
+// → [2, 4, 6]
+```
+
+With empty collection (callback not executed):
+
+```typescript
+collect([])
+    .unlessEmpty(c => c.push('item'))
+    .all()
+// → []
+```
+
+To canonical method, use [`whenNotEmpty`](#whennotempty). To execute when collection IS empty, use [`unlessNotEmpty`](#unlessnotempty).
 
 ---
 
 ### unlessNotEmpty()
 
-Alias for whenEmpty.
+Executes the given callback when the collection is empty.
+This is an alias for {@link whenEmpty}.
+
+To provide a default value for empty results:
+
+```typescript
+collect([])
+    .unlessNotEmpty(() => collect(['No data']))
+    .all()
+// → ['No data']
+```
+
+With non-empty collection (callback not executed):
+
+```typescript
+collect([1, 2, 3])
+    .unlessNotEmpty(() => collect(['default']))
+    .all()
+// → [1, 2, 3]
+```
+
+To canonical method, use [`whenEmpty`](#whenempty). To execute when collection is NOT empty, use [`unlessEmpty`](#unlessempty).
 
 ---
 
 ### offsetSet()
 
-Set the value at a given offset.
+Sets the value at a given offset.
+
+Part of the ArrayAccess interface for bracket-style assignment. If the key is `null`,
+the value is appended to the collection (like `push`). This method modifies the
+collection in place.
+
+Set a value by key:
+
+```typescript
+const collection = collect({ a: 1 })
+collection.offsetSet('b', 2)
+collection.all()
+// → { a: 1, b: 2 }
+```
+
+Append with null key:
+
+```typescript
+const collection = collect([1, 2])
+collection.offsetSet(null, 3)
+collection.all()
+// → [1, 2, 3]
+```
+
+Update existing value:
+
+```typescript
+const collection = collect({ name: 'John' })
+collection.offsetSet('name', 'Jane')
+collection.get('name')
+// → 'Jane'
+```
+
+To primary method for setting values, use [`put`](#put). To append to collection, use [`push`](#push).
 
 ---
 
 ### offsetUnset()
 
-Remove the value at a given offset.
+Removes the value at a given offset.
+
+Part of the ArrayAccess interface for bracket-style deletion. This method modifies
+the collection in place. For arrays, this does not re-index the remaining items.
+
+Remove by key:
+
+```typescript
+const collection = collect({ a: 1, b: 2, c: 3 })
+collection.offsetUnset('b')
+collection.all()
+// → { a: 1, c: 3 }
+```
+
+Remove by index:
+
+```typescript
+const collection = collect(['x', 'y', 'z'])
+collection.offsetUnset(1)
+collection.all()
+// → { '0': 'x', '2': 'z' }  // Note: does not re-index
+```
+
+To primary method for removing items, use [`forget`](#forget). To remove and return a value, use [`pull`](/collections/finding#pull).
 
 ---
 
 ### lazy()
 
-The `lazy` method returns a new LazyCollection instance from the underlying items.
+Returns a new LazyCollection instance from the underlying items.
 
 This is particularly useful when you need to perform transformations on a large collection
-and want to defer processing until the items are actually needed.
+and want to defer processing until the items are actually needed. LazyCollection only
+processes items as they're consumed, which can significantly reduce memory usage and
+improve performance for large datasets.
+
+Convert to lazy for deferred processing:
+
+```typescript
+collect([1, 2, 3, 4, 5])
+    .lazy()
+    .map(n => n * 2)
+    .filter(n => n > 4)
+    .take(2)
+    .all()
+// → [6, 8]
+```
+
+Memory-efficient processing of large data:
+
+```typescript
+const hugeArray = Array.from({ length: 1000000 }, (_, i) => i)
+collect(hugeArray)
+    .lazy()
+    .filter(n => n % 1000 === 0)
+    .map(n => n * 2)
+    .take(10)
+    .all()
+// Only processes items until 10 matches found
+```
+
+Chaining with eager collection methods:
+
+```typescript
+collect(['a', 'b', 'c'])
+    .lazy()
+    .map(s => s.toUpperCase())
+    .collect()  // Convert back to eager Collection
+    .join(', ')
+// → 'A, B, C'
+```
+
+To convert back to eager Collection, use [`collect`](#collect).
+
+---
+
+### mapWithKey()
+
+Iterates through the collection with access to a related
+collection, allowing transformation based on related data.
+
+To simple transformation, use [`map`](#map). To transform and change keys, use [`mapWithKeys`](#mapwithkeys).
 
 ---

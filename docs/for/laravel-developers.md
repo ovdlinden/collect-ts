@@ -24,7 +24,7 @@ const activeUsers = collect(users)
 
 :::
 
-The method names are the same. The arguments are the same. The behavior is the same.
+Same methods, same arguments, same behavior.
 
 ## With Inertia.js
 
@@ -64,7 +64,7 @@ export default function ProductList() {
 }
 ```
 
-Same methods. Same arguments. Same behavior.
+The code above works identically to your controller.
 
 ## TypeScript Catches Your Typos
 
