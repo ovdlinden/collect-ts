@@ -14,6 +14,8 @@
  *   collect(users).filter().map().groupBy();
  */
 
+import * as acorn from 'acorn';
+
 export interface TransformOptions {
 	/** Package name to transform (default: 'collect-ts') */
 	packageName?: string;
@@ -89,25 +91,50 @@ const METHOD_TO_MODULE: Record<string, string> = {
 	countBy: 'count',
 };
 
+type AcornNode = acorn.Node & {
+	type: string;
+	body?: AcornNode[];
+	expression?: AcornNode;
+	source?: { value: string };
+	specifiers?: Array<{
+		type: string;
+		imported?: { name: string };
+		local?: { name: string };
+	}>;
+	callee?: AcornNode;
+	object?: AcornNode;
+	property?: { name: string };
+	name?: string;
+	arguments?: AcornNode[];
+};
+
 /**
  * Transform source code to use tree-shakeable imports.
- * Uses regex-based parsing for simplicity and speed.
+ * Uses acorn for accurate AST-based detection.
  */
 export function transform(code: string, options: TransformOptions = {}): TransformResult | null {
 	const packageName = options.packageName ?? 'collect-ts';
 
-	// Quick check: does this file import from our package?
-	const importRegex = new RegExp(
-		`import\\s*\\{[^}]*\\bcollect\\b[^}]*\\}\\s*from\\s*['"]${escapeRegex(packageName)}['"]`,
-	);
-	if (!importRegex.test(code)) {
-		return null; // No transformation needed
+	let ast: AcornNode;
+	try {
+		ast = acorn.parse(code, {
+			ecmaVersion: 'latest',
+			sourceType: 'module',
+		}) as AcornNode;
+	} catch {
+		return null;
+	}
+
+	// Find the collect identifier from imports
+	const collectIdentifier = findCollectImport(ast, packageName);
+	if (!collectIdentifier) {
+		return null;
 	}
 
 	// Find all method calls on collect() results
-	const usedMethods = findUsedMethods(code);
+	const usedMethods = findUsedMethods(ast, collectIdentifier);
 	if (usedMethods.size === 0) {
-		return null; // No methods to tree-shake
+		return null;
 	}
 
 	// Generate the transformed code
@@ -120,24 +147,122 @@ export function transform(code: string, options: TransformOptions = {}): Transfo
 }
 
 /**
- * Find all Collection methods used in the code.
- * Looks for patterns like `.methodName(` after collect() calls.
+ * Find the local identifier for 'collect' imported from the package.
+ * Handles: import { collect } from 'collect-ts'
+ *          import { collect as c } from 'collect-ts'
  */
-function findUsedMethods(code: string): Set<string> {
+function findCollectImport(ast: AcornNode, packageName: string): string | null {
+	for (const node of ast.body ?? []) {
+		if (node.type !== 'ImportDeclaration') continue;
+		if (node.source?.value !== packageName) continue;
+
+		for (const specifier of node.specifiers ?? []) {
+			if (specifier.type !== 'ImportSpecifier') continue;
+			const importedName = specifier.imported?.name;
+			if (importedName === 'collect') {
+				return specifier.local?.name ?? 'collect';
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * Find all Collection methods used on collect() call chains.
+ * Detects methods both on direct chains and within callback arguments.
+ */
+function findUsedMethods(ast: AcornNode, collectIdentifier: string): Set<string> {
 	const methods = new Set<string>();
 
-	// Match method calls: .methodName( or .methodName.property (for HOM)
-	// This regex finds potential method calls after collect()
-	const methodCallRegex = /\.(\w+)\s*[(.]/g;
-	let match: RegExpExecArray | null;
+	function isCollectCall(node: AcornNode): boolean {
+		return (
+			node.type === 'CallExpression' &&
+			node.callee?.type === 'Identifier' &&
+			node.callee.name === collectIdentifier
+		);
+	}
 
-	while ((match = methodCallRegex.exec(code)) !== null) {
-		const methodName = match[1];
-		if (KNOWN_METHODS.has(methodName)) {
-			methods.add(methodName);
+	function chainLeadsToCollect(node: AcornNode | undefined): boolean {
+		if (!node) return false;
+		if (isCollectCall(node)) return true;
+		if (node.type === 'CallExpression' && node.callee?.type === 'MemberExpression') {
+			return chainLeadsToCollect(node.callee.object as AcornNode);
+		}
+		return false;
+	}
+
+	function collectMethodsFromChain(node: AcornNode, inCollectContext: boolean): void {
+		if (node.type !== 'CallExpression') return;
+
+		const callee = node.callee;
+		if (!callee) return;
+
+		if (callee.type === 'MemberExpression' && callee.property?.name) {
+			const methodName = callee.property.name;
+			const isOnCollectChain = chainLeadsToCollect(callee.object);
+
+			if (isOnCollectChain || inCollectContext) {
+				if (KNOWN_METHODS.has(methodName)) {
+					methods.add(methodName);
+				}
+			}
+
+			// If this is on a collect chain, scan callback arguments for nested Collection methods
+			if (isOnCollectChain && node.arguments) {
+				for (const arg of node.arguments) {
+					if (arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression') {
+						scanForMethodCalls(arg, true);
+					}
+				}
+			}
+
+			collectMethodsFromChain(callee.object as AcornNode, inCollectContext);
 		}
 	}
 
+	function scanForMethodCalls(node: AcornNode, inCollectContext: boolean): void {
+		if (node.type === 'CallExpression') {
+			collectMethodsFromChain(node, inCollectContext);
+		}
+
+		for (const key in node) {
+			const child = (node as unknown as Record<string, unknown>)[key];
+			if (child && typeof child === 'object') {
+				if (Array.isArray(child)) {
+					for (const item of child) {
+						if (item && typeof item === 'object' && 'type' in item) {
+							scanForMethodCalls(item as AcornNode, inCollectContext);
+						}
+					}
+				} else if ('type' in child) {
+					scanForMethodCalls(child as AcornNode, inCollectContext);
+				}
+			}
+		}
+	}
+
+	function visit(node: AcornNode): void {
+		if (node.type === 'CallExpression') {
+			collectMethodsFromChain(node, false);
+		}
+
+		for (const key in node) {
+			const child = (node as unknown as Record<string, unknown>)[key];
+			if (child && typeof child === 'object') {
+				if (Array.isArray(child)) {
+					for (const item of child) {
+						if (item && typeof item === 'object' && 'type' in item) {
+							visit(item as AcornNode);
+						}
+					}
+				} else if ('type' in child) {
+					visit(child as AcornNode);
+				}
+			}
+		}
+	}
+
+	visit(ast);
 	return methods;
 }
 
@@ -151,7 +276,6 @@ function rewriteImports(code: string, packageName: string, usedMethods: Set<stri
 
 	// Deduplicate modules (e.g., sortBy and sortByDesc share a module)
 	const modules = new Set<string>();
-	const methodImports: string[] = [];
 
 	for (const method of usedMethods) {
 		const moduleName = METHOD_TO_MODULE[method] ?? method;
@@ -159,20 +283,14 @@ function rewriteImports(code: string, packageName: string, usedMethods: Set<stri
 			modules.add(moduleName);
 			imports.push(`import ${moduleName}Method from '${packageName}/methods/${moduleName}';`);
 		}
-		// For aliased methods, import the specific export
-		if (METHOD_TO_MODULE[method]) {
-			methodImports.push(`${method}Method`);
-		}
 	}
 
 	// Add named imports for aliased methods
 	for (const method of usedMethods) {
 		if (METHOD_TO_MODULE[method]) {
 			const moduleName = METHOD_TO_MODULE[method];
-			// Check if we need to add a named import
 			const namedImportRegex = new RegExp(`import\\s+\\{[^}]*${method}Method[^}]*\\}`);
 			if (!namedImportRegex.test(imports.join('\n'))) {
-				// Find and update the module import to include the named export
 				const idx = imports.findIndex((i) => i.includes(`/${moduleName}';`) || i.includes(`/${moduleName}";`));
 				if (idx > 0) {
 					imports[idx] = `import ${moduleName}Method, { ${method}Method } from '${packageName}/methods/${moduleName}';`;
@@ -205,6 +323,5 @@ function escapeRegex(str: string): string {
  * Check if a file should be transformed.
  */
 export function shouldTransform(id: string): boolean {
-	// Only transform JS/TS files, skip node_modules
 	return /\.[jt]sx?$/.test(id) && !id.includes('node_modules');
 }

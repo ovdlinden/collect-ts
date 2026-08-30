@@ -116,6 +116,7 @@
 		"@types/babel__traverse": "^7.28.0",
 		"@types/node": "^26.2.0",
 		"@vitest/coverage-v8": "^4.0.18",
+		"acorn": "^8.14.1",
 		"knip": "^6.32.2",
 		"lefthook": "^2.1.10",
 		"markdown-it-container": "^4.0.0",

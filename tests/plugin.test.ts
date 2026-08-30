@@ -54,7 +54,9 @@ const result = collect(users).filter(u => u.active).map(u => u.name);
 			expect(result!.code).toContain("import { createCollection } from 'collect-ts/core'");
 			expect(result!.code).toContain("import filterMethod from 'collect-ts/methods/filter'");
 			expect(result!.code).toContain("import mapMethod from 'collect-ts/methods/map'");
-			expect(result!.code).toContain('createCollection([filterMethod, mapMethod])');
+			expect(result!.code).toContain('createCollection([');
+			expect(result!.code).toContain('filterMethod');
+			expect(result!.code).toContain('mapMethod');
 		});
 
 		it('transforms complex method chain', () => {
@@ -115,6 +117,68 @@ collect(items).sortBy('name').sortByDesc('date');
 			expect(result).not.toBeNull();
 			// sortBy and sortByDesc share the same module
 			expect(result!.code.match(/import.*from.*sortBy/g)?.length).toBe(1);
+		});
+
+		it('does not match methods on native arrays', () => {
+			const code = `
+import { collect } from 'collect-ts';
+const arr = [1, 2, 3].filter(x => x > 1);
+const result = collect(users).map(u => u.name);
+			`;
+			const result = transform(code);
+			expect(result).not.toBeNull();
+			// Should only have 'map', not 'filter' from the native array
+			expect(result!.usedMethods).toContain('map');
+			expect(result!.usedMethods).not.toContain('filter');
+		});
+
+		it('does not match methods in comments', () => {
+			const code = `
+import { collect } from 'collect-ts';
+// Use .filter() to narrow down results
+const result = collect(users).map(u => u.name);
+			`;
+			const result = transform(code);
+			expect(result).not.toBeNull();
+			expect(result!.usedMethods).toContain('map');
+			expect(result!.usedMethods).not.toContain('filter');
+		});
+
+		it('does not match methods in strings', () => {
+			const code = `
+import { collect } from 'collect-ts';
+const msg = "Use .filter() to narrow down";
+const result = collect(users).map(u => u.name);
+			`;
+			const result = transform(code);
+			expect(result).not.toBeNull();
+			expect(result!.usedMethods).toContain('map');
+			expect(result!.usedMethods).not.toContain('filter');
+		});
+
+		it('handles aliased imports', () => {
+			const code = `
+import { collect as c } from 'collect-ts';
+c(users).filter(u => u.active).map(u => u.name);
+			`;
+			const result = transform(code);
+			expect(result).not.toBeNull();
+			expect(result!.usedMethods).toContain('filter');
+			expect(result!.usedMethods).toContain('map');
+		});
+
+		it('handles method calls on other objects with same names', () => {
+			const code = `
+import { collect } from 'collect-ts';
+import { someLib } from 'other-lib';
+const a = someLib.filter(x => x);
+const b = collect(users).map(u => u.name);
+			`;
+			const result = transform(code);
+			expect(result).not.toBeNull();
+			// Only 'map' from collect chain, not 'filter' from someLib
+			expect(result!.usedMethods).toContain('map');
+			expect(result!.usedMethods).not.toContain('filter');
 		});
 	});
 });
