@@ -3,15 +3,68 @@ import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue';
 import loader from '@monaco-editor/loader';
 import type * as Monaco from 'monaco-editor';
 import { collect } from 'collect-ts';
+import { parse } from 'acorn';
+import { parse as looseParse } from 'acorn-loose';
+import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'radix-vue';
 import { examples, defaultCode, getExamplesByCategory, type Example } from './examples';
 import { collectTypeDefinitions } from './collectTypes';
 
+const isWide = ref(false);
+
+onMounted(() => {
+	const mq = window.matchMedia('(min-width: 1024px)');
+	isWide.value = mq.matches;
+	mq.addEventListener('change', (e) => (isWide.value = e.matches));
+});
+
 /**
- * Execute playground code using eval - returns the last expression's value naturally.
- * collect must be passed as parameter so it's in eval's scope.
+ * Execute playground code with REPL-like behavior:
+ * - Variable declarations return their value
+ * - Object literals at statement position are correctly interpreted (not as blocks)
+ * Uses acorn-loose for tolerant parsing that handles ambiguous syntax.
  */
 function runPlayground(code: string, collect: typeof import('collect-ts').collect): unknown {
-	return eval(code);
+	const finalCode = transformForRepl(code);
+	return eval(finalCode);
+}
+
+/**
+ * Transform code for REPL-like evaluation:
+ * - Append variable name after declarations so they return their value
+ * - Wrap trailing object literals in parentheses so they're not parsed as blocks
+ */
+function transformForRepl(code: string): string {
+	const ast = looseParse(code, { ecmaVersion: 'latest' });
+	const lastStmt = ast.body[ast.body.length - 1];
+	if (!lastStmt) return code;
+
+	const prefix = code.slice(0, lastStmt.start);
+	const lastSource = code.slice(lastStmt.start, lastStmt.end);
+
+	// Variable declaration: append variable name to return its value
+	if (lastStmt.type === 'VariableDeclaration' && lastStmt.declarations.length > 0) {
+		const lastDecl = lastStmt.declarations[lastStmt.declarations.length - 1];
+		if (lastDecl.id.type === 'Identifier') {
+			return code + '\n' + lastDecl.id.name;
+		}
+	}
+
+	// Block statement: check if wrapping makes it a valid object literal
+	if (lastStmt.type === 'BlockStatement') {
+		try {
+			const wrapped = '(' + lastSource + ')';
+			const exprAst = parse(wrapped, { ecmaVersion: 'latest', sourceType: 'script' });
+			const exprStmt = exprAst.body[0];
+			if (exprStmt?.type === 'ExpressionStatement' && exprStmt.expression.type === 'ObjectExpression') {
+				// Add semicolon to prevent ASI issues (e.g., `x = 1\n({a})` being parsed as `x = 1({a})`)
+				return prefix.trimEnd() + ';\n' + wrapped;
+			}
+		} catch {
+			// Not a valid object literal when wrapped, use original
+		}
+	}
+
+	return code;
 }
 
 const code = ref(defaultCode);
@@ -21,7 +74,6 @@ const isRunning = ref(false);
 const isLoading = ref(true);
 const selectedExample = ref<string>(examples[0].name);
 const editorRef = ref<HTMLDivElement>();
-const autoRun = ref(true);
 const executionTime = ref<number | null>(null);
 const copied = ref(false);
 
@@ -110,11 +162,12 @@ async function initMonaco() {
 			lineDecorationsWidth: 16,
 			overviewRulerBorder: false,
 			scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+			fixedOverflowWidgets: true,
 		});
 
 		editor.onDidChangeModelContent(() => {
 			code.value = editor?.getValue() ?? '';
-			if (autoRun.value) debouncedRun();
+			debouncedRun();
 		});
 
 		const observer = new MutationObserver(() => {
@@ -211,13 +264,6 @@ function selectExample(example: Example) {
 	runCode();
 }
 
-function shareCode() {
-	const encoded = btoa(encodeURIComponent(code.value));
-	navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#${encoded}`);
-	copied.value = true;
-	setTimeout(() => (copied.value = false), 2000);
-}
-
 function copyOutput() {
 	navigator.clipboard.writeText(output.value || error.value);
 	copied.value = true;
@@ -238,7 +284,7 @@ function copyOutput() {
 				<!-- Left: Example selector -->
 				<select
 					:value="selectedExample"
-					class="h-8 min-w-[150px] px-2.5 pr-8 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-md appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px] bg-[right_4px_center] bg-no-repeat cursor-pointer transition-colors hover:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:text-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 dark:hover:border-zinc-600"
+					class="h-8 w-auto max-w-[280px] px-2.5 pr-8 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-md appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px] bg-[right_4px_center] bg-no-repeat cursor-pointer transition-colors hover:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:text-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 dark:hover:border-zinc-600"
 					@change="(e) => {
 						const ex = examples.find((ex) => ex.name === (e.target as HTMLSelectElement).value);
 						if (ex) selectExample(ex);
@@ -250,61 +296,12 @@ function copyOutput() {
 					</optgroup>
 				</select>
 
-				<!-- Right: Controls -->
-				<div class="flex items-center gap-2">
-					<!-- Auto-run toggle -->
-					<label class="flex items-center gap-1.5 cursor-pointer select-none group">
-						<button
-							type="button"
-							role="switch"
-							:aria-checked="autoRun"
-							class="relative w-8 h-[18px] rounded-full transition-colors"
-							:class="autoRun ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-600'"
-							@click="autoRun = !autoRun"
-						>
-							<span
-								class="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-white rounded-full shadow-sm transition-transform"
-								:class="autoRun ? 'translate-x-3.5' : 'translate-x-0'"
-							/>
-						</button>
-						<span class="text-xs font-medium text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300">
-							Auto
-						</span>
-					</label>
-
-					<!-- Run button -->
-					<button
-						:disabled="isRunning || isLoading"
-						class="inline-flex items-center gap-1 h-8 px-3 text-sm font-semibold text-white bg-primary rounded-md transition-all hover:bg-primary/90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-						@click="runCode"
-					>
-						<svg v-if="isRunning" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-							<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25" />
-							<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75" />
-						</svg>
-						<svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-							<path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-						</svg>
-						<span>Run</span>
-					</button>
-
-					<!-- Share button -->
-					<button
-						class="inline-flex items-center gap-1 h-8 px-2.5 text-sm font-medium text-zinc-600 border border-zinc-200 rounded-md transition-colors hover:text-zinc-900 hover:border-zinc-300 hover:bg-zinc-50 dark:text-zinc-400 dark:border-zinc-700 dark:hover:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
-						@click="shareCode"
-					>
-						<svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-							<path d="M13 4.5a2.5 2.5 0 11.702 1.737L6.97 9.604a2.5 2.5 0 110 .792l6.733 3.367a2.5 2.5 0 11-.67 1.341l-6.733-3.367a2.5 2.5 0 110-3.474l6.733-3.367A2.5 2.5 0 0113 4.5z" />
-						</svg>
-						<span>{{ copied ? 'Copied!' : 'Share' }}</span>
-					</button>
-				</div>
 			</div>
 
-			<!-- Editor + Output (horizontal split) -->
-			<div class="flex flex-col flex-1 min-h-0">
-				<!-- Code pane (top) -->
-				<div class="flex flex-col h-[220px] min-h-[120px] shrink-0 border-b border-zinc-200 dark:border-zinc-700">
+			<!-- Editor + Output (resizable) -->
+			<SplitterGroup :direction="isWide ? 'horizontal' : 'vertical'" class="flex-1 min-h-0">
+				<!-- Code pane -->
+				<SplitterPanel :default-size="60" :min-size="20" class="flex flex-col min-h-0 min-w-0">
 					<div class="flex items-center justify-between h-9 px-4 border-b border-zinc-100/80 dark:border-zinc-800/40">
 						<span class="text-[11px] font-medium tracking-wider uppercase text-zinc-400 dark:text-zinc-500">Code</span>
 					</div>
@@ -313,10 +310,19 @@ function copyOutput() {
 							<div class="w-5 h-5 border-2 border-zinc-200 border-t-primary rounded-full animate-spin dark:border-zinc-700" />
 						</div>
 					</div>
-				</div>
+				</SplitterPanel>
 
-				<!-- Output pane (bottom) -->
-				<div class="flex flex-col flex-1 min-h-0">
+				<!-- Resize handle -->
+				<SplitterResizeHandle
+					class="group relative flex items-center justify-center data-[orientation=horizontal]:w-2 data-[orientation=vertical]:h-2 bg-zinc-100 dark:bg-zinc-800 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+				>
+					<div
+						class="rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-zinc-400 dark:group-hover:bg-zinc-500 group-data-[orientation=horizontal]:h-8 group-data-[orientation=horizontal]:w-1 group-data-[orientation=vertical]:w-8 group-data-[orientation=vertical]:h-1 transition-colors"
+					/>
+				</SplitterResizeHandle>
+
+				<!-- Output pane -->
+				<SplitterPanel :default-size="40" :min-size="15" class="flex flex-col min-h-0 min-w-0">
 					<!-- Output header -->
 					<div class="flex items-center justify-between h-9 px-4 border-b border-zinc-100/80 dark:border-zinc-800/40">
 						<div class="flex items-center gap-1">
@@ -356,8 +362,8 @@ function copyOutput() {
 							Run code to see output
 						</span>
 					</div>
-				</div>
-			</div>
+				</SplitterPanel>
+			</SplitterGroup>
 		</div>
 
 		<!-- Fallback skeleton -->

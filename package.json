@@ -120,6 +120,7 @@
 		"@types/node": "^26.2.0",
 		"@vitest/coverage-v8": "^4.0.18",
 		"acorn": "^8.14.1",
+		"acorn-loose": "^8.5.2",
 		"knip": "^6.32.2",
 		"lefthook": "^2.1.10",
 		"markdown-it-container": "^4.0.0",
@@ -146,6 +147,7 @@
 	},
 	"packageManager": "pnpm@9.15.1",
 	"dependencies": {
-		"minisearch": "^7.2.0"
+		"minisearch": "^7.2.0",
+		"radix-vue": "^1.9.17"
 	}
 }

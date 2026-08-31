@@ -113,12 +113,12 @@ collect(tags).pluck('tag').unique().all()`,
   { title: 'Deploy', done: false },
 ]
 
-const [done, pending] = collect(tasks)
-  .partition(t => t.done)
-  .map(c => c.pluck('title').all())
-  .all()
+const [done, pending] = collect(tasks).partition(t => t.done)
 
-{ done, pending }`,
+{
+  done: done.pluck('title').all(),
+  pending: pending.pluck('title').all(),
+}`,
 	},
 	{
 		name: 'Reduce',
