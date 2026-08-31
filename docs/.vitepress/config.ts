@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import monacoEditorPluginModule from 'vite-plugin-monaco-editor';
 
@@ -121,6 +122,11 @@ export default defineConfig({
 				languageWorkers: ['typescript'],
 			}),
 		],
+		resolve: {
+			alias: {
+				'collect-ts': fileURLToPath(new URL('../../dist/index.js', import.meta.url)),
+			},
+		},
 	},
 
 	ignoreDeadLinks: [/^https:\/\/laravel\.com/],
