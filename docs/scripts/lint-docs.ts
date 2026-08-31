@@ -166,9 +166,11 @@ function lintMarkdown(file: string, text: string): void {
 			// Narrating comments in code fences. URLs are stripped first so a
 			// https:// link in an example is not read as a // comment.
 			// Allowed: // [!code ...] (VitePress transformers), // → (output markers),
-			// //  ^? and // ^| (TwoSlash type queries)
+			// // ^? and // ^| (TwoSlash type queries), // ... or // … (ellipsis),
+			// output continuations (// + whitespace + word/JSON chars), any line with →
 			const code = line.replace(/\b[a-z][\w+.-]*:\/\/\S+/gi, '');
-			if (/\/\/(?!\s*(\[!code|→|\^[?|]))/.test(code)) add(file, n, 'in-fence // comment (move to a legend)');
+			if (/\/\/(?!\s*(\[!code|→|\^[?|]|\.{3}|…)|\s+[\w[\]{}'"])/.test(code) && !/→/.test(code))
+				add(file, n, 'in-fence // comment (move to a legend)');
 			else if (/(^|\s)#(?![![])/.test(code) && !/^\s*#!/.test(code))
 				add(file, n, 'in-fence # comment (move to a legend)');
 			return;
