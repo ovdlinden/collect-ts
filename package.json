@@ -44,7 +44,8 @@
 	},
 	"scripts": {
 		"prepare": "lefthook install",
-		"build": "tsup && tsc -p tsconfig.build.json",
+		"build": "tsup && tsc -p tsconfig.build.json && bun run build:sizes",
+		"build:sizes": "tsx scripts/calculate-bundle-sizes.ts",
 		"dev": "tsup --watch",
 		"test": "vitest run",
 		"test:watch": "vitest",

@@ -21,7 +21,7 @@ To split into N groups, use [`split`](#split). To create overlapping windows, us
 
 ---
 
-### chunkWhile()
+### chunkWhile() <TryInPlayground code="collect([1, 2, 3, 5, 6, 10])&#10;    .chunkWhile((value, key, chunk) =>&#10;        chunk.last() === value - 1&#10;    )&#10;    .toArray()&#10;// → [[1, 2, 3], [5, 6], [10]]" />
 
 The **chunkWhile** method breaks the collection into multiple, smaller collections
 based on the evaluation of the given callback.
@@ -181,7 +181,7 @@ To similar but keeps all items per key, use [`groupBy`](#groupby). To transform 
 
 ---
 
-### partition()
+### partition() <TryInPlayground code="const [active, inactive] = collect([&#10;  { name: 'Taylor', active: true },&#10;  { name: 'Abigail', active: false },&#10;  { name: 'James', active: true },&#10;]).partition(u => u.active)&#10;// active  → [{ name: 'Taylor', ... }, { name: 'James', ... }]&#10;// inactive → [{ name: 'Abigail', ... }]" />
 
 Split the collection into two groups: items passing the test and items failing.
 

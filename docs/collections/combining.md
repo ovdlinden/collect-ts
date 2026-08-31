@@ -54,7 +54,7 @@ To compare by keys, use [`diffKeys`](#diffkeys). To compare by key and value, us
 
 ---
 
-### diffUsing()
+### diffUsing() <TryInPlayground code="collect(['Apple', 'Banana', 'Cherry'])&#10;    .diffUsing(['apple', 'cherry'], (a, b) =>&#10;        a.toLowerCase().localeCompare(b.toLowerCase())&#10;    )&#10;    .all()&#10;// → ['Banana']" />
 
 The **diffUsing** method compares the collection against another array or collection
 using a callback for comparison. The callback should return 0 when two values are
@@ -92,7 +92,7 @@ To compare by values, use [`diff`](#diff). To compare by key and value, use [`di
 
 ---
 
-### diffKeysUsing()
+### diffKeysUsing() <TryInPlayground code="collect({ Name: 'Alice', AGE: 30 })&#10;    .diffKeysUsing({ name: '', age: 0 }, (a, b) =>&#10;        a.toLowerCase().localeCompare(b.toLowerCase())&#10;    )&#10;    .all()&#10;// → {} (all keys match case-insensitively)" />
 
 The **diffKeysUsing** method compares the collection against another array or collection
 based on its keys using a callback. The callback should return 0 when two keys are
@@ -130,7 +130,7 @@ To compare by values only, use [`diff`](#diff). To compare by keys only, use [`d
 
 ---
 
-### diffAssocUsing()
+### diffAssocUsing() <TryInPlayground code="collect({ Name: 'Alice', Age: 30 })&#10;    .diffAssocUsing({ name: 'Alice', age: 25 }, (a, b) =>&#10;        a.toLowerCase().localeCompare(b.toLowerCase())&#10;    )&#10;    .all()&#10;// → { Age: 30 } (Name matches, Age differs in value)" />
 
 The **diffAssocUsing** method compares the collection against another array or collection
 based on its keys and values, using a callback for key comparison. The callback should
@@ -176,7 +176,7 @@ To intersect by keys, use [`intersectByKeys`](#intersectbykeys). To get values N
 
 ---
 
-### intersectUsing()
+### intersectUsing() <TryInPlayground code="collect(['Apple', 'Banana', 'Cherry'])&#10;    .intersectUsing(['apple', 'cherry'], (a, b) =>&#10;        a.toLowerCase().localeCompare(b.toLowerCase())&#10;    )&#10;    .all()&#10;// → ['Apple', 'Cherry']" />
 
 The **intersectUsing** method removes values not present in the given array or collection,
 using a callback for comparison. The callback should return 0 when two values are
@@ -216,7 +216,7 @@ To intersect by values only, use [`intersect`](#intersect). To intersect by keys
 
 ---
 
-### intersectAssocUsing()
+### intersectAssocUsing() <TryInPlayground code="collect({ Name: 'Alice', AGE: 30 })&#10;    .intersectAssocUsing({ name: 'Alice', age: 30 }, (a, b) =>&#10;        a.toLowerCase().localeCompare(b.toLowerCase())&#10;    )&#10;    .all()&#10;// → { Name: 'Alice', AGE: 30 }" />
 
 The **intersectAssocUsing** method compares the collection against another array or collection
 based on both keys and values, using a callback for key comparison. The callback should
@@ -454,7 +454,7 @@ To shallow replacement, use [`replace`](#replace). To similar but merges arrays 
 
 ---
 
-### with()
+### with() <TryInPlayground code="const users = collect([{ id: 1, name: 'Alice' }]);&#10;const orders = collect([{ userId: 1, total: 100 }]);&#10;users.with(orders).map((user, related) => ({&#10;  ...user,&#10;  orderCount: related.count(),&#10;}))" />
 
 The **with** method pairs the collection with a related collection, creating a
 WithCollection that allows ORM-style operations where each primary item can be

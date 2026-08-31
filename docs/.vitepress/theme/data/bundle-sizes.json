@@ -1,0 +1,19 @@
+{
+	"generatedAt": "2026-08-31T04:50:17.455Z",
+	"methodCount": 173,
+	"full": {
+		"raw": 56343,
+		"gzip": 15605,
+		"formatted": "15 KB"
+	},
+	"treeshaken": {
+		"raw": 1536,
+		"gzip": 1284,
+		"formatted": "1.3 KB"
+	},
+	"standalone": {
+		"raw": 179,
+		"gzip": 151,
+		"formatted": "~151 B"
+	}
+}

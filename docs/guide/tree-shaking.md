@@ -1,6 +1,6 @@
 # Tree-Shaking
 
-Full library: ~56 KB. With the plugin: ~6 KB for five methods.
+Full library: ~<BundleSizeInline /> gzip. With the plugin: ~<BundleSizeInline type="treeshaken" /> for five methods.
 
 ## Use the Plugin
 
@@ -127,7 +127,7 @@ Two alternatives when you can't use the plugin.
 
 ### Standalone functions
 
-Skip the Collection wrapper entirely. Each function is ~200 bytes.
+Skip the Collection wrapper entirely. Each function is ~150 bytes gzip.
 
 ```ts
 import { filter, map, groupBy } from 'collect-ts/fn';
@@ -160,12 +160,7 @@ Terminal methods (`all()`, `toArray()`, `count()`, `isEmpty()`) are built into C
 
 ## Size Reference
 
-| Approach | Size |
-|----------|------|
-| Full library | ~56 KB |
-| Plugin (5 methods) | ~6 KB |
-| Manual (2 methods) | ~5.5 KB |
-| Standalone function | ~200 B each |
+<BundleSizeTable />
 
 ## Exports
 

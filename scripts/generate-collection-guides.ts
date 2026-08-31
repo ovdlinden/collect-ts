@@ -502,8 +502,18 @@ function generateGuidePage(
 		}
 
 		for (const method of groupMethods) {
+			// Get the first code example for the playground link
+			const firstExample = method.examples.find((e) => e.code);
+			const playgroundCode = firstExample?.code || `collect([1, 2, 3]).${method.name}()`;
+			// Escape for HTML attribute: newlines to &#10;, quotes to &quot;
+			const escapedCode = playgroundCode
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/\n/g, '&#10;')
+				.replace(/\t/g, '&#9;');
+
 			// Always use ### for methods (subordinate to groups or category)
-			lines.push(`### ${method.name}()`, '');
+			lines.push(`### ${method.name}() <TryInPlayground code="${escapedCode}" />`, '');
 
 			if (method.description) {
 				lines.push(method.description, '');

@@ -195,11 +195,34 @@
 
 /**
  * Code block overrides (unlayered to beat Tailwind preflight)
- * Preflight resets margin/padding on ::before, breaking our line numbers
+ * Preflight resets box model on ::before, breaking our line numbers
+ * Using !important to override Tailwind's margin: 0 reset
  */
+.vp-doc div[class*="language-"] pre code {
+	counter-reset: line-number !important;
+	display: flex !important;
+	flex-direction: column !important;
+	padding-left: 48px !important;
+}
+
+.vp-doc div[class*="language-"] .line {
+	display: block !important;
+}
+
 .vp-doc div[class*="language-"] .line::before {
-	margin-left: -48px;
-	margin-right: 16px;
+	content: counter(line-number) !important;
+	counter-increment: line-number !important;
+	display: inline-block !important;
+	width: 32px !important;
+	margin-left: -48px !important;
+	margin-right: 16px !important;
+	text-align: center !important;
+	color: var(--vp-code-line-number-color) !important;
+}
+
+.vp-doc div[class*="language-"] .line.output-line::before {
+	content: none !important;
+	counter-increment: none !important;
 }
 
 .vp-doc div[class*="language-"] .line.output-line {

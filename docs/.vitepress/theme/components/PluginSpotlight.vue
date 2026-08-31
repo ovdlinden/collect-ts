@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import bundleSizes from '../data/bundle-sizes.json';
 </script>
 
 <template>
@@ -47,8 +48,8 @@ collect(data)
 
     <div class="flex items-center justify-center gap-5 py-4 mb-4 max-[700px]:gap-3">
       <div class="flex flex-col items-center text-center">
-        <span class="font-mono text-[1.1rem] font-bold text-[var(--vp-c-text-3)] tracking-tight max-[700px]:text-base">56 KB</span>
-        <span class="text-[0.7rem] text-[var(--vp-c-text-3)] mt-0.5">all 155+ methods</span>
+        <span class="font-mono text-[1.1rem] font-bold text-[var(--vp-c-text-3)] tracking-tight max-[700px]:text-base">{{ bundleSizes.full.formatted }}</span>
+        <span class="text-[0.7rem] text-[var(--vp-c-text-3)] mt-0.5">all {{ bundleSizes.methodCount }}+ methods</span>
       </div>
       <div class="text-[var(--vp-c-text-3)] flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="max-[700px]:size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -56,7 +57,7 @@ collect(data)
         </svg>
       </div>
       <div class="flex flex-col items-center text-center scale-115">
-        <span class="font-mono text-2xl font-bold text-success tracking-tight max-[700px]:text-xl">6 KB</span>
+        <span class="font-mono text-2xl font-bold text-success tracking-tight max-[700px]:text-xl">{{ bundleSizes.treeshaken.formatted }}</span>
         <span class="text-[0.7rem] text-[var(--vp-c-text-3)] mt-0.5">with plugin</span>
       </div>
       <div class="text-[var(--vp-c-text-3)] flex items-center">
@@ -65,10 +66,11 @@ collect(data)
         </svg>
       </div>
       <div class="flex flex-col items-center text-center">
-        <span class="font-mono text-[1.1rem] font-bold text-[var(--vp-c-text-3)] tracking-tight max-[700px]:text-base">200 B</span>
+        <span class="font-mono text-[1.1rem] font-bold text-[var(--vp-c-text-3)] tracking-tight max-[700px]:text-base">{{ bundleSizes.standalone.formatted }}</span>
         <span class="text-[0.7rem] text-[var(--vp-c-text-3)] mt-0.5">standalone fn</span>
       </div>
     </div>
+    <p class="text-[0.65rem] text-center text-[var(--vp-c-text-3)] -mt-2 mb-4 opacity-70">gzip compressed</p>
 
     <div class="text-center mt-1">
       <a href="/guide/tree-shaking" class="cta inline-flex items-center gap-1.5 py-2 px-4 text-xs font-medium text-[var(--vp-c-text-2)] no-underline bg-[var(--vp-c-bg)] border border-[var(--vp-c-divider)] rounded-md transition-all duration-150 hover:text-[var(--vp-c-text-1)] hover:border-[var(--vp-c-text-3)] hover:gap-2">

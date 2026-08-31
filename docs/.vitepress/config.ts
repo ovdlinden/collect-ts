@@ -1,5 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
-import monacoEditorPlugin from 'vite-plugin-monaco-editor';
+import monacoEditorPluginModule from 'vite-plugin-monaco-editor';
+
+const monacoEditorPlugin = (monacoEditorPluginModule as any).default || monacoEditorPluginModule;
+
 import { type DefaultTheme, defineConfig } from 'vitepress';
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 import llmstxt from 'vitepress-plugin-llms';

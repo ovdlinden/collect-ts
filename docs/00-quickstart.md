@@ -62,7 +62,7 @@ module.exports = { plugins: [collectionPlugin()] };
 ```
 :::
 
-Ships only the methods you call. Typical bundle: ~14 KB gzipped. See the [Tree-Shaking Guide](/guide/tree-shaking) for Next.js, Nuxt, esbuild, and manual approaches.
+Ships only the methods you call. Typical bundle: ~<BundleSizeInline /> gzipped. See the [Tree-Shaking Guide](/guide/tree-shaking) for Next.js, Nuxt, esbuild, and manual approaches.
 
 ## What's next
 

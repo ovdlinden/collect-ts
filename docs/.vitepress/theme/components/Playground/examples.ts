@@ -52,14 +52,10 @@ collect(products)
   { id: 4, status: 'cancelled', total: 75 },
 ]
 
-const grouped = collect(orders).groupBy('status')
-
-Object.fromEntries(
-  Object.entries(grouped.all()).map(([status, items]) => [
-    status,
-    items.sum('total')
-  ])
-)`,
+collect(orders)
+  .groupBy('status')
+  .map(items => items.sum('total'))
+  .all()`,
 	},
 	{
 		name: 'Aggregations',

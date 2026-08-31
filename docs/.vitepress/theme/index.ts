@@ -16,6 +16,8 @@ const SearchProvider = defineAsyncComponent(() => import('./components/SearchPro
 
 // Direct imports for small/common components
 import BenchmarkSpeedup from './components/BenchmarkSpeedup.vue';
+import BundleSizeInline from './components/BundleSizeInline.vue';
+import BundleSizeTable from './components/BundleSizeTable.vue';
 import CallbackTaxDiagram from './components/CallbackTaxDiagram.vue';
 import CopyAsMarkdown from './components/CopyAsMarkdown.vue';
 import HeroActions from './components/HeroActions.vue';
@@ -27,6 +29,8 @@ export default {
 	enhanceApp({ app }) {
 		app.component('Benchmarks', Benchmarks);
 		app.component('BenchmarkSpeedup', BenchmarkSpeedup);
+		app.component('BundleSizeInline', BundleSizeInline);
+		app.component('BundleSizeTable', BundleSizeTable);
 		app.component('CallbackTaxDiagram', CallbackTaxDiagram);
 		app.component('HomepageLazyDemo', HomepageLazyDemo);
 		app.component('LazySpotlight', LazySpotlight);
