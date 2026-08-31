@@ -119,7 +119,6 @@ For the majority of the remaining collection documentation, we'll discuss each m
 [combine](#method-combine)
 [concat](#method-concat)
 [contains](#method-contains)
-[containsOneItem](#method-containsoneitem)
 [containsStrict](#method-containsstrict)
 [count](#method-count)
 [countBy](#method-countBy)
@@ -154,6 +153,8 @@ For the majority of the remaining collection documentation, we'll discuss each m
 [groupBy](#method-groupby)
 [has](#method-has)
 [hasAny](#method-hasany)
+[hasMany](#method-hasmany)
+[hasSole](#method-hassole)
 [implode](#method-implode)
 [intersect](#method-intersect)
 [intersectUsing](#method-intersectusing)
@@ -198,6 +199,7 @@ For the majority of the remaining collection documentation, we'll discuss each m
 [random](#method-random)
 [range](#method-range)
 [reduce](#method-reduce)
+[reduceInto](#method-reduce-into)
 [reduceSpread](#method-reduce-spread)
 [reject](#method-reject)
 [replace](#method-replace)
@@ -576,29 +578,6 @@ The `contains` method uses "loose" comparisons when checking item values, meanin
 
 For the inverse of `contains`, see the [doesntContain](#method-doesntcontain) method.
 
-<a name="method-containsoneitem"></a>
-#### `containsOneItem()` {.collection-method}
-
-The `containsOneItem` method determines whether the collection contains a single item:
-
-```php
-collect([])->containsOneItem();
-
-// false
-
-collect(['1'])->containsOneItem();
-
-// true
-
-collect(['1', '2'])->containsOneItem();
-
-// false
-
-collect([1, 2, 3])->containsOneItem(fn (int $item) => $item === 2);
-
-// true
-```
-
 <a name="method-containsstrict"></a>
 #### `containsStrict()` {.collection-method}
 
@@ -652,7 +631,7 @@ $counted->all();
 <a name="method-crossjoin"></a>
 #### `crossJoin()` {.collection-method}
 
-The `crossJoin` method cross joins the collection's values among the given arrays or collections, returning a Cartesian product with all possible permutations:
+The `crossJoin` method cross joins the collection's values among the given arrays or collections, returning a Cartesian product with all possible combinations:
 
 ```php
 $collection = collect([1, 2]);
@@ -1437,6 +1416,51 @@ $collection->hasAny(['name', 'price']);
 // false
 ```
 
+<a name="method-hasmany"></a>
+#### `hasMany()` {.collection-method}
+
+The `hasMany` method determines whether the collection contains multiple items:
+
+```php
+collect([])->hasMany();
+
+// false
+
+collect(['1'])->hasMany();
+
+// false
+
+collect([1, 2, 3])->hasMany();
+
+// true
+
+collect([
+    ['age' => 2],
+    ['age' => 3],
+])->hasMany(fn ($item) => $item['age'] === 2)
+
+// false
+```
+
+<a name="method-hassole"></a>
+#### `hasSole()` {.collection-method}
+
+The `hasSole` method determines if the collection contains a single item, optionally matching the given criteria:
+
+```php
+collect([])->hasSole();
+
+// false
+
+collect(['1'])->hasSole();
+
+// true
+
+collect([1, 2, 3])->hasSole(fn (int $item) => $item === 2);
+
+// true
+```
+
 <a name="method-implode"></a>
 #### `implode()` {.collection-method}
 
@@ -1958,7 +1982,10 @@ $merged->all();
 The `min` method returns the minimum value of a given key:
 
 ```php
-$min = collect([['foo' => 10], ['foo' => 20]])->min('foo');
+$min = collect([
+    ['foo' => 10],
+    ['foo' => 20]
+])->min('foo');
 
 // 10
 
@@ -2472,6 +2499,49 @@ $collection->reduce(function (int $carry, int $value, string $key) use ($ratio) 
 }, 0);
 
 // 4264
+```
+
+<a name="method-reduce-into"></a>
+#### `reduceInto()` {.collection-method}
+
+The `reduceInto` method reduces the collection to a single value by mutating the given initial value. Unlike the `reduce` method, the given callback does not need to return the accumulated value:
+
+```php
+class OrderStats
+{
+    public int $total = 0;
+
+    public int $count = 0;
+}
+
+$orders = collect([
+    ['amount' => 100],
+    ['amount' => 250],
+    ['amount' => 50],
+]);
+
+$stats = $orders->reduceInto(new OrderStats, function (OrderStats $stats, array $order) {
+    $stats->total += $order['amount'];
+    $stats->count++;
+});
+
+$stats->total;
+
+// 400
+```
+
+When reducing into a scalar or array, you should accept it by reference in the callback so that your mutations are applied to the original value:
+
+```php
+$collection = collect([1, 2, 3, 4, 5]);
+
+$even = $collection->reduceInto([], function (array &$result, int $value) {
+    if ($value % 2 === 0) {
+        $result[] = $value;
+    }
+});
+
+// [2, 4]
 ```
 
 <a name="method-reduce-spread"></a>
@@ -3578,7 +3648,7 @@ The `values` method returns a new collection with the keys reset to consecutive 
 ```php
 $collection = collect([
     10 => ['product' => 'Desk', 'price' => 200],
-    11 => ['product' => 'Desk', 'price' => 200],
+    11 => ['product' => 'Speaker', 'price' => 400],
 ]);
 
 $values = $collection->values();
@@ -3588,7 +3658,7 @@ $values->all();
 /*
     [
         0 => ['product' => 'Desk', 'price' => 200],
-        1 => ['product' => 'Desk', 'price' => 200],
+        1 => ['product' => 'Speaker', 'price' => 400],
     ]
 */
 ```
@@ -4194,6 +4264,7 @@ Almost all methods available on the `Collection` class are also available on the
 [pluck](#method-pluck)
 [random](#method-random)
 [reduce](#method-reduce)
+[reduceInto](#method-reduce-into)
 [reject](#method-reject)
 [replace](#method-replace)
 [replaceRecursive](#method-replacerecursive)

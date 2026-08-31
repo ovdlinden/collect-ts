@@ -1,0 +1,61 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'benchmarks/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'benchmarks/**'
+  workflow_dispatch:
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run benchmarks
+        run: pnpm bench:ci
+
+      - name: Check benchmark docs freshness
+        run: pnpm bench:check
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-results.json
+          # Store in main branch under docs/public so VitePress serves it
+          gh-pages-branch: main
+          benchmark-data-dir-path: docs/public/benchmarks
+          # Only push on main branch
+          auto-push: ${{ github.ref == 'refs/heads/main' }}
+          # Alert if performance regresses by more than 10%
+          alert-threshold: '110%'
+          # Comment on PR with comparison
+          comment-on-alert: true
+          # Fail workflow if regression detected (optional - enable when ready)
+          # fail-on-alert: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}

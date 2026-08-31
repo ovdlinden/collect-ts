@@ -4,11 +4,15 @@ export default defineConfig({
 	test: {
 		globals: true,
 		include: ['tests/**/*.test.ts'],
+		benchmark: {
+			include: ['benchmarks/**/*.bench.ts'],
+			setupFiles: ['./benchmarks/setup.ts'],
+		},
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'html', 'lcov', 'json', 'json-summary'],
 			include: ['src/**/*.ts'],
-			exclude: ['src/index.ts', 'src/traits/**/*.ts'],
+			exclude: ['src/index.ts'],
 		},
 	},
 });

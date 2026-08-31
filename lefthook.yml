@@ -15,10 +15,6 @@ pre-commit:
           echo "Error: jsr.json version does not match package.json ($VERSION)"
           exit 1
         fi
-        if ! grep -q "VERSION = '$VERSION'" src/index.ts; then
-          echo "Error: src/index.ts VERSION does not match package.json ($VERSION)"
-          exit 1
-        fi
       skip:
         - merge
         - rebase
@@ -37,3 +33,18 @@ pre-push:
   commands:
     test:
       run: pnpm test
+    bench-freshness-hint:
+      run: |
+        # Warn if benchmark-affecting files changed but data wasn't updated
+        BENCH_DATA="docs/.vitepress/theme/data/benchmark-results.json"
+        CHANGED=$(git diff --name-only @{push}.. 2>/dev/null || git diff --name-only origin/main...HEAD)
+
+        if echo "$CHANGED" | grep -qE '^(src/|benchmarks/)'; then
+          if ! echo "$CHANGED" | grep -q "$BENCH_DATA"; then
+            echo ""
+            echo "⚠️  Benchmark-affecting files changed but $BENCH_DATA wasn't updated."
+            echo "   Consider running: pnpm bench:docs"
+            echo ""
+          fi
+        fi
+        exit 0

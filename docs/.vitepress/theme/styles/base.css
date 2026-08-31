@@ -1,0 +1,16 @@
+/**
+ * Base Styles - Shared foundation
+ * Wrapped in @layer base for lowest cascade priority
+ */
+
+@layer base {
+	/* Prevent layout shift when scrollbar appears/disappears */
+	html {
+		scrollbar-gutter: stable;
+	}
+
+	/* Selection color */
+	.vp-doc ::selection {
+		background: var(--color-primary-soft);
+	}
+}

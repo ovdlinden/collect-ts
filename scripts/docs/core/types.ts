@@ -65,5 +65,5 @@ export interface FileError {
 // Config
 // ============================================================================
 
-export const LARAVEL_VERSION = '12.x' as const;
+export const LARAVEL_VERSION = '13.x' as const;
 export const BASELINE_PATH = 'scripts/docs/baseline/laravel-collections.md' as const;

@@ -1,9 +1,9 @@
-/**
- * Exception thrown when an invalid argument is provided.
- */
 export class InvalidArgumentException extends Error {
-	constructor(message: string) {
-		super(message);
+	constructor(
+		message: string,
+		public readonly method?: string,
+	) {
+		super(method ? `${method}(): ${message}` : message);
 		this.name = 'InvalidArgumentException';
 	}
 }

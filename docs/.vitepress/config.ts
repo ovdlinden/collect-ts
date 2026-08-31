@@ -1,47 +1,106 @@
-import { defineConfig } from 'vitepress';
+import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
+import monacoEditorPluginModule from 'vite-plugin-monaco-editor';
+
+const monacoEditorPlugin = (monacoEditorPluginModule as any).default || monacoEditorPluginModule;
+
+import { type DefaultTheme, defineConfig } from 'vitepress';
+import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
+import llmstxt from 'vitepress-plugin-llms';
+import { outputContainerPlugin } from './plugins/markdown-output.ts';
+import { transformerOutputLines } from './plugins/shiki-output.ts';
+
+const site = {
+	title: 'Laravel Collection for TypeScript',
+	siteTitle: 'collect-ts',
+	description: 'A TypeScript port of Laravel Collection with full type safety. Always in sync with Laravel.',
+	boosted: ['/00-quickstart', '/collections/'],
+};
+
+const sidebar: DefaultTheme.SidebarItem[] = [
+	{ text: 'Quick Start', link: '/00-quickstart' },
+	{
+		text: 'Guide',
+		items: [
+			{ text: 'TypeScript', link: '/01-typescript' },
+			{ text: 'Common Patterns', link: '/02-patterns' },
+			{ text: 'LazyCollection', link: '/03-lazy' },
+			{ text: 'Tree-Shaking', link: '/guide/tree-shaking' },
+			{ text: 'Performance', link: '/05-benchmarks' },
+			{
+				text: 'Coming From...',
+				collapsed: true,
+				items: [
+					{ text: 'Laravel', link: '/for/laravel-developers' },
+					{ text: 'JavaScript', link: '/for/javascript-developers' },
+					{ text: 'Lodash', link: '/for/lodash-users' },
+				],
+			},
+		],
+	},
+	{
+		text: 'Collections',
+		items: [
+			{ text: 'Overview', link: '/collections/' },
+			{ text: 'Creating', link: '/collections/creating' },
+			{ text: 'Finding', link: '/collections/finding' },
+			{ text: 'Filtering', link: '/collections/filtering' },
+			{ text: 'Transforming', link: '/collections/transforming' },
+			{ text: 'Grouping', link: '/collections/grouping' },
+			{ text: 'Aggregating', link: '/collections/aggregating' },
+			{ text: 'Sorting', link: '/collections/sorting' },
+			{ text: 'Combining', link: '/collections/combining' },
+			{ text: 'Checking', link: '/collections/checking' },
+		],
+	},
+	{
+		text: 'Advanced',
+		items: [{ text: 'Extending Collections', link: '/collections/extending' }],
+	},
+];
+
+const nav = [
+	{ text: 'Quick Start', link: '/00-quickstart' },
+	{ text: 'Collections', link: '/collections/' },
+	{ text: 'Playground', link: '/playground' },
+] satisfies DefaultTheme.NavItem[];
 
 export default defineConfig({
-	title: 'Laravel Collection for TypeScript',
-	description: 'A TypeScript port of Laravel Collection with full type safety',
-	base: '/collect-ts/',
+	title: site.title,
+	description: site.description,
+	base: '/',
 
 	head: [
-		['link', { rel: 'icon', type: 'image/svg+xml', href: '/collect-ts/logo.svg' }],
+		['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
 		['meta', { name: 'theme-color', content: '#FF2D20' }],
 	],
+
+	cleanUrls: true,
+	lastUpdated: true,
+
+	srcExclude: ['README.md'],
+
+	markdown: {
+		config: (md) => {
+			md.use(groupIconMdPlugin);
+			md.use(outputContainerPlugin);
+			// Note: outputPreprocessPlugin removed - using Shiki transformer instead
+		},
+		codeTransformers: [transformerOutputLines()],
+		theme: {
+			light: 'github-light',
+			dark: 'github-dark',
+		},
+		lineNumbers: false,
+	},
 
 	themeConfig: {
 		logo: '/logo.svg',
 		siteTitle: false,
+		outline: { level: [2, 3], label: 'On this page' },
 
-		nav: [
-			{ text: 'Home', link: '/' },
-			{ text: 'Collections', link: '/collections' },
-			{ text: 'GitHub', link: 'https://github.com/ovdlinden/collect-ts' },
-		],
-
-		sidebar: [
-			{
-				text: 'Getting Started',
-				items: [
-					{ text: 'Introduction', link: '/' },
-					{ text: 'Installation', link: '/#installation' },
-				],
-			},
-			{
-				text: 'Guide',
-				items: [
-					{ text: 'TypeScript', link: '/guide/typescript' },
-					{ text: 'Common Patterns', link: '/guide/patterns' },
-					{ text: 'LazyCollection', link: '/guide/lazy' },
-					{ text: 'Inertia.js', link: '/guide/inertia' },
-				],
-			},
-			{
-				text: 'API Reference',
-				items: [{ text: 'Collections', link: '/collections' }],
-			},
-		],
+		nav,
+		sidebar,
 
 		socialLinks: [{ icon: 'github', link: 'https://github.com/ovdlinden/collect-ts' }],
 
@@ -50,24 +109,25 @@ export default defineConfig({
 			copyright: 'TypeScript port of Laravel Collection',
 		},
 
-		search: {
-			provider: 'local',
-		},
+		// Custom search powered by collect-ts - see FastSearch.vue
+		// search: { provider: 'local' },
+	},
 
-		outline: {
-			level: [2, 3],
-			label: 'On this page',
+	vite: {
+		plugins: [
+			tailwindcss(),
+			groupIconVitePlugin(),
+			llmstxt({ excludeIndexPage: false }),
+			monacoEditorPlugin({
+				languageWorkers: ['typescript'],
+			}),
+		],
+		resolve: {
+			alias: {
+				'collect-ts': fileURLToPath(new URL('../../dist/index.js', import.meta.url)),
+			},
 		},
 	},
 
-	markdown: {
-		theme: {
-			light: 'github-light',
-			dark: 'github-dark',
-		},
-		lineNumbers: true,
-	},
-
-	// Ignore dead links to Laravel docs (external references)
 	ignoreDeadLinks: [/^https:\/\/laravel\.com/],
 });

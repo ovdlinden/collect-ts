@@ -1,0 +1,374 @@
+<script setup lang="ts">
+import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue';
+import loader from '@monaco-editor/loader';
+import type * as Monaco from 'monaco-editor';
+import { collect } from 'collect-ts';
+import { parse } from 'acorn';
+import { parse as looseParse } from 'acorn-loose';
+import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'radix-vue';
+import { examples, defaultCode, getExamplesByCategory, type Example } from './examples';
+import { collectTypeDefinitions } from './collectTypes';
+
+const isWide = ref(false);
+
+onMounted(() => {
+	const mq = window.matchMedia('(min-width: 1024px)');
+	isWide.value = mq.matches;
+	mq.addEventListener('change', (e) => (isWide.value = e.matches));
+});
+
+/**
+ * Execute playground code with REPL-like behavior:
+ * - Variable declarations return their value
+ * - Object literals at statement position are correctly interpreted (not as blocks)
+ * Uses acorn-loose for tolerant parsing that handles ambiguous syntax.
+ */
+function runPlayground(code: string, collect: typeof import('collect-ts').collect): unknown {
+	const finalCode = transformForRepl(code);
+	return eval(finalCode);
+}
+
+/**
+ * Transform code for REPL-like evaluation:
+ * - Append variable name after declarations so they return their value
+ * - Wrap trailing object literals in parentheses so they're not parsed as blocks
+ */
+function transformForRepl(code: string): string {
+	const ast = looseParse(code, { ecmaVersion: 'latest' });
+	const lastStmt = ast.body[ast.body.length - 1];
+	if (!lastStmt) return code;
+
+	const prefix = code.slice(0, lastStmt.start);
+	const lastSource = code.slice(lastStmt.start, lastStmt.end);
+
+	// Variable declaration: append variable name to return its value
+	if (lastStmt.type === 'VariableDeclaration' && lastStmt.declarations.length > 0) {
+		const lastDecl = lastStmt.declarations[lastStmt.declarations.length - 1];
+		if (lastDecl.id.type === 'Identifier') {
+			return code + '\n' + lastDecl.id.name;
+		}
+	}
+
+	// Block statement: check if wrapping makes it a valid object literal
+	if (lastStmt.type === 'BlockStatement') {
+		try {
+			const wrapped = '(' + lastSource + ')';
+			const exprAst = parse(wrapped, { ecmaVersion: 'latest', sourceType: 'script' });
+			const exprStmt = exprAst.body[0];
+			if (exprStmt?.type === 'ExpressionStatement' && exprStmt.expression.type === 'ObjectExpression') {
+				// Add semicolon to prevent ASI issues (e.g., `x = 1\n({a})` being parsed as `x = 1({a})`)
+				return prefix.trimEnd() + ';\n' + wrapped;
+			}
+		} catch {
+			// Not a valid object literal when wrapped, use original
+		}
+	}
+
+	return code;
+}
+
+const code = ref(defaultCode);
+const output = ref<string>('');
+const error = ref<string>('');
+const isRunning = ref(false);
+const isLoading = ref(true);
+const selectedExample = ref<string>(examples[0].name);
+const editorRef = ref<HTMLDivElement>();
+const executionTime = ref<number | null>(null);
+const copied = ref(false);
+
+let monaco: typeof Monaco | null = null;
+let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
+let runTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const examplesByCategory = computed(() => getExamplesByCategory());
+
+onMounted(async () => {
+	const hash = window.location.hash.slice(1);
+	if (hash) {
+		try {
+			code.value = decodeURIComponent(atob(hash));
+			selectedExample.value = '';
+		} catch {
+			// Invalid hash
+		}
+	}
+	await nextTick();
+	await initMonaco();
+	runCode();
+});
+
+onUnmounted(() => {
+	editor?.dispose();
+});
+
+async function initMonaco() {
+	if (!editorRef.value) return;
+
+	try {
+		monaco = await loader.init();
+
+		// Configure TypeScript compiler options
+		monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+			target: monaco.languages.typescript.ScriptTarget.ESNext,
+			allowNonTsExtensions: true,
+			moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+			module: monaco.languages.typescript.ModuleKind.ESNext,
+			noEmit: true,
+			strict: false,
+			esModuleInterop: true,
+			skipLibCheck: true,
+			allowJs: true,
+		});
+
+		// Enable diagnostics for IntelliSense
+		monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+			noSemanticValidation: false,
+			noSyntaxValidation: false,
+		});
+
+		// Add collect-ts type definitions with JSDoc
+		monaco.languages.typescript.typescriptDefaults.addExtraLib(
+			collectTypeDefinitions,
+			'file:///node_modules/@types/collect-ts/index.d.ts'
+		);
+
+		// Create editor
+		editor = monaco.editor.create(editorRef.value, {
+			value: code.value,
+			language: 'typescript',
+			theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs',
+			minimap: { enabled: false },
+			fontSize: 14,
+			lineHeight: 24,
+			fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
+			fontLigatures: true,
+			lineNumbers: 'on',
+			scrollBeyondLastLine: false,
+			automaticLayout: true,
+			tabSize: 2,
+			padding: { top: 20, bottom: 20 },
+			wordWrap: 'on',
+			quickSuggestions: true,
+			suggestOnTriggerCharacters: true,
+			parameterHints: { enabled: true },
+			hover: { enabled: true },
+			folding: false,
+			renderLineHighlight: 'none',
+			cursorBlinking: 'smooth',
+			smoothScrolling: true,
+			lineNumbersMinChars: 3,
+			glyphMargin: true,
+			lineDecorationsWidth: 16,
+			overviewRulerBorder: false,
+			scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+			fixedOverflowWidgets: true,
+		});
+
+		editor.onDidChangeModelContent(() => {
+			code.value = editor?.getValue() ?? '';
+			debouncedRun();
+		});
+
+		const observer = new MutationObserver(() => {
+			monaco?.editor.setTheme(document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs');
+		});
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+		isLoading.value = false;
+	} catch (e) {
+		console.error('Failed to load Monaco:', e);
+		error.value = 'Failed to load editor. Please refresh the page.';
+		isLoading.value = false;
+	}
+}
+
+function debouncedRun() {
+	if (runTimeout) clearTimeout(runTimeout);
+	runTimeout = setTimeout(runCode, 150);
+}
+
+async function runCode() {
+	if (isLoading.value) return;
+
+	isRunning.value = true;
+	error.value = '';
+	output.value = '';
+	executionTime.value = null;
+
+	const startTime = performance.now();
+
+	try {
+		const logs: string[] = [];
+		const originalLog = console.log;
+		console.log = (...args) => logs.push(args.map((a) => formatValue(a)).join(' '));
+
+		try {
+			const result = runPlayground(code.value, collect);
+			console.log = originalLog;
+
+			let outputStr = logs.length > 0 ? logs.join('\n') + '\n\n' : '';
+			outputStr += formatValue(result);
+			output.value = outputStr;
+			executionTime.value = Math.round((performance.now() - startTime) * 10) / 10;
+		} catch (e: any) {
+			console.log = originalLog;
+			if (e.message === 'dd() called' && logs.length > 0) {
+				output.value = 'dd() output:\n\n' + logs.join('\n');
+			} else if (logs.length > 0) {
+				output.value = logs.join('\n');
+				error.value = e.message || String(e);
+			} else {
+				error.value = e.message || String(e);
+			}
+		}
+	} catch (e: any) {
+		error.value = e.message || String(e);
+	} finally {
+		isRunning.value = false;
+	}
+}
+
+function formatValue(value: any, indent = 0): string {
+	if (value === undefined) return 'undefined';
+	if (value === null) return 'null';
+	if (typeof value === 'string') return JSON.stringify(value);
+	if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+	if (Array.isArray(value)) {
+		if (value.length === 0) return '[]';
+		const items = value.map((v) => formatValue(v, indent + 2));
+		if (items.join(', ').length < 60 && !items.some((i) => i.includes('\n'))) {
+			return `[${items.join(', ')}]`;
+		}
+		const pad = ' '.repeat(indent + 2);
+		return `[\n${items.map((i) => pad + i).join(',\n')}\n${' '.repeat(indent)}]`;
+	}
+	if (typeof value === 'object') {
+		const entries = Object.entries(value);
+		if (entries.length === 0) return '{}';
+		const items = entries.map(([k, v]) => `${k}: ${formatValue(v, indent + 2)}`);
+		if (items.join(', ').length < 60 && !items.some((i) => i.includes('\n'))) {
+			return `{ ${items.join(', ')} }`;
+		}
+		const pad = ' '.repeat(indent + 2);
+		return `{\n${items.map((i) => pad + i).join(',\n')}\n${' '.repeat(indent)}}`;
+	}
+	return String(value);
+}
+
+function selectExample(example: Example) {
+	selectedExample.value = example.name;
+	code.value = example.code;
+	editor?.setValue(example.code);
+	history.replaceState(null, '', window.location.pathname);
+	runCode();
+}
+
+function copyOutput() {
+	navigator.clipboard.writeText(output.value || error.value);
+	copied.value = true;
+	setTimeout(() => (copied.value = false), 2000);
+}
+</script>
+
+<template>
+	<ClientOnly>
+		<!-- Container -->
+		<div
+			class="flex flex-col h-[calc(100vh-200px)] min-h-[500px] rounded-xl bg-white ring-1 ring-zinc-900/10 shadow-xl shadow-zinc-900/5 overflow-hidden dark:bg-zinc-900 dark:ring-white/10 dark:shadow-black/30"
+		>
+			<!-- Toolbar -->
+			<div
+				class="flex items-center justify-between gap-4 px-5 py-3.5 bg-zinc-50/50 border-b border-zinc-200/60 dark:bg-zinc-800/40 dark:border-zinc-700/40"
+			>
+				<!-- Left: Example selector -->
+				<select
+					:value="selectedExample"
+					class="h-8 w-auto max-w-[280px] px-2.5 pr-8 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-md appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px] bg-[right_4px_center] bg-no-repeat cursor-pointer transition-colors hover:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:text-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 dark:hover:border-zinc-600"
+					@change="(e) => {
+						const ex = examples.find((ex) => ex.name === (e.target as HTMLSelectElement).value);
+						if (ex) selectExample(ex);
+					}"
+				>
+					<option value="" disabled>Select example...</option>
+					<optgroup v-for="[category, exs] in examplesByCategory" :key="category" :label="category">
+						<option v-for="ex in exs" :key="ex.name" :value="ex.name">{{ ex.name }}</option>
+					</optgroup>
+				</select>
+
+			</div>
+
+			<!-- Editor + Output (resizable) -->
+			<SplitterGroup :direction="isWide ? 'horizontal' : 'vertical'" class="flex-1 min-h-0">
+				<!-- Code pane -->
+				<SplitterPanel :default-size="60" :min-size="20" class="flex flex-col min-h-0 min-w-0">
+					<div class="flex items-center justify-between h-9 px-4 border-b border-zinc-100/80 dark:border-zinc-800/40">
+						<span class="text-[11px] font-medium tracking-wider uppercase text-zinc-400 dark:text-zinc-500">Code</span>
+					</div>
+					<div ref="editorRef" class="relative flex-1 min-h-0">
+						<div v-if="isLoading" class="absolute inset-0 flex items-center justify-center bg-white dark:bg-zinc-900">
+							<div class="w-5 h-5 border-2 border-zinc-200 border-t-primary rounded-full animate-spin dark:border-zinc-700" />
+						</div>
+					</div>
+				</SplitterPanel>
+
+				<!-- Resize handle -->
+				<SplitterResizeHandle
+					class="group relative flex items-center justify-center data-[orientation=horizontal]:w-2 data-[orientation=vertical]:h-2 bg-zinc-100 dark:bg-zinc-800 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+				>
+					<div
+						class="rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-zinc-400 dark:group-hover:bg-zinc-500 group-data-[orientation=horizontal]:h-8 group-data-[orientation=horizontal]:w-1 group-data-[orientation=vertical]:w-8 group-data-[orientation=vertical]:h-1 transition-colors"
+					/>
+				</SplitterResizeHandle>
+
+				<!-- Output pane -->
+				<SplitterPanel :default-size="40" :min-size="15" class="flex flex-col min-h-0 min-w-0">
+					<!-- Output header -->
+					<div class="flex items-center justify-between h-9 px-4 border-b border-zinc-100/80 dark:border-zinc-800/40">
+						<div class="flex items-center gap-1">
+							<span class="text-[11px] font-medium tracking-wider uppercase text-zinc-400 dark:text-zinc-500">Output</span>
+							<span
+								v-if="executionTime !== null"
+								class="ml-2 text-[10px] font-medium tabular-nums text-zinc-400 dark:text-zinc-500"
+							>
+								{{ executionTime }}ms
+							</span>
+						</div>
+						<button
+							class="flex items-center justify-center w-6 h-6 text-zinc-400 rounded hover:text-zinc-600 hover:bg-zinc-100 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+							title="Copy output"
+							@click="copyOutput"
+						>
+							<svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+								<path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z" />
+								<path d="M4.5 6A1.5 1.5 0 003 7.5v9A1.5 1.5 0 004.5 18h7a1.5 1.5 0 001.5-1.5v-5.879a1.5 1.5 0 00-.44-1.06L9.44 6.439A1.5 1.5 0 008.378 6H4.5z" />
+							</svg>
+						</button>
+					</div>
+
+					<!-- Output view -->
+					<div class="flex-1 p-4 overflow-auto bg-white dark:bg-zinc-900">
+						<div
+							v-if="error"
+							class="p-2.5 text-[13px] font-mono text-red-600 bg-red-50 rounded-md dark:text-red-400 dark:bg-red-950/30"
+						>
+							{{ error }}
+						</div>
+						<pre
+							v-else-if="output"
+							class="text-[13px] leading-relaxed font-mono text-zinc-700 whitespace-pre-wrap break-words dark:text-zinc-300"
+						>{{ output }}</pre>
+						<span v-else class="text-sm italic text-zinc-400 dark:text-zinc-500">
+							Run code to see output
+						</span>
+					</div>
+				</SplitterPanel>
+			</SplitterGroup>
+		</div>
+
+		<!-- Fallback skeleton -->
+		<template #fallback>
+			<div class="h-[480px] rounded-xl bg-zinc-100 animate-pulse dark:bg-zinc-800" />
+		</template>
+	</ClientOnly>
+</template>

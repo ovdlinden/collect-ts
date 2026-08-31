@@ -1,28 +1,51 @@
 # collect-ts
 
-**Laravel Collection for TypeScript — always in sync, TypeScript-first, modern.**
+**Laravel Collection for TypeScript. Always in sync. TypeScript-first.**
 
-[![Alpha](https://img.shields.io/badge/status-alpha-orange)]()
+[![CI](https://github.com/ovdlinden/collect-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/ovdlinden/collect-ts/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/collect-ts)](https://www.npmjs.com/package/collect-ts)
 [![JSR](https://jsr.io/badges/@ovdlinden/collect-ts)](https://jsr.io/@ovdlinden/collect-ts)
-[![Laravel 12.x](https://img.shields.io/badge/Laravel-12.x-FF2D20)](https://laravel.com/docs/12.x/collections)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org/)
+[![codecov](https://codecov.io/gh/ovdlinden/collect-ts/graph/badge.svg)](https://codecov.io/gh/ovdlinden/collect-ts)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ovdlinden/collect-ts/badge)](https://securityscorecards.dev/viewer/?uri=github.com/ovdlinden/collect-ts)
+
+[![Laravel 13.x](https://img.shields.io/badge/Laravel-13.x-FF2D20)](https://laravel.com/docs/13.x/collections)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.x-3178C6)](https://www.typescriptlang.org/)
+[![Tree-Shakeable](https://img.shields.io/badge/tree--shakeable-yes-blue)](https://collect-ts.dev/guide/tree-shaking)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ovdlinden/collect-ts/graph/badge.svg)](https://codecov.io/gh/ovdlinden/collect-ts)
 
-> **Warning**
-> This package is in **alpha** and under active development. APIs may change before the 1.0.0 stable release. Not recommended for production use yet.
+> **Fast**: Matches native for simple ops, up to 2.5× faster for chained operations. [See live benchmarks →](https://collect-ts.dev/05-benchmarks)
 
-## Why collect-ts?
+## What it does
 
-**A living synchronization with Laravel Collections.**
+| What you're doing | Native JavaScript | collect-ts |
+|-------------------|-------------------|------------|
+| Group by category | `items.reduce((acc, item) => {...}, {})` | `collect(items).groupBy('category')` |
+| Unique emails | `[...new Set(users.map(u => u.email))]` | `collect(users).pluck('email').unique()` |
+| Sum order totals | `orders.reduce((sum, o) => sum + o.total, 0)` | `collect(orders).sum('total')` |
+| First active admin | `users.find(u => u.active && u.role === 'admin')` | `collect(users).where('active', true).firstWhere('role', 'admin')` |
 
-- 🔄 **Always in Sync** — Tracks Laravel 12.x. When Laravel updates, we update.
-- 🎯 **TypeScript-First** — Advanced generics, conditional types, full inference.
-- ⚡ **LazyCollection** — Generator-based lazy evaluation for large datasets.
-- 🛠️ **Modern Stack** — ESM-only, Node 18+, zero dependencies.
-- 🚀 **Inertia.js Ready** — Same Collection API from Laravel to React/Vue.
+### Who is this for?
+
+- **Laravel developers using Inertia.js**: Same API on frontend and backend
+- **TypeScript developers tired of reduce chains**: Readable, chainable, fully typed
+- **Teams migrating from lodash**: 12kb vs 72kb, better tree-shaking
+
+### How it compares
+
+| | collect-ts | lodash | collect.js |
+|-|------------|--------|------------|
+| Size | 12kb brotli | 72kb | 45kb |
+| TypeScript | First-class, with Path types | @types/lodash | Basic |
+| API style | Fluent chaining | Utility functions | Fluent |
+| Laravel sync | Tracks 13.x upstream | N/A | Stale (11.x) |
+
+### What makes it different
+
+- **Always in Sync**: Tracks Laravel 13.x. When Laravel updates, we update.
+- **TypeScript-First**: Advanced generics, conditional types, full inference.
+- **LazyCollection**: Generator-based lazy evaluation for large datasets.
+- **Modern Stack**: ESM-only, Node 18+, zero dependencies.
 
 ## Installation
 
@@ -89,7 +112,7 @@ export default function ProductList() {
 }
 ```
 
-Same methods. Same arguments. Same behavior. No new paradigm to learn.
+Same methods, same arguments, same behavior. Nothing new to learn.
 
 ## Features
 
@@ -161,10 +184,36 @@ collect(items).groupBy('category').keyBy('id').partition(fn)
 
 ### Modern Stack
 
-- **ESM-only** — No CommonJS baggage
-- **Node 18+** — Modern JavaScript features
-- **Zero dependencies** — Nothing to audit
-- **TypeScript 5** — Latest type system features
+- **ESM-only**: no CommonJS
+- **Node 18+**: top-level await, native fetch
+- **Zero dependencies**: nothing to audit
+- **TypeScript 5**: const type parameters, satisfies
+
+### Tree-Shaking
+
+Minimize bundle size with automatic or manual tree-shaking:
+
+```typescript
+// Option 1: Automatic with plugin (recommended)
+// vite.config.ts
+import { vite as collectionPlugin } from 'collect-ts/plugin';
+export default { plugins: [collectionPlugin()] };
+
+// Then write normal code - only used methods are bundled
+import { collect } from 'collect-ts';
+collect(users).filter().map().groupBy(); // ~6KB instead of 56KB
+```
+
+```typescript
+// Option 2: Standalone functions for smallest bundles
+import { filter, map, groupBy } from 'collect-ts/fn';
+
+const active = filter(users, u => u.active);     // ~200B
+const names = map(active, u => u.name);          // ~200B
+const byRole = groupBy(users, 'role');           // ~200B
+```
+
+[Tree-Shaking Guide →](https://collect-ts.dev/guide/tree-shaking)
 
 ## API Reference
 

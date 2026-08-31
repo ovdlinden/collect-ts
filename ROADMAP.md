@@ -1,61 +1,37 @@
 # Roadmap
 
-This document outlines the planned development for collect-ts.
-
 Track progress via [GitHub Milestones](https://github.com/ovdlinden/collect-ts/milestones).
 
 ---
 
-## Current: v0.1.0 (Alpha)
-
-The initial alpha release with core functionality:
+## Current: v0.4.0 (Alpha)
 
 - [x] Core Collection class with 130+ methods
-- [x] LazyCollection for memory-efficient processing
+- [x] LazyCollection with generator-based lazy evaluation
+- [x] AsyncLazyCollection with throttle support
 - [x] Full TypeScript generics and type inference
 - [x] Higher-order messaging support
-- [x] Zero dependencies
-- [x] ESM-only, Node 18+
+- [x] Macro system (Collection.macro)
+- [x] Zero dependencies, ESM-only, Node 18+
+- [x] GitHub Actions CI (lint, test, build on Node 20/22/24)
+- [x] Automated publishing via semantic-release (npm + JSR)
 - [x] VitePress documentation site
-
----
-
-## v0.2.0 — CI & Automation
-
-Focus: Development infrastructure
-
-- [x] GitHub Actions CI (lint, test, build on PRs)
-- [x] Automated npm publishing on release tags
-- [x] CHANGELOG.md (auto-generated with git-cliff)
-- [x] CONTRIBUTING.md
-
----
-
-## v0.3.0 — Laravel Sync
-
-Focus: Automated synchronization with Laravel
-
-- [ ] Sync detection script (compare Laravel Collection.php vs local implementation)
-- [ ] Daily sync check workflow (creates issues when Laravel changes detected)
-- [ ] Issue template for sync updates
+- [x] Docs sync baseline for Laravel Collection tracking
 
 ---
 
 ## v1.0.0 — Stable Release
 
-Criteria for stable release:
+Criteria:
 
 1. **API Stability** — No breaking changes expected
-2. **Battle-tested** — Used in production by the community
-3. **Laravel Sync Working** — Automated sync reliably detects and reports changes
+2. **Battle-tested** — Used in production
+3. **Laravel Sync** — Automated detection of upstream changes
 
 ---
 
 ## Future Ideas
 
-These may be explored after 1.0.0:
-
-- [ ] Browser bundle (for non-Node environments)
+- [ ] Browser bundle
 - [ ] Benchmarks against alternatives (lodash, collect.js)
-- [ ] Plugin system for custom methods
-- [ ] Integration examples (React, Vue, etc.)
+- [ ] Integration examples (React, Vue, Inertia.js)

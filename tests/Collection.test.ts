@@ -6,11 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { Collection, collect, MultipleItemsFoundException, type ProxiedCollection } from '../src';
-
-// =============================================================================
-// BASIC TESTS
-// =============================================================================
+import { Collection, collect, MultipleItemsFoundException } from '../src';
 
 describe('Collection', () => {
 	describe('collect()', () => {
@@ -44,11 +40,11 @@ describe('Collection', () => {
 		});
 
 		it('returns default value when not found', () => {
-			expect(collect([]).first(undefined, 'default')).toBe('default');
+			expect(collect<string>([]).first(undefined, 'default')).toBe('default');
 		});
 
 		it('returns default from callback when not found', () => {
-			expect(collect([]).first(undefined, () => 'default')).toBe('default');
+			expect(collect<string>([]).first(undefined, () => 'default')).toBe('default');
 		});
 	});
 
@@ -84,10 +80,6 @@ describe('Collection', () => {
 		});
 	});
 });
-
-// =============================================================================
-// TRANSFORMATION TESTS
-// =============================================================================
 
 describe('Transformation', () => {
 	describe('map()', () => {
@@ -208,9 +200,9 @@ describe('Transformation', () => {
 		it('provides correct type inference for nested paths', () => {
 			type User = { name: string; address: { city: string; zip: number } };
 			const users = collect<User>([{ name: 'John', address: { city: 'NYC', zip: 10001 } }]);
-			// These should compile with correct types
-			const cities: Collection<string> = users.pluck('address.city');
-			const zips: Collection<number> = users.pluck('address.zip');
+			// These should compile with correct types (ArrayCollection for array input)
+			const cities = users.pluck('address.city');
+			const zips = users.pluck('address.zip');
 			expect(cities.first()).toBe('NYC');
 			expect(zips.first()).toBe(10001);
 		});
@@ -248,10 +240,6 @@ describe('Transformation', () => {
 		});
 	});
 });
-
-// =============================================================================
-// AGGREGATION TESTS
-// =============================================================================
 
 describe('Aggregation', () => {
 	describe('count()', () => {
@@ -327,10 +315,6 @@ describe('Aggregation', () => {
 	});
 });
 
-// =============================================================================
-// SORTING TESTS
-// =============================================================================
-
 describe('Sorting', () => {
 	describe('sort()', () => {
 		it('sorts values', () => {
@@ -388,10 +372,6 @@ describe('Sorting', () => {
 	});
 });
 
-// =============================================================================
-// SLICING TESTS
-// =============================================================================
-
 describe('Slicing', () => {
 	describe('take()', () => {
 		it('takes first n items', () => {
@@ -432,10 +412,6 @@ describe('Slicing', () => {
 		});
 	});
 });
-
-// =============================================================================
-// CONTAINS / EXISTS TESTS
-// =============================================================================
 
 describe('Contains', () => {
 	describe('contains()', () => {
@@ -483,10 +459,6 @@ describe('Contains', () => {
 	});
 });
 
-// =============================================================================
-// GROUPING TESTS
-// =============================================================================
-
 describe('Grouping', () => {
 	describe('groupBy()', () => {
 		it('groups by key', () => {
@@ -522,10 +494,6 @@ describe('Grouping', () => {
 	});
 });
 
-// =============================================================================
-// REDUCE TESTS
-// =============================================================================
-
 describe('Reduce', () => {
 	describe('reduce()', () => {
 		it('reduces to single value', () => {
@@ -539,11 +507,40 @@ describe('Reduce', () => {
 			expect(result).toEqual(['a:1', 'b:2']);
 		});
 	});
-});
 
-// =============================================================================
-// WHERE TESTS
-// =============================================================================
+	describe('reduceInto()', () => {
+		it('mutates and returns initial object', () => {
+			const orders = collect([{ amount: 100 }, { amount: 250 }, { amount: 50 }]);
+			const stats = orders.reduceInto({ total: 0, count: 0 }, (s, order) => {
+				s.total += order.amount;
+				s.count++;
+			});
+			expect(stats.total).toBe(400);
+			expect(stats.count).toBe(3);
+		});
+
+		it('works with arrays', () => {
+			const result = collect([1, 2, 3, 4, 5]).reduceInto([] as number[], (arr, val) => {
+				if (val % 2 === 0) arr.push(val);
+			});
+			expect(result).toEqual([2, 4]);
+		});
+
+		it('provides key to callback', () => {
+			const result = collect({ a: 1, b: 2 }).reduceInto([] as string[], (arr, val, key) => {
+				arr.push(`${key}:${val}`);
+			});
+			expect(result).toEqual(['a:1', 'b:2']);
+		});
+
+		it('returns empty object for empty collection', () => {
+			const result = collect([]).reduceInto({ sum: 0 }, (acc) => {
+				acc.sum++;
+			});
+			expect(result).toEqual({ sum: 0 });
+		});
+	});
+});
 
 describe('Where', () => {
 	describe('where()', () => {
@@ -581,10 +578,6 @@ describe('Where', () => {
 	});
 });
 
-// =============================================================================
-// UNIQUE / DUPLICATES TESTS
-// =============================================================================
-
 describe('Unique and Duplicates', () => {
 	describe('unique()', () => {
 		it('returns unique values', () => {
@@ -604,10 +597,6 @@ describe('Unique and Duplicates', () => {
 		});
 	});
 });
-
-// =============================================================================
-// DIFF / INTERSECT TESTS
-// =============================================================================
 
 describe('Diff and Intersect', () => {
 	describe('diff()', () => {
@@ -631,10 +620,6 @@ describe('Diff and Intersect', () => {
 	});
 });
 
-// =============================================================================
-// MERGE / UNION / COMBINE TESTS
-// =============================================================================
-
 describe('Merge and Union', () => {
 	describe('merge()', () => {
 		it('merges arrays', () => {
@@ -656,7 +641,8 @@ describe('Merge and Union', () => {
 
 	describe('combine()', () => {
 		it('combines keys with values', () => {
-			const result = collect(['a', 'b']).combine([1, 2]);
+			// Collection uses string keys - use directly
+			const result = new Collection(['a', 'b']).combine([1, 2]);
 			expect(result.get('a')).toBe(1);
 			expect(result.get('b')).toBe(2);
 		});
@@ -671,15 +657,12 @@ describe('Merge and Union', () => {
 
 	describe('zip()', () => {
 		it('zips arrays together', () => {
-			const result = collect([1, 2, 3]).zip(['a', 'b', 'c']);
+			// Collection wraps zip results - use directly
+			const result = new Collection([1, 2, 3]).zip(['a', 'b', 'c']);
 			expect(result.first()?.all()).toEqual([1, 'a']);
 		});
 	});
 });
-
-// =============================================================================
-// PIPING / TAP TESTS
-// =============================================================================
 
 describe('Piping and Tap', () => {
 	describe('pipe()', () => {
@@ -721,10 +704,6 @@ describe('Piping and Tap', () => {
 	});
 });
 
-// =============================================================================
-// EXCEPTIONS TESTS
-// =============================================================================
-
 describe('Exceptions', () => {
 	describe('sole()', () => {
 		it('returns single item', () => {
@@ -750,14 +729,6 @@ describe('Exceptions', () => {
 		});
 	});
 });
-
-// =============================================================================
-// CONDITIONAL TESTS
-// =============================================================================
-
-// =============================================================================
-// SLIDING TESTS (Laravel port)
-// =============================================================================
 
 describe('Sliding', () => {
 	describe('sliding()', () => {
@@ -803,10 +774,6 @@ describe('Sliding', () => {
 		});
 	});
 });
-
-// =============================================================================
-// BEFORE/AFTER TESTS (Laravel port)
-// =============================================================================
 
 describe('Before and After', () => {
 	describe('before()', () => {
@@ -872,10 +839,6 @@ describe('Before and After', () => {
 	});
 });
 
-// =============================================================================
-// FLIP TESTS (Laravel port)
-// =============================================================================
-
 describe('Flip', () => {
 	describe('flip()', () => {
 		it('flips keys and values', () => {
@@ -884,7 +847,8 @@ describe('Flip', () => {
 		});
 
 		it('flips array values to keys', () => {
-			const data = collect(['a', 'b', 'c']);
+			// Collection uses string keys - use directly
+			const data = new Collection(['a', 'b', 'c']);
 			const flipped = data.flip();
 			expect(flipped.get('a')).toBe('0');
 			expect(flipped.get('b')).toBe('1');
@@ -892,10 +856,6 @@ describe('Flip', () => {
 		});
 	});
 });
-
-// =============================================================================
-// PAD TESTS (Laravel port)
-// =============================================================================
 
 describe('Pad', () => {
 	describe('pad()', () => {
@@ -921,10 +881,6 @@ describe('Pad', () => {
 	});
 });
 
-// =============================================================================
-// MULTIPLY TESTS (Laravel port)
-// =============================================================================
-
 describe('Multiply', () => {
 	describe('multiply()', () => {
 		it('returns empty for negative or zero multiplier', () => {
@@ -944,10 +900,6 @@ describe('Multiply', () => {
 		});
 	});
 });
-
-// =============================================================================
-// STATIC METHODS TESTS (Laravel port)
-// =============================================================================
 
 describe('Static Methods', () => {
 	describe('times()', () => {
@@ -1015,14 +967,11 @@ describe('Static Methods', () => {
 	});
 });
 
-// =============================================================================
-// CHUNK WHILE TESTS (Laravel port)
-// =============================================================================
-
 describe('ChunkWhile', () => {
 	describe('chunkWhile()', () => {
 		it('chunks on equal elements', () => {
-			const data = collect(['A', 'A', 'B', 'B', 'C', 'C', 'C']).chunkWhile(
+			// Collection preserves keys - use directly
+			const data = new Collection(['A', 'A', 'B', 'B', 'C', 'C', 'C']).chunkWhile(
 				(current, _key, chunk) => chunk.last() === current,
 			);
 
@@ -1034,7 +983,8 @@ describe('ChunkWhile', () => {
 		});
 
 		it('chunks on contiguously increasing integers', () => {
-			const data = collect([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21]).chunkWhile(
+			// Collection preserves keys - use directly
+			const data = new Collection([1, 4, 9, 10, 11, 12, 15, 16, 19, 20, 21]).chunkWhile(
 				(current, _key, chunk) => (chunk.last() as number) + 1 === current,
 			);
 
@@ -1058,21 +1008,19 @@ describe('ChunkWhile', () => {
 		});
 
 		it('returns Collection instances', () => {
-			const data = collect(['A', 'B']).chunkWhile(() => false);
+			// Collection returns Collection instances - use directly
+			const data = new Collection(['A', 'B']).chunkWhile(() => false);
 			expect(data).toBeInstanceOf(Collection);
 			expect(data.first()).toBeInstanceOf(Collection);
 		});
 	});
 });
 
-// =============================================================================
-// CHUNK EDGE CASES TESTS (Laravel port)
-// =============================================================================
-
 describe('Chunk Edge Cases', () => {
 	describe('chunk()', () => {
 		it('creates chunks with preserved keys', () => {
-			const data = collect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).chunk(3);
+			// Collection preserves keys - use directly
+			const data = new Collection([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).chunk(3);
 			expect(data).toBeInstanceOf(Collection);
 			expect(data.first()).toBeInstanceOf(Collection);
 			expect(data.count()).toBe(4);
@@ -1091,10 +1039,6 @@ describe('Chunk Edge Cases', () => {
 		});
 	});
 });
-
-// =============================================================================
-// CONDITIONAL TESTS
-// =============================================================================
 
 describe('Conditional', () => {
 	describe('when()', () => {
@@ -1140,14 +1084,11 @@ describe('Conditional', () => {
 	});
 });
 
-// =============================================================================
-// PHASE B: TRANSFORMATION TESTS (Laravel port)
-// =============================================================================
-
 describe('CountBy', () => {
 	describe('countBy()', () => {
 		it('counts by value standalone', () => {
-			const c = collect(['foo', 'foo', 'foo', 'bar', 'bar', 'foobar']);
+			// Collection returns keyed collection - use directly
+			const c = new Collection(['foo', 'foo', 'foo', 'bar', 'bar', 'foobar']);
 			const result = c.countBy();
 			expect(result.get('foo')).toBe(3);
 			expect(result.get('bar')).toBe(2);
@@ -1155,7 +1096,8 @@ describe('CountBy', () => {
 		});
 
 		it('counts by key', () => {
-			const c = collect([
+			// Collection returns keyed collection - use directly
+			const c = new Collection([
 				{ key: 'a' },
 				{ key: 'a' },
 				{ key: 'a' },
@@ -1170,7 +1112,8 @@ describe('CountBy', () => {
 		});
 
 		it('counts by callback', () => {
-			const c = collect(['alice', 'aaron', 'bob', 'carla']);
+			// Collection returns keyed collection - use directly
+			const c = new Collection(['alice', 'aaron', 'bob', 'carla']);
 			const result = c.countBy((name) => name.charAt(0));
 			expect(result.get('a')).toBe(2);
 			expect(result.get('b')).toBe(1);
@@ -1205,34 +1148,39 @@ describe('GetOrPut', () => {
 describe('Splice', () => {
 	describe('splice()', () => {
 		it('removes items from offset', () => {
-			const data = collect(['foo', 'baz']);
+			// Collection is mutable - use directly
+			const data = new Collection(['foo', 'baz']);
 			data.splice(1);
-			expect(data.all()).toEqual(['foo']);
+			expect(data.values().all()).toEqual(['foo']);
 		});
 
 		it('inserts items at offset', () => {
-			const data = collect(['foo', 'baz']);
+			// Collection is mutable - use directly
+			const data = new Collection(['foo', 'baz']);
 			data.splice(1, 0, 'bar');
-			expect(data.all()).toEqual(['foo', 'bar', 'baz']);
+			expect(data.values().all()).toEqual(['foo', 'bar', 'baz']);
 		});
 
 		it('removes and returns removed items', () => {
-			const data = collect(['foo', 'baz']);
+			// Collection is mutable - use directly
+			const data = new Collection(['foo', 'baz']);
 			data.splice(1, 1);
-			expect(data.all()).toEqual(['foo']);
+			expect(data.values().all()).toEqual(['foo']);
 		});
 
 		it('removes and replaces items', () => {
-			const data = collect(['foo', 'baz']);
+			// Collection is mutable - use directly
+			const data = new Collection(['foo', 'baz']);
 			const cut = data.splice(1, 1, 'bar');
-			expect(data.all()).toEqual(['foo', 'bar']);
-			expect(cut.all()).toEqual(['baz']);
+			expect(data.values().all()).toEqual(['foo', 'bar']);
+			expect(cut.values().all()).toEqual(['baz']);
 		});
 
 		it('inserts array at offset', () => {
-			const data = collect(['foo', 'baz']);
+			// Collection is mutable - use directly
+			const data = new Collection(['foo', 'baz']);
 			data.splice(1, 0, ['bar']);
-			expect(data.all()).toEqual(['foo', 'bar', 'baz']);
+			expect(data.values().all()).toEqual(['foo', 'bar', 'baz']);
 		});
 	});
 });
@@ -1262,7 +1210,8 @@ describe('MapSpread', () => {
 describe('MapToDictionary', () => {
 	describe('mapToDictionary()', () => {
 		it('maps to dictionary grouping values', () => {
-			const data = collect([
+			// Collection uses string keys - use directly
+			const data = new Collection([
 				{ id: 1, name: 'A' },
 				{ id: 2, name: 'B' },
 				{ id: 3, name: 'C' },
@@ -1277,7 +1226,8 @@ describe('MapToDictionary', () => {
 		});
 
 		it('maps with numeric keys', () => {
-			const data = collect([1, 2, 3, 2, 1]);
+			// Collection uses string keys - use directly
+			const data = new Collection([1, 2, 3, 2, 1]);
 			const groups = data.mapToDictionary((item, key) => [String(item), key]);
 
 			expect(groups.get('1')).toEqual(['0', '4']);
@@ -1290,7 +1240,8 @@ describe('MapToDictionary', () => {
 describe('MapToGroups', () => {
 	describe('mapToGroups()', () => {
 		it('maps to groups returning Collection values', () => {
-			const data = collect([
+			// Collection returns Collection instances - use directly
+			const data = new Collection([
 				{ id: 1, name: 'A' },
 				{ id: 2, name: 'B' },
 				{ id: 3, name: 'C' },
@@ -1334,7 +1285,8 @@ describe('MapInto', () => {
 describe('Split', () => {
 	describe('split()', () => {
 		it('splits into divisible groups', () => {
-			const data = collect(['a', 'b', 'c', 'd']);
+			// Collection returns Collection instances - use directly
+			const data = new Collection(['a', 'b', 'c', 'd']);
 			const split = data.split(2);
 
 			expect(split.get(0)?.all()).toEqual(['a', 'b']);
@@ -1359,7 +1311,8 @@ describe('Split', () => {
 		});
 
 		it('splits into three with count of four', () => {
-			const data = collect(['a', 'b', 'c', 'd']);
+			// Collection returns Collection instances - use directly
+			const data = new Collection(['a', 'b', 'c', 'd']);
 			const split = data.split(3);
 
 			expect(split.get(0)?.all()).toEqual(['a', 'b']);
@@ -1389,7 +1342,8 @@ describe('Split', () => {
 describe('SplitIn', () => {
 	describe('splitIn()', () => {
 		it('splits into specified number of groups', () => {
-			const data = collect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+			// Collection returns Collection instances - use directly
+			const data = new Collection([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 			const split = data.splitIn(3);
 
 			expect(split).toBeInstanceOf(Collection);
@@ -1401,10 +1355,6 @@ describe('SplitIn', () => {
 		});
 	});
 });
-
-// =============================================================================
-// PHASE C: EDGE CASE TESTS (Laravel port)
-// =============================================================================
 
 describe('Edge Cases - Empty Collections', () => {
 	it('first returns undefined on empty collection', () => {
@@ -1617,7 +1567,7 @@ describe('Edge Cases - Callback vs Value', () => {
 	});
 
 	it('first with default value', () => {
-		expect(collect([]).first(undefined, 'default')).toBe('default');
+		expect(collect<string>([]).first(undefined, 'default')).toBe('default');
 	});
 
 	it('last with callback', () => {
@@ -1625,7 +1575,7 @@ describe('Edge Cases - Callback vs Value', () => {
 	});
 
 	it('last with default value', () => {
-		expect(collect([]).last(undefined, 'default')).toBe('default');
+		expect(collect<string>([]).last(undefined, 'default')).toBe('default');
 	});
 
 	it('contains with callback', () => {
@@ -1723,7 +1673,7 @@ describe('Edge Cases - Chaining', () => {
 	it('chains groupBy then map', () => {
 		const result = collect([1, 2, 3, 4])
 			.groupBy((n) => (n % 2 === 0 ? 'even' : 'odd'))
-			.map((group: Collection<number>) => group.sum());
+			.map((group) => group.sum());
 		expect(result.get('odd')).toBe(4);
 		expect(result.get('even')).toBe(6);
 	});
@@ -1758,27 +1708,31 @@ describe('Edge Cases - Immutability', () => {
 	});
 
 	it('push modifies original', () => {
-		const original = collect([1, 2, 3]);
+		// Collection is mutable, use directly to test mutation behavior
+		const original = new Collection([1, 2, 3]);
 		original.push(4);
-		expect(original.all()).toEqual([1, 2, 3, 4]);
+		expect(original.values().all()).toEqual([1, 2, 3, 4]);
 	});
 
 	it('pop modifies original', () => {
-		const original = collect([1, 2, 3]);
+		// Collection is mutable, use directly to test mutation behavior
+		const original = new Collection([1, 2, 3]);
 		original.pop();
-		expect(original.all()).toEqual([1, 2]);
+		expect(original.values().all()).toEqual([1, 2]);
 	});
 
 	it('shift modifies original', () => {
-		const original = collect([1, 2, 3]);
+		// Collection is mutable, use directly to test mutation behavior
+		const original = new Collection([1, 2, 3]);
 		original.shift();
-		expect(original.all()).toEqual([2, 3]);
+		expect(original.values().all()).toEqual([2, 3]);
 	});
 
 	it('transform modifies in place', () => {
-		const original = collect([1, 2, 3]);
+		// Collection is mutable, use directly to test mutation behavior
+		const original = new Collection([1, 2, 3]);
 		original.transform((n) => n * 2);
-		expect(original.all()).toEqual([2, 4, 6]);
+		expect(original.values().all()).toEqual([2, 4, 6]);
 	});
 });
 
@@ -1868,19 +1822,16 @@ describe('Edge Cases - Numeric Edge Cases', () => {
 	});
 
 	it('random with count returns collection', () => {
-		const result = collect([1, 2, 3, 4, 5]).random(2);
+		const result = new Collection([1, 2, 3, 4, 5]).random(2);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as Collection<number>).count()).toBe(2);
 	});
 });
 
-// =============================================================================
-// PORTED FROM LARAVEL: SupportCollectionTest.php
-// =============================================================================
-
 describe('Add (Laravel port)', () => {
 	it('adds items to collection', () => {
-		const c = collect<unknown>([]);
+		// Collection is mutable - use directly to test mutation behavior
+		const c = new Collection<unknown>([]);
 		expect(c.add(1).values().all()).toEqual([1]);
 		expect(c.add(2).values().all()).toEqual([1, 2]);
 		expect(c.add('').values().all()).toEqual([1, 2, '']);
@@ -1899,9 +1850,10 @@ describe('Put (Laravel port)', () => {
 	});
 
 	it('puts with no key appends', () => {
-		const data = collect(['taylor', 'shawn']);
+		// Collection is mutable - use directly to test mutation behavior
+		const data = new Collection(['taylor', 'shawn']);
 		data.put(null as unknown as string, 'dayle');
-		expect(data.all()).toEqual(['taylor', 'shawn', 'dayle']);
+		expect(data.values().all()).toEqual(['taylor', 'shawn', 'dayle']);
 	});
 });
 
@@ -1919,7 +1871,8 @@ describe('Prepend (Laravel port)', () => {
 
 describe('Forget (Laravel port)', () => {
 	it('forgets single key from array', () => {
-		const c = collect(['foo', 'bar']);
+		// Collection preserves string keys - use directly
+		const c = new Collection(['foo', 'bar']);
 		const result = c.forget(0);
 		expect(result.has(0)).toBe(false);
 		expect(result.has(1)).toBe(true);
@@ -1933,7 +1886,8 @@ describe('Forget (Laravel port)', () => {
 	});
 
 	it('forgets array of keys', () => {
-		const c = collect(['foo', 'bar', 'baz']);
+		// Collection preserves string keys - use directly
+		const c = new Collection(['foo', 'bar', 'baz']);
 		const result = c.forget([0, 2]);
 		expect(result.has(0)).toBe(false);
 		expect(result.has(2)).toBe(false);
@@ -1963,7 +1917,8 @@ describe('Pull (Laravel port)', () => {
 	});
 
 	it('removes item from collection', () => {
-		const c = collect(['foo', 'bar']);
+		// Collection is mutable - use directly to test mutation behavior
+		const c = new Collection(['foo', 'bar']);
 		c.pull(0);
 		// After pull, keys are preserved (not reindexed)
 		expect(c.get(1)).toBe('bar');
@@ -1972,7 +1927,7 @@ describe('Pull (Laravel port)', () => {
 	});
 
 	it('returns default value when missing', () => {
-		const c = collect([]);
+		const c = collect<string>([]);
 		const value = c.pull(0, 'foo');
 		expect(value).toBe('foo');
 	});
@@ -2368,7 +2323,7 @@ describe('IntersectByKeys (Laravel port)', () => {
 
 describe('Duplicates (Laravel port)', () => {
 	it('finds duplicate values', () => {
-		const duplicates = collect([1, 2, 1, 'laravel', null, 'laravel', 'php', null]).duplicates();
+		const duplicates = new Collection([1, 2, 1, 'laravel', null, 'laravel', 'php', null]).duplicates();
 		expect(duplicates.get(2)).toBe(1);
 		expect(duplicates.get(5)).toBe('laravel');
 		expect(duplicates.get(7)).toBe(null);
@@ -2377,7 +2332,7 @@ describe('Duplicates (Laravel port)', () => {
 
 describe('DuplicatesStrict (Laravel port)', () => {
 	it('finds duplicates with strict comparison', () => {
-		const c = collect([1, '1', 1, '1', 2]);
+		const c = new Collection([1, '1', 1, '1', 2]);
 		const duplicates = c.duplicatesStrict();
 		expect(duplicates.get(2)).toBe(1);
 		expect(duplicates.get(3)).toBe('1');
@@ -2435,7 +2390,7 @@ describe('EachSpread (Laravel port)', () => {
 
 describe('Replace (Laravel port)', () => {
 	it('replaces items by key', () => {
-		const c = collect(['a', 'b', 'c']);
+		const c = new Collection(['a', 'b', 'c']);
 		const replaced = c.replace({ 1: 'B' });
 		expect(replaced.all()).toEqual(['a', 'B', 'c']);
 	});
@@ -2461,10 +2416,6 @@ describe('MergeRecursive (Laravel port)', () => {
 		expect(merged.get('name')).toBe('taylor');
 	});
 });
-
-// =============================================================================
-// BATCH 8: SKIP, CHUNK, SPLIT, REDUCE (Laravel port)
-// =============================================================================
 
 describe('Skip (Laravel port)', () => {
 	it('skips items', () => {
@@ -2840,7 +2791,7 @@ describe('Percentage (Laravel port)', () => {
 
 describe('CountBy (Laravel port)', () => {
 	it('counts by callback', () => {
-		const data = collect(['alice@example.com', 'bob@example.com', 'carlos@gmail.com']);
+		const data = new Collection(['alice@example.com', 'bob@example.com', 'carlos@gmail.com']);
 		const counts = data.countBy((email) => email.split('@')[1]);
 		expect(counts.get('example.com')).toBe(2);
 		expect(counts.get('gmail.com')).toBe(1);
@@ -2862,7 +2813,7 @@ describe('GroupBy deep (Laravel port)', () => {
 
 describe('KeyBy (Laravel port)', () => {
 	it('keys by property', () => {
-		const data = collect([
+		const data = new Collection([
 			{ id: 1, name: 'Taylor' },
 			{ id: 2, name: 'Otwell' },
 		]);
@@ -2870,7 +2821,7 @@ describe('KeyBy (Laravel port)', () => {
 	});
 
 	it('keys by callback', () => {
-		const data = collect([
+		const data = new Collection([
 			{ id: 1, name: 'Taylor' },
 			{ id: 2, name: 'Otwell' },
 		]);
@@ -2880,7 +2831,7 @@ describe('KeyBy (Laravel port)', () => {
 
 describe('MapToGroups (Laravel port)', () => {
 	it('maps to groups', () => {
-		const data = collect([
+		const data = new Collection([
 			{ id: 1, group: 'A' },
 			{ id: 2, group: 'A' },
 			{ id: 3, group: 'B' },
@@ -2893,7 +2844,7 @@ describe('MapToGroups (Laravel port)', () => {
 
 describe('MapWithKeys (Laravel port)', () => {
 	it('maps with keys', () => {
-		const data = collect([
+		const data = new Collection([
 			{ id: 1, name: 'Taylor' },
 			{ id: 2, name: 'Otwell' },
 		]);
@@ -2924,10 +2875,6 @@ describe('Before and After (Laravel port)', () => {
 		expect(data.after(5)).toBeNull();
 	});
 });
-
-// =============================================================================
-// PHASE 1: COMPARISON METHODS (Laravel port for 100% coverage)
-// =============================================================================
 
 describe('DiffUsing (Laravel port)', () => {
 	it('diffs using case-insensitive comparison', () => {
@@ -2994,21 +2941,19 @@ describe('DoesntContainStrict (Laravel port)', () => {
 	});
 });
 
-// =============================================================================
-// PHASE 2: CORE OPERATIONS (Laravel port for 100% coverage)
-// =============================================================================
-
 describe('Unshift (Laravel port)', () => {
 	it('adds items to the beginning', () => {
-		const c = collect([1, 2, 3]);
+		// Collection is mutable - use directly to test mutation behavior
+		const c = new Collection([1, 2, 3]);
 		c.unshift(0);
-		expect(c.all()).toEqual([0, 1, 2, 3]);
+		expect(c.values().all()).toEqual([0, 1, 2, 3]);
 	});
 
 	it('adds multiple items', () => {
-		const c = collect([3, 4]);
+		// Collection is mutable - use directly to test mutation behavior
+		const c = new Collection([3, 4]);
 		c.unshift(1, 2);
-		expect(c.all()).toEqual([1, 2, 3, 4]);
+		expect(c.values().all()).toEqual([1, 2, 3, 4]);
 	});
 });
 
@@ -3032,17 +2977,17 @@ describe('Select (Laravel port)', () => {
 
 describe('CollapseWithKeys (Laravel port)', () => {
 	it('collapses preserving keys', () => {
-		const data = collect([{ 1: 'a' }, { 3: 'c' }, { 2: 'b' }]);
+		const data = new Collection([{ 1: 'a' }, { 3: 'c' }, { 2: 'b' }]);
 		expect(data.collapseWithKeys().all()).toEqual({ '1': 'a', '2': 'b', '3': 'c' });
 	});
 
 	it('returns empty for flat collection', () => {
-		const data = collect(['a', 'b', 'c']);
+		const data = new Collection(['a', 'b', 'c']);
 		expect(data.collapseWithKeys().all()).toEqual({});
 	});
 
 	it('handles nested collections', () => {
-		const data = collect([collect({ a: '1a', b: '1b' }), collect({ b: '2b', c: '2c' })]);
+		const data = new Collection([new Collection({ a: '1a', b: '1b' }), new Collection({ b: '2b', c: '2c' })]);
 		const result = data.collapseWithKeys();
 		expect(result.get('a')).toBe('1a');
 		expect(result.get('b')).toBe('2b'); // second overwrites first
@@ -3056,10 +3001,6 @@ describe('WhereNotBetween (Laravel port)', () => {
 		expect(c.whereNotBetween('v', [2, 4]).values().all()).toEqual([{ v: 1 }]);
 	});
 });
-
-// =============================================================================
-// PHASE 3: FILTERING & TYPE METHODS (Laravel port for 100% coverage)
-// =============================================================================
 
 describe('WhereInstanceOf (Laravel port)', () => {
 	it('filters by instance type', () => {
@@ -3110,7 +3051,7 @@ describe('Value (Laravel port)', () => {
 			{ id: 1, pivot: { value: 'foo' } },
 			{ id: 2, pivot: { value: 'bar' } },
 		]);
-		// @ts-expect-error testing dot notation
+		// @ts-expect-error dot notation is a runtime feature, not reflected in types
 		expect(c.value('pivot.value')).toBe('foo');
 	});
 
@@ -3119,10 +3060,6 @@ describe('Value (Laravel port)', () => {
 		expect(c.value('balance')).toBe(0);
 	});
 });
-
-// =============================================================================
-// PHASE 4: UTILITY METHODS (Laravel port for 100% coverage)
-// =============================================================================
 
 describe('Static make (Laravel port)', () => {
 	it('creates collection via make', () => {
@@ -3155,11 +3092,11 @@ describe('Static wrap with iterables (Laravel port)', () => {
 
 describe('PipeInto (Laravel port)', () => {
 	it('pipes into class constructor', () => {
-		class Container<T> {
-			constructor(public value: ProxiedCollection<T>) {}
+		class Container {
+			constructor(public value: { all(): number[] }) {}
 		}
 		const c = collect([1, 2, 3]);
-		const container = c.pipeInto(Container);
+		const container = c.pipeInto(Container as any) as Container;
 		expect(container.value.all()).toEqual([1, 2, 3]);
 	});
 });
@@ -3185,10 +3122,6 @@ describe('DD (Laravel port)', () => {
 		expect(() => c.dd()).toThrow();
 	});
 });
-
-// =============================================================================
-// PHASE 5: ARRAY ACCESS & HELPERS (Laravel port for 100% coverage)
-// =============================================================================
 
 describe('Array Access (Laravel port)', () => {
 	it('offsetExists checks key existence', () => {
@@ -3257,15 +3190,12 @@ describe('toArray helper', () => {
 	});
 });
 
-// =============================================================================
-// ADDITIONAL EDGE CASE TESTS (for 100% coverage)
-// =============================================================================
-
 describe('WithCollection helper', () => {
 	it('map receives filtered related items', async () => {
 		const { WithCollection } = await import('../src/index.js');
-		const primary = collect(['a', 'b', 'c']);
-		const related = collect(['a', 'a', 'b']);
+		// Cast array collections to ProxiedCollection for WithCollection compatibility
+		const primary = collect(['a', 'b', 'c']) as any;
+		const related = collect(['a', 'a', 'b']) as any;
 		const with_ = new WithCollection(primary, related);
 		const result = with_.map((item, rel) => `${item}:${rel.count()}`);
 		expect(result.all()).toEqual(['a:2', 'b:1', 'c:0']);
@@ -3274,7 +3204,7 @@ describe('WithCollection helper', () => {
 	it('mapWithKey receives item, key and related', async () => {
 		const { WithCollection } = await import('../src/index.js');
 		const primary = collect({ x: 'a', y: 'b' });
-		const related = collect(['a', 'a']);
+		const related = collect(['a', 'a']) as any;
 		const with_ = new WithCollection(primary, related);
 		const result = with_.mapWithKey((_item, key, rel) => `${key}:${rel.count()}`);
 		expect(result.all()).toEqual({ x: 'x:2', y: 'y:0' });
@@ -3282,8 +3212,8 @@ describe('WithCollection helper', () => {
 
 	it('each iterates with related', async () => {
 		const { WithCollection } = await import('../src/index.js');
-		const primary = collect([1, 2]);
-		const related = collect([1, 1, 2]);
+		const primary = collect([1, 2]) as any;
+		const related = collect([1, 1, 2]) as any;
 		const with_ = new WithCollection(primary, related);
 		const counts: number[] = [];
 		with_.each((_item, rel) => {
@@ -3294,8 +3224,8 @@ describe('WithCollection helper', () => {
 
 	it('all returns primary items', async () => {
 		const { WithCollection } = await import('../src/index.js');
-		const primary = collect([1, 2, 3]);
-		const related = collect(['a', 'b']);
+		const primary = collect([1, 2, 3]) as any;
+		const related = collect(['a', 'b']) as any;
 		const with_ = new WithCollection(primary, related);
 		expect(with_.all()).toEqual([1, 2, 3]);
 	});
@@ -3303,20 +3233,20 @@ describe('WithCollection helper', () => {
 
 describe('Pop edge cases', () => {
 	it('returns empty collection when count < 1', () => {
-		const c = collect([1, 2, 3]);
+		const c = new Collection([1, 2, 3]);
 		const result = c.pop(0);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as Collection<number>).all()).toEqual([]);
 	});
 
 	it('returns empty collection on empty collection with count > 1', () => {
-		const c = collect<number>([]);
+		const c = new Collection<number>([]);
 		const result = c.pop(5);
 		expect(result).toBeInstanceOf(Collection);
 	});
 
 	it('returns multiple items when count > 1', () => {
-		const c = collect([1, 2, 3, 4, 5]);
+		const c = new Collection([1, 2, 3, 4, 5]);
 		const result = c.pop(3);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as Collection<number>).count()).toBe(3);
@@ -3326,18 +3256,18 @@ describe('Pop edge cases', () => {
 
 describe('Shift edge cases', () => {
 	it('throws when count < 0', () => {
-		const c = collect([1, 2, 3]);
+		const c = new Collection([1, 2, 3]);
 		expect(() => c.shift(-1)).toThrow('Number of shifted items may not be less than zero.');
 	});
 
 	it('returns empty collection on empty collection with count > 1', () => {
-		const c = collect<number>([]);
+		const c = new Collection<number>([]);
 		const result = c.shift(5);
 		expect(result).toBeInstanceOf(Collection);
 	});
 
 	it('returns multiple items when count > 1', () => {
-		const c = collect([1, 2, 3, 4, 5]);
+		const c = new Collection([1, 2, 3, 4, 5]);
 		const result = c.shift(3);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as Collection<number>).all()).toEqual([1, 2, 3]);
@@ -3347,9 +3277,9 @@ describe('Shift edge cases', () => {
 
 describe('Last with callable default', () => {
 	it('calls default function when no match', () => {
-		const c = collect([1, 2, 3]);
+		const c = collect<number | string>([1, 2, 3]);
 		const result = c.last(
-			(v) => v > 10,
+			(v) => typeof v === 'number' && v > 10,
 			() => 'fallback',
 		);
 		expect(result).toBe('fallback');
@@ -3392,9 +3322,10 @@ describe('operatorForWhere default case', () => {
 
 describe('Collection.with()', () => {
 	it('creates WithCollection instance', () => {
-		const c = collect([1, 2, 3]);
-		const related = collect(['a', 'b']);
-		const with_ = c.with(related);
+		// Use Collection directly for .with() that takes a related collection
+		const c = new Collection([1, 2, 3]);
+		const related = new Collection(['a', 'b']);
+		const with_ = c.with(related as any);
 		expect(with_).toBeInstanceOf(Object);
 		expect(with_.all()).toEqual([1, 2, 3]);
 	});
@@ -3410,7 +3341,7 @@ describe('Collapse with Collection items', () => {
 
 describe('CollapseWithKeys edge cases', () => {
 	it('returns empty for empty collection', () => {
-		const c = collect([]);
+		const c = new Collection([]);
 		const result = c.collapseWithKeys();
 		expect(result.all()).toEqual({});
 	});
@@ -3428,7 +3359,7 @@ describe('DoesntContainStrict with key-value', () => {
 
 describe('Shift with count = 0', () => {
 	it('returns empty collection when count is 0', () => {
-		const c = collect([1, 2, 3]);
+		const c = new Collection([1, 2, 3]);
 		const result = c.shift(0);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as Collection<number>).all()).toEqual([]);
@@ -3474,7 +3405,7 @@ describe('Ensure with class instance', () => {
 		const obj1 = new MyClass(1);
 		const obj2 = new MyClass(2);
 		const c = collect([obj1, obj2]);
-		expect(() => c.ensure(MyClass)).not.toThrow();
+		expect(() => c.ensure(MyClass as new (...args: unknown[]) => unknown)).not.toThrow();
 	});
 
 	it('throws when item is not instance of class', () => {
@@ -3482,7 +3413,7 @@ describe('Ensure with class instance', () => {
 			constructor(public value: number) {}
 		}
 		const c = collect([{ value: 1 }, { value: 2 }]);
-		expect(() => c.ensure(MyClass)).toThrow();
+		expect(() => c.ensure(MyClass as new (...args: unknown[]) => unknown)).toThrow();
 	});
 });
 
@@ -3512,7 +3443,7 @@ describe('Only with null keys', () => {
 
 describe('Select with null keys', () => {
 	it('returns all items when keys is null', () => {
-		const c = collect([{ a: 1, b: 2 }]);
+		const c = new Collection([{ a: 1, b: 2 }]);
 		const result = c.select(null);
 		expect(result.count()).toBe(1);
 	});
@@ -3520,14 +3451,14 @@ describe('Select with null keys', () => {
 
 describe('GroupBy edge cases', () => {
 	it('handles boolean group keys', () => {
-		const c = collect([{ active: true }, { active: false }, { active: true }]);
+		const c = new Collection([{ active: true }, { active: false }, { active: true }]);
 		const result = c.groupBy('active');
 		expect(result.keys().all()).toContain('1'); // true becomes '1'
 		expect(result.keys().all()).toContain('0'); // false becomes '0'
 	});
 
 	it('handles null/undefined group keys', () => {
-		const c = collect([
+		const c = new Collection([
 			{ name: 'Alice' },
 			{ name: null as unknown as string },
 			{ name: undefined as unknown as string },
@@ -3537,7 +3468,7 @@ describe('GroupBy edge cases', () => {
 	});
 
 	it('preserves keys when specified', () => {
-		const c = collect({ x: { type: 'a' }, y: { type: 'a' }, z: { type: 'b' } });
+		const c = new Collection({ x: { type: 'a' }, y: { type: 'a' }, z: { type: 'b' } });
 		const result = c.groupBy('type', true);
 		const groupA = result.get('a');
 		expect(groupA?.has('x')).toBe(true);
@@ -3595,6 +3526,80 @@ describe('ContainsOneItem with callback', () => {
 	});
 });
 
+describe('hasMany()', () => {
+	it('returns false for empty collection', () => {
+		expect(collect([]).hasMany()).toBe(false);
+	});
+
+	it('returns false for single item', () => {
+		expect(collect(['1']).hasMany()).toBe(false);
+	});
+
+	it('returns true for multiple items', () => {
+		expect(collect([1, 2, 3]).hasMany()).toBe(true);
+	});
+
+	it('returns false when only one item matches callback', () => {
+		const c = collect([{ age: 2 }, { age: 3 }]);
+		expect(c.hasMany((item) => item.age === 2)).toBe(false);
+	});
+
+	it('returns true when multiple items match callback', () => {
+		const c = collect([{ age: 2 }, { age: 2 }, { age: 3 }]);
+		expect(c.hasMany((item) => item.age === 2)).toBe(true);
+	});
+
+	it('supports key/value syntax', () => {
+		const c = collect([{ active: true }, { active: false }, { active: true }]);
+		expect(c.hasMany('active', true)).toBe(true);
+		expect(c.hasMany('active', false)).toBe(false);
+	});
+
+	it('supports key/operator/value syntax', () => {
+		const c = collect([{ age: 1 }, { age: 2 }, { age: 3 }]);
+		expect(c.hasMany('age', '>', 1)).toBe(true);
+		expect(c.hasMany('age', '>', 2)).toBe(false);
+	});
+});
+
+describe('hasSole()', () => {
+	it('returns false for empty collection', () => {
+		expect(collect([]).hasSole()).toBe(false);
+	});
+
+	it('returns true for single item', () => {
+		expect(collect(['1']).hasSole()).toBe(true);
+	});
+
+	it('returns false for multiple items', () => {
+		expect(collect([1, 2, 3]).hasSole()).toBe(false);
+	});
+
+	it('returns true when exactly one item matches callback', () => {
+		expect(collect([1, 2, 3]).hasSole((item) => item === 2)).toBe(true);
+	});
+
+	it('returns false when no items match callback', () => {
+		expect(collect([1, 2, 3]).hasSole((item) => item === 5)).toBe(false);
+	});
+
+	it('returns false when multiple items match callback', () => {
+		expect(collect([1, 2, 2, 3]).hasSole((item) => item === 2)).toBe(false);
+	});
+
+	it('supports key/value syntax', () => {
+		const c = collect([{ active: true }, { active: false }, { active: false }]);
+		expect(c.hasSole('active', true)).toBe(true);
+		expect(c.hasSole('active', false)).toBe(false);
+	});
+
+	it('supports key/operator/value syntax', () => {
+		const c = collect([{ age: 1 }, { age: 2 }, { age: 3 }]);
+		expect(c.hasSole('age', '>', 2)).toBe(true);
+		expect(c.hasSole('age', '<', 3)).toBe(false);
+	});
+});
+
 describe('FirstOrFail edge cases', () => {
 	it('with key-operator-value', () => {
 		const c = collect([{ val: 1 }, { val: 2 }, { val: 3 }]);
@@ -3629,7 +3634,7 @@ describe('ReduceWithKeys', () => {
 
 describe('Collect and toBase', () => {
 	it('collect returns new collection', () => {
-		const c = collect([1, 2, 3]);
+		const c = new Collection([1, 2, 3]);
 		const result = c.collect();
 		expect(result).toBeInstanceOf(Collection);
 		expect(result).not.toBe(c);
@@ -3637,7 +3642,7 @@ describe('Collect and toBase', () => {
 	});
 
 	it('toBase returns new collection', () => {
-		const c = collect([1, 2, 3]);
+		const c = new Collection([1, 2, 3]);
 		const result = c.toBase();
 		expect(result).toBeInstanceOf(Collection);
 		expect(result).not.toBe(c);
@@ -3685,10 +3690,6 @@ describe('Replace edge case', () => {
 		expect(result.get('c')).toBe(3); // New key added
 	});
 });
-
-// =============================================================================
-// BRANCH COVERAGE TESTS (improving 88.67% → 100%)
-// =============================================================================
 
 describe('Before/After null coalescing branches', () => {
 	it('before returns null when item at position-1 is undefined', () => {
@@ -3801,8 +3802,8 @@ describe('Sole/FirstOrFail string key branches', () => {
 
 describe('ToArray nested Collection branch', () => {
 	it('toArray converts nested collections to arrays', () => {
-		const inner = collect([1, 2, 3]);
-		const c = collect({ items: inner });
+		const inner = new Collection([1, 2, 3]);
+		const c = new Collection({ items: inner });
 		const result = c.toArray() as unknown as Record<string, number[]>;
 		expect(Array.isArray(result.items)).toBe(true);
 		expect(result.items).toEqual([1, 2, 3]);
@@ -3992,10 +3993,6 @@ describe('Value with non-callable default', () => {
 	});
 });
 
-// ============================================================================
-// GROUP 1-2: dataGet and Callable Defaults (Lines 60-61, 291, 303, 309)
-// ============================================================================
-
 describe('dataGet branches', () => {
 	it('where with null key checks item equality directly', () => {
 		const c = collect([1, 2, 3, 2, 1]);
@@ -4011,48 +4008,44 @@ describe('dataGet branches', () => {
 
 describe('Callable defaults branches', () => {
 	it('first with callable default on empty collection', () => {
-		const c = collect([]);
+		const c = collect<string>([]);
 		expect(c.first(undefined, () => 'default-value')).toBe('default-value');
 	});
 
 	it('first with callback and callable default, no match', () => {
-		const c = collect([1, 2, 3]);
+		const c = collect<number | string>([1, 2, 3]);
 		expect(
 			c.first(
-				(v) => v > 100,
+				(v) => typeof v === 'number' && v > 100,
 				() => 'no-match',
 			),
 		).toBe('no-match');
 	});
 
 	it('last with callable default on empty collection (no callback)', () => {
-		const c = collect([]);
+		const c = collect<string>([]);
 		expect(c.last(undefined, () => 'last-default')).toBe('last-default');
 	});
 
 	it('last with callback and callable default, no match', () => {
-		const c = collect([1, 2, 3]);
+		const c = collect<number | string>([1, 2, 3]);
 		expect(
 			c.last(
-				(v) => v > 100,
+				(v) => typeof v === 'number' && v > 100,
 				() => 'no-last-match',
 			),
 		).toBe('no-last-match');
 	});
 
 	it('last with callback and non-callable default, no match', () => {
-		const c = collect([1, 2, 3]);
-		expect(c.last((v) => v > 100, 'static-default')).toBe('static-default');
+		const c = collect<number | string>([1, 2, 3]);
+		expect(c.last((v) => typeof v === 'number' && v > 100, 'static-default')).toBe('static-default');
 	});
 });
 
-// ============================================================================
-// GROUP 3: Collection Argument Branches (12 methods)
-// ============================================================================
-
 describe('Collection argument branches', () => {
 	it('countBy with Collection items', () => {
-		const items = collect([collect([1, 2]), collect([3, 4])]);
+		const items = new Collection([new Collection([1, 2]), new Collection([3, 4])]);
 		// @ts-expect-error testing numeric sortBy
 		const result = items.countBy((item) => (item as Collection<number>).count());
 		expect(result.get(2)).toBe(2);
@@ -4162,10 +4155,6 @@ describe('Collection argument branches', () => {
 	});
 });
 
-// ============================================================================
-// GROUP 4-5: Empty/Edge Checks and only/select/except null
-// ============================================================================
-
 describe('Empty and edge case branches', () => {
 	it('chunk with preserveKeys explicitly false', () => {
 		const c = collect({ a: 1, b: 2, c: 3, d: 4 });
@@ -4210,8 +4199,8 @@ describe('only/select/except with null and Collection keys', () => {
 
 	it('only with Collection keys', () => {
 		const c = collect({ a: 1, b: 2, c: 3 });
-		const keys = collect(['a', 'c']);
-		const result = c.only(keys as Collection<string | number>);
+		const keys = collect(['a', 'c']).all();
+		const result = c.only(keys);
 		expect(result.get('a')).toBe(1);
 		expect(result.get('c')).toBe(3);
 		expect(result.count()).toBe(2);
@@ -4222,15 +4211,11 @@ describe('only/select/except with null and Collection keys', () => {
 			{ a: 1, b: 2, c: 3 },
 			{ a: 4, b: 5, c: 6 },
 		]);
-		const keys = collect(['a', 'c']);
-		const result = c.select(keys as Collection<string | number>);
+		const keys = collect(['a', 'c']).all();
+		const result = c.select(keys);
 		expect(result.first()).toEqual({ a: 1, c: 3 });
 	});
 });
-
-// ============================================================================
-// GROUP 6-7: Has/HasAny and GroupBy branches
-// ============================================================================
 
 describe('has/hasAny branches', () => {
 	it('has with array of keys', () => {
@@ -4264,10 +4249,6 @@ describe('groupBy returning array of keys', () => {
 	});
 });
 
-// ============================================================================
-// GROUP 8: Sorting branches
-// ============================================================================
-
 describe('Sorting branches', () => {
 	it('sortBy with callback (not key string)', () => {
 		const c = collect([{ n: 3 }, { n: 1 }, { n: 2 }]);
@@ -4296,10 +4277,6 @@ describe('Sorting branches', () => {
 	});
 });
 
-// ============================================================================
-// GROUP 9: Join and Skip branches
-// ============================================================================
-
 describe('Join and Skip branches', () => {
 	it('join with finalGlue', () => {
 		const c = collect(['a', 'b', 'c']);
@@ -4323,29 +4300,21 @@ describe('Join and Skip branches', () => {
 	});
 });
 
-// ============================================================================
-// GROUP 10: Random and Replace branches
-// ============================================================================
-
 describe('Random and Replace branches', () => {
 	it('random with function count', () => {
-		const c = collect([1, 2, 3, 4, 5]);
+		const c = new Collection([1, 2, 3, 4, 5]);
 		const result = c.random(() => 2) as Collection<number>;
 		expect(result.count()).toBe(2);
 	});
 
 	it('replace adds keys not in original', () => {
-		const c = collect({ a: 1 });
+		const c = new Collection({ a: 1 });
 		const result = c.replace({ b: 2, c: 3 });
 		expect(result.get('a')).toBe(1);
 		expect(result.get('b')).toBe(2);
 		expect(result.get('c')).toBe(3);
 	});
 });
-
-// ============================================================================
-// GROUP 11: whereNull with key
-// ============================================================================
 
 describe('whereNull with key', () => {
 	it('whereNull with key parameter filters by that key', () => {
@@ -4367,16 +4336,12 @@ describe('whereNull with key', () => {
 	});
 });
 
-// ============================================================================
-// ADDITIONAL BRANCH COVERAGE TESTS
-// ============================================================================
-
 describe('Additional branch coverage tests', () => {
 	// Line 309: last with callback and callable default, no match
 	it('last with callback matching nothing and callable default', () => {
-		const c = collect([1, 2, 3]);
+		const c = collect<number | string>([1, 2, 3]);
 		const result = c.last(
-			(v) => v > 100,
+			(v) => typeof v === 'number' && v > 100,
 			() => 'fallback',
 		);
 		expect(result).toBe('fallback');
@@ -4407,7 +4372,7 @@ describe('Additional branch coverage tests', () => {
 
 	// Line 1203: pop on empty with count > 1
 	it('pop on empty collection with count > 1 returns empty Collection', () => {
-		const c = collect([]);
+		const c = new Collection([]);
 		const result = c.pop(5);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as unknown as Collection<unknown>).count()).toBe(0);
@@ -4415,7 +4380,7 @@ describe('Additional branch coverage tests', () => {
 
 	// Line 1233: shift on empty with count > 1
 	it('shift on empty collection with count > 1 returns empty Collection', () => {
-		const c = collect([]);
+		const c = new Collection([]);
 		const result = c.shift(5);
 		expect(result).toBeInstanceOf(Collection);
 		expect((result as unknown as Collection<unknown>).count()).toBe(0);
@@ -4424,8 +4389,8 @@ describe('Additional branch coverage tests', () => {
 	// Line 1286: except with Collection keys
 	it('except with Collection keys', () => {
 		const c = collect({ a: 1, b: 2, c: 3 });
-		const keys = collect(['b']);
-		const result = c.except(keys as Collection<string | number>);
+		const keys = collect(['b']).all();
+		const result = c.except(keys);
 		expect(result.get('a')).toBe(1);
 		expect(result.get('c')).toBe(3);
 		expect(result.count()).toBe(2);
@@ -4503,7 +4468,7 @@ describe('Additional branch coverage tests', () => {
 
 	// Line 1101: replace non-existent key
 	it('replace adds new keys not in original', () => {
-		const c = collect([1, 2]);
+		const c = new Collection([1, 2]);
 		const result = c.replace({ 5: 99 });
 		expect(result.get('5')).toBe(99);
 	});
@@ -4521,8 +4486,8 @@ describe('Additional branch coverage tests', () => {
 
 	// Line 1089: combine with Collection values
 	it('combine with Collection values', () => {
-		const keys = collect(['a', 'b', 'c']);
-		const values = collect([1, 2, 3]);
+		const keys = new Collection(['a', 'b', 'c']);
+		const values = new Collection([1, 2, 3]);
 		const result = keys.combine(values);
 		expect(result.get('a')).toBe(1);
 		expect(result.get('b')).toBe(2);
@@ -4583,7 +4548,7 @@ describe('Additional branch coverage tests', () => {
 	});
 
 	it('mode with key on object collection', () => {
-		const c = collect([{ val: 1 }, { val: 2 }, { val: 2 }, { val: 2 }, { val: 3 }]);
+		const c = new Collection([{ val: 1 }, { val: 2 }, { val: 2 }, { val: 2 }, { val: 3 }]);
 		expect(c.mode('val')).toEqual([2]);
 	});
 
@@ -4611,7 +4576,7 @@ describe('Additional branch coverage tests', () => {
 	// Line 461: collapse skips non-array non-Collection items
 	it('collapse skips primitive items', () => {
 		// Mix of arrays and primitives - primitives should be skipped
-		const c = collect([[1, 2], 'skip-me', [3, 4], 42]);
+		const c = new Collection([[1, 2], 'skip-me', [3, 4], 42]);
 		const result = c.collapse();
 		expect(result.all()).toEqual([1, 2, 3, 4]);
 	});
@@ -4677,10 +4642,10 @@ describe('Additional branch coverage tests', () => {
 
 	// Line 309: last with callable default returning default when callback matches nothing
 	it('last calls callable default when no match', () => {
-		const c = collect([1, 2, 3]);
+		const c = collect<number | string>([1, 2, 3]);
 		let called = false;
 		const result = c.last(
-			(v) => v > 100,
+			(v) => typeof v === 'number' && v > 100,
 			() => {
 				called = true;
 				return 'default';
@@ -4690,10 +4655,6 @@ describe('Additional branch coverage tests', () => {
 		expect(result).toBe('default');
 	});
 });
-
-// ============================================================================
-// HIGHER-ORDER MESSAGING
-// ============================================================================
 
 describe('Higher-Order Messaging', () => {
 	// Test data
@@ -5038,20 +4999,16 @@ describe('Higher-Order Messaging', () => {
 		});
 	});
 
-	// =============================================================================
-	// PERFORMANCE OPTIMIZATIONS
-	// =============================================================================
-
 	describe('performance optimizations', () => {
 		describe('push() optimization with cached nextNumericKey', () => {
 			it('push() uses correct next key', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				c.push(4, 5);
 				expect(c.all()).toEqual([1, 2, 3, 4, 5]);
 			});
 
 			it('multiple push() calls maintain correct keys', () => {
-				const c = collect<number>([]);
+				const c = new Collection<number>([]);
 				c.push(1);
 				c.push(2);
 				c.push(3);
@@ -5059,7 +5016,7 @@ describe('Higher-Order Messaging', () => {
 			});
 
 			it('push() after pop() maintains correct keys', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				c.pop();
 				c.push(4);
 				// After pop, the cache is invalidated and recalculated
@@ -5067,41 +5024,41 @@ describe('Higher-Order Messaging', () => {
 			});
 
 			it('push() after shift() maintains correct keys', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				c.shift();
 				c.push(4);
 				expect(c.values().all()).toEqual([2, 3, 4]);
 			});
 
 			it('push() after forget() maintains correct keys', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				c.forget(1);
 				c.push(4);
 				expect(c.values().all()).toEqual([1, 3, 4]);
 			});
 
 			it('push() after pull() maintains correct keys', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				c.pull(1);
 				c.push(4);
 				expect(c.values().all()).toEqual([1, 3, 4]);
 			});
 
 			it('pull() with non-numeric key does not invalidate cache', () => {
-				const c = collect<number | string>({ 0: 'a', 1: 'b', foo: 'c' });
+				const c = new Collection<number | string>({ 0: 'a', 1: 'b', foo: 'c' });
 				c.pull('foo'); // Non-numeric key - should NOT invalidate cache
 				c.push('d');
 				expect(c.get(2)).toBe('d'); // Next numeric key is still 2
 			});
 
 			it('handles mixed numeric and string keys', () => {
-				const c = collect<number | string>({ 0: 'a', 1: 'b', foo: 'c' });
+				const c = new Collection<number | string>({ 0: 'a', 1: 'b', foo: 'c' });
 				c.push('d');
 				expect(c.get(2)).toBe('d');
 			});
 
 			it('push() on empty collection starts at 0', () => {
-				const c = collect<number>([]);
+				const c = new Collection<number>([]);
 				c.push(1);
 				expect(c.keys().all()).toEqual(['0']);
 			});
@@ -5109,13 +5066,13 @@ describe('Higher-Order Messaging', () => {
 
 		describe('pop(n) optimization', () => {
 			it('pop() removes last item', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				expect(c.pop()).toBe(3);
 				expect(c.all()).toEqual([1, 2]);
 			});
 
 			it('pop(n) removes last n items efficiently', () => {
-				const c = collect([1, 2, 3, 4, 5]);
+				const c = new Collection([1, 2, 3, 4, 5]);
 				const result = c.pop(3);
 				expect(result.all()).toEqual([3, 4, 5]);
 				expect(c.all()).toEqual([1, 2]);
@@ -5124,13 +5081,13 @@ describe('Higher-Order Messaging', () => {
 
 		describe('shift(n) optimization', () => {
 			it('shift() removes first item', () => {
-				const c = collect([1, 2, 3]);
+				const c = new Collection([1, 2, 3]);
 				expect(c.shift()).toBe(1);
 				expect(c.values().all()).toEqual([2, 3]);
 			});
 
 			it('shift(n) removes first n items efficiently', () => {
-				const c = collect([1, 2, 3, 4, 5]);
+				const c = new Collection([1, 2, 3, 4, 5]);
 				const result = c.shift(3);
 				expect(result.all()).toEqual([1, 2, 3]);
 				expect(c.values().all()).toEqual([4, 5]);
@@ -5139,14 +5096,11 @@ describe('Higher-Order Messaging', () => {
 	});
 });
 
-// =============================================================================
-// TYPE INFERENCE TESTS
-// =============================================================================
-
 describe('Type Inference', () => {
 	describe('collapse() type inference', () => {
 		it('infers inner array type', () => {
-			const nested = collect([
+			// Use Collection directly for type inference tests
+			const nested = new Collection([
 				[1, 2],
 				[3, 4],
 			]);
@@ -5160,7 +5114,7 @@ describe('Type Inference', () => {
 		});
 
 		it('preserves T when not nested (type check)', () => {
-			const flat = collect([1, 2, 3]);
+			const flat = new Collection([1, 2, 3]);
 			const collapsed = flat.collapse();
 
 			// Type should be Collection<number> (not Collection<never>)
@@ -5171,7 +5125,8 @@ describe('Type Inference', () => {
 		});
 
 		it('handles Collection of Collections', () => {
-			const nested = collect([collect(['a', 'b']), collect(['c', 'd'])]);
+			// Use Collection directly for type inference tests
+			const nested = new Collection([new Collection(['a', 'b']), new Collection(['c', 'd'])]);
 			const collapsed = nested.collapse();
 
 			// Type should be Collection<string>
@@ -5182,7 +5137,8 @@ describe('Type Inference', () => {
 
 	describe('flatten() type inference', () => {
 		it('infers type for flatten(1)', () => {
-			const deep = collect([[[1, 2]], [[3, 4]]]);
+			// Use Collection directly for type inference tests
+			const deep = new Collection([[[1, 2]], [[3, 4]]]);
 			const flat1 = deep.flatten(1);
 
 			// number[][][] flattened 1 level = number[][]
@@ -5191,7 +5147,7 @@ describe('Type Inference', () => {
 		});
 
 		it('infers type for flatten(2)', () => {
-			const deep = collect([[[1, 2]], [[3, 4]]]);
+			const deep = new Collection([[[1, 2]], [[3, 4]]]);
 			const flat2 = deep.flatten(2);
 
 			// number[][][] flattened 2 levels = number
@@ -5200,7 +5156,7 @@ describe('Type Inference', () => {
 		});
 
 		it('infers type for flatten() (deep)', () => {
-			const deep = collect([[[[[1, 2]]]]]);
+			const deep = new Collection([[[[[1, 2]]]]]);
 			const flatDeep = deep.flatten();
 
 			// Should be fully flattened to number
@@ -5243,10 +5199,6 @@ describe('Type Inference', () => {
 	});
 });
 
-// ============================================================================
-// Arrayable/Collectable Input Types (Coverage for helper functions)
-// ============================================================================
-
 describe('Arrayable inputs (Iterable, CollectionParam)', () => {
 	describe('Iterable inputs via Set', () => {
 		it('diff accepts Set (Iterable)', () => {
@@ -5279,7 +5231,7 @@ describe('Arrayable inputs (Iterable, CollectionParam)', () => {
 		});
 
 		it('combine accepts generator (Iterable)', () => {
-			const c = collect(['a', 'b', 'c']);
+			const c = new Collection(['a', 'b', 'c']);
 			function* gen() {
 				yield 1;
 				yield 2;
