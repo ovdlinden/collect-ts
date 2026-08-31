@@ -2,8 +2,17 @@
 import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue';
 import loader from '@monaco-editor/loader';
 import type * as Monaco from 'monaco-editor';
+import { collect } from 'collect-ts';
 import { examples, defaultCode, getExamplesByCategory, type Example } from './examples';
 import { collectTypeDefinitions } from './collectTypes';
+
+/**
+ * Execute playground code using eval - returns the last expression's value naturally.
+ * collect must be passed as parameter so it's in eval's scope.
+ */
+function runPlayground(code: string, collect: typeof import('collect-ts').collect): unknown {
+	return eval(code);
+}
 
 const code = ref(defaultCode);
 const output = ref<string>('');
@@ -137,16 +146,12 @@ async function runCode() {
 	const startTime = performance.now();
 
 	try {
-		const { collect } = await import('../../../../../src/index.js');
-
 		const logs: string[] = [];
 		const originalLog = console.log;
 		console.log = (...args) => logs.push(args.map((a) => formatValue(a)).join(' '));
 
 		try {
-			// Execute the code with collect in scope
-			const fn = new Function('collect', code.value);
-			const result = fn(collect);
+			const result = runPlayground(code.value, collect);
 			console.log = originalLog;
 
 			let outputStr = logs.length > 0 ? logs.join('\n') + '\n\n' : '';
