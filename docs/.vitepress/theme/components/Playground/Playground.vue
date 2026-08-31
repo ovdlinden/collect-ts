@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted, nextTick, provide, watch } from 'vue';
+import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue';
 import loader from '@monaco-editor/loader';
 import type * as Monaco from 'monaco-editor';
 import { examples, defaultCode, getExamplesByCategory, type Example } from './examples';
 import { collectTypeDefinitions } from './collectTypes';
-import { executeWithInstrumentation, type PipelineStep } from './instrumentedCollect';
-import PipelineVisualizer from './PipelineVisualizer.vue';
-import CardFlowView from './CardFlowView.vue';
-import StepScrubber from './StepScrubber.vue';
 
 const code = ref(defaultCode);
 const output = ref<string>('');
@@ -19,20 +15,6 @@ const editorRef = ref<HTMLDivElement>();
 const autoRun = ref(true);
 const executionTime = ref<number | null>(null);
 const copied = ref(false);
-const activeTab = ref<'output' | 'pipeline' | 'flow'>('flow');
-const pipelineSteps = ref<PipelineStep[]>([]);
-const pipelineResult = ref<unknown>(null);
-const currentStepIndex = ref(0);
-
-provide('currentStepIndex', currentStepIndex);
-
-watch(pipelineSteps, (steps) => {
-	if (steps.length > 0) {
-		currentStepIndex.value = steps.length - 1;
-	} else {
-		currentStepIndex.value = 0;
-	}
-});
 
 let monaco: typeof Monaco | null = null;
 let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
@@ -151,8 +133,6 @@ async function runCode() {
 	error.value = '';
 	output.value = '';
 	executionTime.value = null;
-	pipelineSteps.value = [];
-	pipelineResult.value = null;
 
 	const startTime = performance.now();
 
@@ -164,14 +144,13 @@ async function runCode() {
 		console.log = (...args) => logs.push(args.map((a) => formatValue(a)).join(' '));
 
 		try {
-			const instrumented = executeWithInstrumentation(code.value, collect);
+			// Execute the code with collect in scope
+			const fn = new Function('collect', code.value);
+			const result = fn(collect);
 			console.log = originalLog;
 
-			pipelineSteps.value = instrumented.steps;
-			pipelineResult.value = instrumented.result;
-
 			let outputStr = logs.length > 0 ? logs.join('\n') + '\n\n' : '';
-			outputStr += formatValue(instrumented.result);
+			outputStr += formatValue(result);
 			output.value = outputStr;
 			executionTime.value = Math.round((performance.now() - startTime) * 10) / 10;
 		} catch (e: any) {
@@ -184,13 +163,9 @@ async function runCode() {
 			} else {
 				error.value = e.message || String(e);
 			}
-			pipelineSteps.value = [];
-			pipelineResult.value = null;
 		}
 	} catch (e: any) {
 		error.value = e.message || String(e);
-		pipelineSteps.value = [];
-		pipelineResult.value = null;
 	} finally {
 		isRunning.value = false;
 	}
@@ -337,54 +312,18 @@ function copyOutput() {
 
 				<!-- Output pane (bottom) -->
 				<div class="flex flex-col flex-1 min-h-0">
-					<!-- Tabs header -->
+					<!-- Output header -->
 					<div class="flex items-center justify-between h-9 px-4 border-b border-zinc-100/80 dark:border-zinc-800/40">
 						<div class="flex items-center gap-1">
-							<button
-								type="button"
-								class="px-2 py-1 text-[11px] font-medium tracking-wider uppercase rounded transition-colors"
-								:class="activeTab === 'output'
-									? 'text-primary bg-primary/10'
-									: 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'"
-								@click="activeTab = 'output'"
-							>
-								Output
-							</button>
-							<button
-								type="button"
-								class="px-2 py-1 text-[11px] font-medium tracking-wider uppercase rounded transition-colors"
-								:class="activeTab === 'flow'
-									? 'text-primary bg-primary/10'
-									: 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'"
-								@click="activeTab = 'flow'"
-							>
-								Flow
-								<span
-									v-if="pipelineSteps.length > 0"
-									class="ml-1 px-1 py-px text-[9px] rounded bg-zinc-200 dark:bg-zinc-700"
-								>
-									{{ pipelineSteps.length }}
-								</span>
-							</button>
-							<button
-								type="button"
-								class="px-2 py-1 text-[11px] font-medium tracking-wider uppercase rounded transition-colors"
-								:class="activeTab === 'pipeline'
-									? 'text-primary bg-primary/10'
-									: 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300'"
-								@click="activeTab = 'pipeline'"
-							>
-								Pipeline
-							</button>
+							<span class="text-[11px] font-medium tracking-wider uppercase text-zinc-400 dark:text-zinc-500">Output</span>
 							<span
-								v-if="executionTime !== null && activeTab === 'output'"
+								v-if="executionTime !== null"
 								class="ml-2 text-[10px] font-medium tabular-nums text-zinc-400 dark:text-zinc-500"
 							>
 								{{ executionTime }}ms
 							</span>
 						</div>
 						<button
-							v-if="activeTab === 'output'"
 							class="flex items-center justify-center w-6 h-6 text-zinc-400 rounded hover:text-zinc-600 hover:bg-zinc-100 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
 							title="Copy output"
 							@click="copyOutput"
@@ -397,7 +336,7 @@ function copyOutput() {
 					</div>
 
 					<!-- Output view -->
-					<div v-if="activeTab === 'output'" class="flex-1 p-4 overflow-auto bg-white dark:bg-zinc-900">
+					<div class="flex-1 p-4 overflow-auto bg-white dark:bg-zinc-900">
 						<div
 							v-if="error"
 							class="p-2.5 text-[13px] font-mono text-red-600 bg-red-50 rounded-md dark:text-red-400 dark:bg-red-950/30"
@@ -412,29 +351,6 @@ function copyOutput() {
 							Run code to see output
 						</span>
 					</div>
-
-					<!-- Flow view -->
-					<CardFlowView
-						v-else-if="activeTab === 'flow'"
-						:steps="pipelineSteps"
-						:result="pipelineResult"
-						class="flex-1 overflow-hidden bg-white dark:bg-zinc-900"
-					/>
-
-					<!-- Pipeline view -->
-					<PipelineVisualizer
-						v-else-if="activeTab === 'pipeline'"
-						:steps="pipelineSteps"
-						:result="pipelineResult"
-						class="flex-1 overflow-hidden bg-white dark:bg-zinc-900"
-					/>
-
-					<!-- Step scrubber -->
-					<StepScrubber
-						:steps="pipelineSteps"
-						:current-step="currentStepIndex"
-						@update:current-step="currentStepIndex = $event"
-					/>
 				</div>
 			</div>
 		</div>
