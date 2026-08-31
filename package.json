@@ -59,7 +59,7 @@
 		"docs:lint": "bun run docs/scripts/lint-docs.ts",
 		"docs:search": "tsx scripts/generate-search-index.ts",
 		"docs:dev": "bun run docs:guides && bun run docs:search && bun run docs:icons && vitepress dev docs",
-		"docs:build": "bun run docs:guides && bun run docs:search && bun run docs:lint && bun run docs:icons && vitepress build docs",
+		"docs:build": "tsup && bun run docs:guides && bun run docs:search && bun run docs:lint && bun run docs:icons && vitepress build docs",
 		"docs:preview": "vitepress preview docs",
 		"docs:check": "tsx scripts/docs/index.ts check",
 		"docs:sync": "tsx scripts/docs/index.ts sync",
