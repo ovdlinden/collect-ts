@@ -228,7 +228,7 @@ To get minimum value, use [`min`](#min). To get average value, use [`avg`](#avg)
 
 ---
 
-### percentage() <TryInPlayground code="collect([1, 1, 2, 2, 2, 3])&#10;    .percentage(value => value === 1)&#10;// → 33.33" />
+### percentage()
 
 The **percentage** method may be used to quickly determine the percentage of
 items in the collection that pass a given truth test.
@@ -339,7 +339,7 @@ To join by property or callback, use [`implode`](#implode). To convert to comma-
 
 ---
 
-### reduce() <TryInPlayground code="collect([1, 2, 3])&#10;    .reduce((carry, item) => carry + item, 0)&#10;// → 6" />
+### reduce()
 
 The **reduce** method reduces the collection to a single value, passing the result of each
 iteration into the subsequent iteration.
@@ -371,7 +371,7 @@ To reduce with spread arguments, use [`reduceSpread`](#reducespread). To same as
 
 ---
 
-### reduceSpread() <TryInPlayground code="collect([1, 2, 3, 4])&#10;    .reduceSpread(&#10;        (sum, product, item) => [sum + item, product * item],&#10;        0, 1&#10;    )&#10;// → [10, 24]" />
+### reduceSpread()
 
 The **reduceSpread** method reduces the collection to multiple values using spread arguments.
 
@@ -390,7 +390,7 @@ To single accumulator, use [`reduce`](#reduce). To reduce by mutating an object,
 
 ---
 
-### reduceWithKeys() <TryInPlayground code="collect({ a: 1, b: 2, c: 3 })&#10;    .reduceWithKeys((carry, value, key) => {&#10;        carry[key] = value * 2&#10;        return carry&#10;    }, {})&#10;// → { a: 2, b: 4, c: 6 }" />
+### reduceWithKeys()
 
 The **reduceWithKeys** method reduces the collection with access to both value and key.
 
@@ -412,7 +412,7 @@ To primary reduce method, use [`reduce`](#reduce).
 
 ---
 
-### reduceInto() <TryInPlayground code="collect([1, 2, 3])&#10;    .reduceInto({ total: 0 }, (carry, item) => {&#10;        carry.total += item&#10;    })&#10;// → { total: 6 }" />
+### reduceInto()
 
 The **reduceInto** method reduces the collection into an existing object, mutating it.
 

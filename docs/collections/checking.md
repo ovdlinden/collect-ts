@@ -296,7 +296,7 @@ To get the sole item (throws if not exactly one), use [`sole`](/collections/find
 
 ---
 
-### every() <TryInPlayground code="collect([1, 2, 3])&#10;    .every(n => n < 10)&#10;// → true" />
+### every()
 
 The **every** method verifies that all elements of the collection pass a given truth test.
 
@@ -331,7 +331,7 @@ To checking if any item passes, use [`some`](#some). To check if a specific valu
 
 ---
 
-### some() <TryInPlayground code="collect([1, 2, 3, 4, 5])&#10;    .some(n => n > 4)&#10;// → true" />
+### some()
 
 The **some** method is an alias for the `contains` method.
 

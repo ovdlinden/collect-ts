@@ -302,7 +302,7 @@ To join with custom separator, use [`join`](/collections/aggregating#join). To j
 
 ---
 
-### sole() <TryInPlayground code="collect([1, 2, 3])&#10;    .sole(n => n === 2)&#10;// → 2" />
+### sole()
 
 The **sole** method returns the first element in the collection that passes
 a given truth test, but only if exactly one element matches. If no elements

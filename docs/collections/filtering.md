@@ -3,7 +3,7 @@
 <!-- This file is auto-generated from JSDoc. Do not edit directly. -->
 <!-- Run: bun run docs:guides -->
 
-### filter() <TryInPlayground code="collect([1, 2, 3, 4])&#10;    .filter(n => n > 2)&#10;// → [3, 4]" />
+### filter()
 
 The **filter** method filters the collection using the given callback, keeping only
 items that pass a given truth test. If no callback is supplied, all falsy values
@@ -27,7 +27,7 @@ To the inverse (keeps items that fail), use [`reject`](#reject). To filter by ke
 
 ---
 
-### reject() <TryInPlayground code="collect([1, 2, 3, 4])&#10;    .reject(n => n > 2)&#10;// → [1, 2]" />
+### reject()
 
 The **reject** method filters the collection using the given callback, removing
 items that pass the truth test. It is the inverse of the `filter` method.
@@ -228,7 +228,7 @@ To skip while condition is true, use [`skipWhile`](#skipwhile). To take until co
 
 ---
 
-### skipWhile() <TryInPlayground code="collect([1, 2, 3, 4])&#10;    .skipWhile(item => item < 3)&#10;    .all()&#10;// → [3, 4]" />
+### skipWhile()
 
 The **skipWhile** method skips items while the given callback returns true,
 then returns the remaining items.
@@ -292,7 +292,7 @@ To take while condition is true, use [`takeWhile`](#takewhile). To skip until co
 
 ---
 
-### takeWhile() <TryInPlayground code="collect([1, 2, 3, 4])&#10;    .takeWhile(item => item < 3)&#10;    .all()&#10;// → [1, 2]" />
+### takeWhile()
 
 The **takeWhile** method returns items while the given callback returns true.
 Once the callback returns false, it stops.

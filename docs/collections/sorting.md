@@ -195,7 +195,7 @@ To sort keys in ascending order, use [`sortKeys`](#sortkeys). To sort values in 
 
 ---
 
-### sortKeysUsing() <TryInPlayground code="collect({ '10': 'ten', '2': 'two', '1': 'one' })&#10;    .sortKeysUsing((a, b) => a.localeCompare(b, undefined, { numeric: true }))&#10;    .all()&#10;// → { '1': 'one', '2': 'two', '10': 'ten' }" />
+### sortKeysUsing()
 
 The **sortKeysUsing** method sorts the collection by its keys using a callback.
 The callback should return a negative, zero, or positive integer based on comparison.

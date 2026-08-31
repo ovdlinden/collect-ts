@@ -27,7 +27,7 @@ To generate by calling a function N times, use [`times`](#times).
 
 ---
 
-### times() <TryInPlayground code="Collection.times(3, i => i * 2)&#10;// → Collection [2, 4, 6]" />
+### times()
 
 The **times** method creates a new collection by invoking the given closure a specified number of times.
 
@@ -52,7 +52,7 @@ To generate a range between two numbers, use [`range`](#range).
 
 ---
 
-### map() <TryInPlayground code="collect([1, 2, 3])&#10;    .map(n => n * 2)&#10;// → Collection [2, 4, 6]" />
+### map()
 
 The **map** method iterates over the collection and passes each value to the given callback.
 The callback is free to modify the item and return it, thus forming a new collection of
@@ -79,7 +79,7 @@ To extract a single property by key, use [`pluck`](#pluck). To transform and cha
 
 ---
 
-### mapWithKeys() <TryInPlayground code="collect([&#10;    { name: 'John', department: 'Sales' },&#10;    { name: 'Jane', department: 'Marketing' }&#10;]).mapWithKeys(emp => [emp.name, emp.department])&#10;  .all()&#10;// → { John: 'Sales', Jane: 'Marketing' }" />
+### mapWithKeys()
 
 The **mapWithKeys** method iterates through the collection and passes each value
 to the given callback. The callback should return an associative array containing
@@ -98,7 +98,7 @@ To transform values keeping original keys, use [`map`](#map). To key by a proper
 
 ---
 
-### mapToDictionary() <TryInPlayground code="collect([&#10;  { name: 'John', department: 'Sales' },&#10;  { name: 'Jane', department: 'Sales' },&#10;  { name: 'Bob', department: 'Marketing' },&#10;])&#10;  .mapToDictionary(emp => [emp.department, emp.name])&#10;  .all()&#10;// → { Sales: ['John', 'Jane'], Marketing: ['Bob'] }" />
+### mapToDictionary()
 
 The **mapToDictionary** method runs the given callback over each item and groups
 the returned values by their keys.
@@ -118,7 +118,7 @@ To similar but returns nested Collections, use [`mapToGroups`](#maptogroups). To
 
 ---
 
-### mapToGroups() <TryInPlayground code="collect([&#10;  { name: 'John', department: 'Sales' },&#10;  { name: 'Jane', department: 'Sales' },&#10;  { name: 'Bob', department: 'Marketing' },&#10;])&#10;  .mapToGroups(emp => [emp.department, emp.name])&#10;// → { Sales: Collection(['John', 'Jane']), Marketing: Collection(['Bob']) }" />
+### mapToGroups()
 
 The **mapToGroups** method groups the collection's items by the given callback.
 The callback returns a [key, value] tuple that determines the grouping.
@@ -137,7 +137,7 @@ To similar but returns plain arrays, use [`mapToDictionary`](#maptodictionary). 
 
 ---
 
-### mapInto() <TryInPlayground code="class Currency {&#10;    constructor(public amount: number) {}&#10;    format() { return `$${this.amount.toFixed(2)}`; }&#10;}&#10;collect([100, 250, 50])&#10;    .mapInto(Currency)&#10;    .map(c => c.format())&#10;    .all()&#10;// → ['$100.00', '$250.00', '$50.00']" />
+### mapInto()
 
 The **mapInto** method iterates over the collection and creates a new instance
 of the given class for each item, passing the item value and key to the constructor.
@@ -158,7 +158,7 @@ To transform with arbitrary callback, use [`map`](#map). To pass entire collecti
 
 ---
 
-### mapSpread() <TryInPlayground code="collect([[1, 2], [3, 4], [5, 6]])&#10;    .mapSpread((a, b) => a + b)&#10;    .all()&#10;// → [3, 7, 11]" />
+### mapSpread()
 
 The **mapSpread** method iterates over the collection's items, passing each nested
 item value into the given callback as separate arguments.
@@ -183,7 +183,7 @@ To iterate without transforming, use [`eachSpread`](#eachspread). To map and fla
 
 ---
 
-### flatMap() <TryInPlayground code="collect([[1, 2], [3, 4]])&#10;    .flatMap(arr => arr.map(n => n * 2))&#10;// → Collection [2, 4, 6, 8]" />
+### flatMap()
 
 Map each item then flatten the results by one level.
 
@@ -565,7 +565,7 @@ To transform items with full callback control, use [`map`](#map). To get first i
 
 ---
 
-### transform() <TryInPlayground code="const collection = collect([1, 2, 3])&#10;collection.transform(n => n * 2)&#10;collection.all()&#10;// → [2, 4, 6]" />
+### transform()
 
 The **transform** method iterates over the collection and calls the given callback
 with each item in the collection. The items in the collection will be replaced
@@ -719,7 +719,7 @@ To flatten to dot notation, use [`dot`](#dot).
 
 ---
 
-### each() <TryInPlayground code="collect([1, 2, 3])&#10;    .each(n => console.log(n))&#10;// logs: 1, 2, 3" />
+### each()
 
 The **each** method iterates over the items in the collection and passes each item to a closure.
 
@@ -747,7 +747,7 @@ To execute callback on entire collection, use [`tap`](#tap). To transform items 
 
 ---
 
-### eachSpread() <TryInPlayground code="collect([['John', 35], ['Jane', 28]])&#10;    .eachSpread((name, age) => {&#10;        console.log(`${name} is ${age} years old`);&#10;    })&#10;// Logs: &quot;John is 35 years old&quot;&#10;// Logs: &quot;Jane is 28 years old&quot;" />
+### eachSpread()
 
 The **eachSpread** method iterates over the collection's items, passing each nested
 item value into the given callback as separate arguments.
@@ -833,7 +833,7 @@ To create a new collection copy, use [`collect`](#collect).
 
 ---
 
-### pipe() <TryInPlayground code="collect([1, 2, 3])&#10;    .pipe(c => c.sum() * 2)&#10;// → 12" />
+### pipe()
 
 The **pipe** method passes the collection to the given closure and returns the result
 of the executed closure. This is useful for wrapping the collection in custom logic
@@ -870,7 +870,7 @@ To execute callback but return collection unchanged, use [`tap`](#tap). To pass 
 
 ---
 
-### pipeInto() <TryInPlayground code="class Report {&#10;    constructor(private data: Collection<number>) {}&#10;    summary() { return { total: this.data.sum(), avg: this.data.avg() }; }&#10;}&#10;collect([10, 20, 30])&#10;    .pipeInto(Report)&#10;    .summary()&#10;// → { total: 60, avg: 20 }" />
+### pipeInto()
 
 The **pipeInto** method creates a new instance of the given class and passes the
 collection into the constructor. This is useful for wrapping the collection in
@@ -891,7 +891,7 @@ To pass collection to a callback, use [`pipe`](#pipe). To create instances from 
 
 ---
 
-### pipeThrough() <TryInPlayground code="collect([1, 2, 3])&#10;    .pipeThrough([&#10;        c => c.sum(),      // 6&#10;        n => n * 2,        // 12&#10;        n => `Total: ${n}` // 'Total: 12'&#10;    ])&#10;// → 'Total: 12'" />
+### pipeThrough()
 
 The **pipeThrough** method passes the collection through a series of callbacks and
 returns the final result. Each callback receives the result of the previous callback,
@@ -922,7 +922,7 @@ To pass through a single callback, use [`pipe`](#pipe).
 
 ---
 
-### tap() <TryInPlayground code="collect([1, 2, 3])&#10;  .map(n => n * 2)&#10;  .tap(c => console.log(c.all()))&#10;  .filter(n => n > 2)" />
+### tap()
 
 Pass the collection to the given callback and return it unchanged.
 
@@ -941,7 +941,7 @@ To execute callback for each item, use [`each`](#each). To transform and return 
 
 ---
 
-### dump() <TryInPlayground code="collect([1, 2, 3])&#10;    .map(n => n * 2)&#10;    .dump()              // Logs: [2, 4, 6]&#10;    .filter(n => n > 3)&#10;    .all()&#10;// → [4, 6]" />
+### dump()
 
 The **dump** method outputs the collection's items to the console and returns the
 collection, allowing you to inspect the contents at any point in a method chain
@@ -974,7 +974,7 @@ To dump and halt execution, use [`dd`](#dd). To execute any callback mid-chain, 
 
 ---
 
-### dd() <TryInPlayground code="collect([1, 2, 3])&#10;    .map(n => n * 2)&#10;    .dd()  // Logs: [2, 4, 6], then throws&#10;    .filter(n => n > 3)  // Never reached" />
+### dd()
 
 The **dd** method outputs the collection's items to the console and then throws
 an error to halt script execution. This is useful for debugging when you want
@@ -999,7 +999,7 @@ To dump without halting, use [`dump`](#dump).
 
 ---
 
-### when() <TryInPlayground code="collect([1, 2, 3])&#10;    .when(true, c => c.map(n => n * 2))&#10;    .all()&#10;// → [2, 4, 6]" />
+### when()
 
 The **when** method executes the given callback when the first argument evaluates to true.
 The collection instance and the resolved value are passed to the closure.
@@ -1042,7 +1042,7 @@ To execute when condition is falsy, use [`unless`](#unless). To execute when col
 
 ---
 
-### unless() <TryInPlayground code="const isAdmin = false&#10;collect([&#10;  { title: 'Public Post', public: true },&#10;  { title: 'Draft', public: false },&#10;])&#10;  .unless(isAdmin, c => c.where('public', true))&#10;  .all()&#10;// → [{ title: 'Public Post', public: true }]" />
+### unless()
 
 The **unless** method executes the given callback when the first argument evaluates to false.
 This is the inverse of the `when` method. An optional second callback is executed when
@@ -1082,7 +1082,7 @@ To execute when condition is truthy, use [`when`](#when). To execute when collec
 
 ---
 
-### whenEmpty() <TryInPlayground code="collect([])&#10;    .whenEmpty(c => c.push('default'))&#10;    .all()&#10;// → ['default']" />
+### whenEmpty()
 
 The **whenEmpty** method executes the given callback when the collection is empty.
 An optional second callback is executed when the collection is not empty.
@@ -1108,7 +1108,7 @@ To execute when collection has items, use [`whenNotEmpty`](#whennotempty). To ex
 
 ---
 
-### whenNotEmpty() <TryInPlayground code="collect([&#10;  { id: 1, total: 100 },&#10;  { id: 2, total: 200 },&#10;])&#10;  .whenNotEmpty(c => c.pluck('total'))&#10;  .all()&#10;// → [100, 200]" />
+### whenNotEmpty()
 
 The **whenNotEmpty** method executes the given callback when the collection is not empty.
 An optional second callback is executed when the collection is empty.
@@ -1140,7 +1140,7 @@ To execute when collection is empty, use [`whenEmpty`](#whenempty). To alias for
 
 ---
 
-### unlessEmpty() <TryInPlayground code="collect([1, 2, 3])&#10;    .unlessEmpty(c => c.map(n => n * 2))&#10;    .all()&#10;// → [2, 4, 6]" />
+### unlessEmpty()
 
 The **unlessEmpty** method executes the given callback when the collection is not empty.
 This is an alias for {@link whenNotEmpty}.
@@ -1165,7 +1165,7 @@ To canonical method, use [`whenNotEmpty`](#whennotempty). To execute when collec
 
 ---
 
-### unlessNotEmpty() <TryInPlayground code="collect([])&#10;    .unlessNotEmpty(() => collect(['No data']))&#10;    .all()&#10;// → ['No data']" />
+### unlessNotEmpty()
 
 The **unlessNotEmpty** method executes the given callback when the collection is empty.
 This is an alias for {@link whenEmpty}.
@@ -1260,7 +1260,7 @@ To primary method for removing items, use [`forget`](#forget). To remove and ret
 
 ---
 
-### lazy() <TryInPlayground code="collect([1, 2, 3, 4, 5])&#10;    .lazy()&#10;    .map(n => n * 2)&#10;    .filter(n => n > 4)&#10;    .take(2)&#10;    .all()&#10;// → [6, 8]" />
+### lazy()
 
 The **lazy** method returns a new LazyCollection instance from the underlying items.
 

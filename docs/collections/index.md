@@ -3286,7 +3286,7 @@ const users = collect(allUsersArray).filter((user) => user.id > 500);
 However, using a lazy collection allows you to process items one at a time. In this example, the `filter` callback is not executed until we actually iterate over each user individually, allowing for a drastic reduction in memory usage:
 
 ```typescript
-const users = lazy(function* () {
+const users = collect.lazy(function* () {
     for (const user of generateUsersFromSource()) {
         yield user;
     }
@@ -3300,14 +3300,14 @@ for (const user of users) {
 <a name="creating-lazy-collections"></a>
 ### Creating Lazy Collections
 
-To create a lazy collection instance, you can use the `lazy()` helper function or the `LazyCollection.make()` method with a generator function:
+To create a lazy collection instance, you can use `collect.lazy()` or the `LazyCollection.make()` method with a generator function:
 
 ```typescript
-import { lazy, LazyCollection } from 'collect-ts';
+import { collect, LazyCollection } from 'collect-ts';
 
-const lazyFromArray = lazy([1, 2, 3, 4, 5]);
+const lazyFromArray = collect.lazy([1, 2, 3, 4, 5]);
 
-const lazyFromGenerator = lazy(function* () {
+const lazyFromGenerator = collect.lazy(function* () {
     yield 1;
     yield 2;
     yield 3;
@@ -3505,7 +3505,7 @@ Logs numbers 1, 2, etc., up to around 58-59 before the timeout (1 minute) is rea
 const processStart = Date.now();
 const timeoutMs = 14 * 60 * 1000;
 
-lazy(function* () {
+collect.lazy(function* () {
     for (const invoice of fetchPendingInvoices()) {
         yield invoice;
     }
@@ -3536,7 +3536,7 @@ The `remember` method returns a new lazy collection that will remember any value
 
 ```typescript
 let computeCount = 0;
-const lazyCollection = lazy(function* () {
+const lazyCollection = collect.lazy(function* () {
     for (let i = 1; i <= 10; i++) {
         computeCount++;
         yield i;

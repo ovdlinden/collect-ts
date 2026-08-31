@@ -100,9 +100,9 @@ Typo in the path? Caught at compile time.
 Same concept as Laravel's `LazyCollection`, generator-based evaluation for memory efficiency:
 
 ```typescript
-import { lazy } from 'collect-ts'
+import { collect } from 'collect-ts'
 
-const errors = lazy(readLines('huge-log.jsonl'))
+const errors = collect.lazy(readLines('huge-log.jsonl'))
     .filter(entry => entry.level === 'error')
     .take(100)
     .all()
